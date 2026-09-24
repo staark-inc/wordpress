@@ -1,0 +1,171 @@
+<?php
+/**
+ * Staark Security login throttling.
+ *
+ * This is deliberately conservative and stores only hashed throttle keys in
+ * transients. It does not replace edge/WAF rate limiting, 2FA or server-level
+ * monitoring, but it gives managed WordPress sites a safe local fallback.
+ */
+
+if (! defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * Use REMOTE_ADDR by default instead of trusting spoofable forwarding headers.
+ * Hosts behind a trusted proxy can provide the real address through the filter.
+ */
+function staark_hub_security_client_ip(): string
+{
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+    $ip = (string) apply_filters('staark_hub_security_client_ip', $ip);
+
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : 'unknown';
+}
+
+/**
+ * @return array{window:int,attempts:int,lockout:int}
+ */
+function staark_hub_security_login_limits(): array
+{
+    $limits = [
+        'window' => 15 * MINUTE_IN_SECONDS,
+        'attempts' => 12,
+        'lockout' => 10 * MINUTE_IN_SECONDS,
+    ];
+
+    $filtered = apply_filters('staark_hub_security_login_limits', $limits);
+    if (! is_array($filtered)) {
+        return $limits;
+    }
+
+    return [
+        'window' => max(MINUTE_IN_SECONDS, absint($filtered['window'] ?? $limits['window'])),
+        'attempts' => max(3, absint($filtered['attempts'] ?? $limits['attempts'])),
+        'lockout' => max(MINUTE_IN_SECONDS, absint($filtered['lockout'] ?? $limits['lockout'])),
+    ];
+}
+
+function staark_hub_security_login_key(string $type, string $value): string
+{
+    $value = strtolower(trim($value));
+    $hash = hash_hmac('sha256', $type . '|' . $value, wp_salt('auth'));
+
+    return 'staark_login_' . sanitize_key($type) . '_' . substr($hash, 0, 32);
+}
+
+/**
+ * @return array{count:int,first:int,locked_until:int}
+ */
+function staark_hub_security_login_state(string $key): array
+{
+    $state = get_transient($key);
+    if (! is_array($state)) {
+        return ['count' => 0, 'first' => 0, 'locked_until' => 0];
+    }
+
+    return [
+        'count' => absint($state['count'] ?? 0),
+        'first' => absint($state['first'] ?? 0),
+        'locked_until' => absint($state['locked_until'] ?? 0),
+    ];
+}
+
+function staark_hub_security_login_is_locked(string $login): bool
+{
+    $now = time();
+    $ip = staark_hub_security_client_ip();
+    $keys = [staark_hub_security_login_key('identity', $ip . '|' . $login)];
+    if ($ip !== 'unknown') {
+        array_unshift($keys, staark_hub_security_login_key('ip', $ip));
+    }
+
+    foreach ($keys as $key) {
+        $state = staark_hub_security_login_state($key);
+        if ($state['locked_until'] > $now) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function staark_hub_security_login_record_failure(string $login): void
+{
+    if (! staark_hub_module_enabled('security', true)) {
+        return;
+    }
+
+    $settings = staark_hub_security_settings();
+    if (empty($settings['login_protection'])) {
+        return;
+    }
+
+    $now = time();
+    $limits = staark_hub_security_login_limits();
+    $ip = staark_hub_security_client_ip();
+    $keys = [staark_hub_security_login_key('identity', $ip . '|' . $login)];
+    if ($ip !== 'unknown') {
+        array_unshift($keys, staark_hub_security_login_key('ip', $ip));
+    }
+
+    foreach ($keys as $key) {
+        $state = staark_hub_security_login_state($key);
+        if ($state['first'] === 0 || ($now - $state['first']) > $limits['window']) {
+            $state = ['count' => 0, 'first' => $now, 'locked_until' => 0];
+        }
+
+        ++$state['count'];
+        if ($state['count'] >= $limits['attempts']) {
+            $state['locked_until'] = $now + $limits['lockout'];
+        }
+
+        $ttl = max($limits['window'], $limits['lockout']) + MINUTE_IN_SECONDS;
+        set_transient($key, $state, $ttl);
+    }
+}
+
+function staark_hub_security_login_clear_success(string $login): void
+{
+    $ip = staark_hub_security_client_ip();
+    delete_transient(staark_hub_security_login_key('identity', $ip . '|' . $login));
+    if ($ip !== 'unknown') {
+        delete_transient(staark_hub_security_login_key('ip', $ip));
+    }
+}
+
+/**
+ * Fail before WordPress performs credential validation once a bucket is locked.
+ * The message is deliberately generic and does not reveal whether the username
+ * exists or whether the limit was reached by the identity or IP bucket.
+ *
+ * @param WP_User|WP_Error|null $user
+ * @return WP_User|WP_Error|null
+ */
+function staark_hub_security_login_authenticate($user, $username, $password)
+{
+    $username = is_scalar($username) ? (string) $username : '';
+    if ($user instanceof WP_Error || ! staark_hub_module_enabled('security', true)) {
+        return $user;
+    }
+
+    $settings = staark_hub_security_settings();
+    if (empty($settings['login_protection']) || $username === '') {
+        return $user;
+    }
+
+    if (staark_hub_security_login_is_locked($username)) {
+        return new WP_Error(
+            'staark_login_throttled',
+            __('Too many login attempts. Please wait a few minutes and try again.', 'staark-core')
+        );
+    }
+
+    return $user;
+}
+
+add_filter('authenticate', 'staark_hub_security_login_authenticate', 5, 3);
+add_action('wp_login_failed', 'staark_hub_security_login_record_failure', 10, 1);
+add_action('wp_login', static function (string $user_login): void {
+    staark_hub_security_login_clear_success($user_login);
+}, 10, 1);

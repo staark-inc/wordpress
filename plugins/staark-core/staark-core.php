@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.5.7.2
+ * Version: 0.5.10.0
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -13,8 +13,18 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-const STAARK_HUB_VERSION = '0.5.7.2';
+const STAARK_HUB_VERSION = '0.5.10.0';
 const STAARK_HUB_SLUG = 'staark-hub';
+define('STAARK_HUB_PLUGIN_FILE', __FILE__);
+define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
+
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/helpers.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/security.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/seo.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'admin/security-page.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'admin/seo-page.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'admin/performance-page.php';
 
 /**
  * Return the current Staark Hub admin page slug.
@@ -445,10 +455,13 @@ function staark_hub_connection_site_payload(): array
         'timezone' => wp_timezone_string(),
         'capabilities' => [
             'support' => true,
-            'security' => false,
-            'seo' => false,
-            'performance' => false,
+            'security' => staark_hub_module_enabled('security', true),
+            'seo' => staark_hub_module_enabled('seo', true),
+            'performance' => staark_hub_module_enabled('performance', true),
         ],
+        'security' => function_exists('staark_hub_security_summary') ? staark_hub_security_summary() : null,
+        'seo' => function_exists('staark_hub_seo_summary') ? staark_hub_seo_summary() : null,
+        'performance' => function_exists('staark_hub_performance_summary') ? staark_hub_performance_summary() : null,
     ];
 }
 
@@ -796,6 +809,9 @@ add_action('admin_menu', static function (): void {
 
     add_submenu_page(STAARK_HUB_SLUG, __('Overview', 'staark-core'), __('Overview', 'staark-core'), 'manage_options', STAARK_HUB_SLUG, 'staark_hub_render_overview');
     add_submenu_page(STAARK_HUB_SLUG, __('Website', 'staark-core'), __('Website', 'staark-core'), 'manage_options', 'staark-hub-website', 'staark_hub_render_website');
+    add_submenu_page(STAARK_HUB_SLUG, __('Security', 'staark-core'), __('Security', 'staark-core'), 'manage_options', 'staark-hub-security', 'staark_hub_render_security');
+    add_submenu_page(STAARK_HUB_SLUG, __('SEO', 'staark-core'), __('SEO', 'staark-core'), 'manage_options', 'staark-hub-seo', 'staark_hub_render_seo');
+    add_submenu_page(STAARK_HUB_SLUG, __('Performance', 'staark-core'), __('Performance', 'staark-core'), 'manage_options', 'staark-hub-performance', 'staark_hub_render_performance');
     add_submenu_page(STAARK_HUB_SLUG, __('Support', 'staark-core'), __('Support', 'staark-core'), 'manage_options', 'staark-hub-support', 'staark_hub_render_support');
     add_submenu_page(STAARK_HUB_SLUG, __('Branding', 'staark-core'), __('Branding', 'staark-core'), 'manage_options', 'staark-hub-branding', 'staark_hub_render_branding');
     add_submenu_page(STAARK_HUB_SLUG, __('Connect', 'staark-core'), __('Connect to Staark', 'staark-core'), 'manage_options', 'staark-hub-connect', 'staark_hub_render_connect');
@@ -822,7 +838,34 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
         STAARK_HUB_VERSION
     );
 
-    if (staark_hub_current_page() === 'staark-hub-branding') {
+    if (staark_hub_current_page() === 'staark-hub-security') {
+        wp_enqueue_style(
+            'staark-hub-security',
+            plugin_dir_url(__FILE__) . 'assets/security.css',
+            ['staark-hub-admin'],
+            STAARK_HUB_VERSION
+        );
+    }
+
+    if (staark_hub_current_page() === 'staark-hub-seo') {
+        wp_enqueue_style(
+            'staark-hub-seo',
+            plugin_dir_url(__FILE__) . 'assets/seo.css',
+            ['staark-hub-admin'],
+            STAARK_HUB_VERSION
+        );
+    }
+
+    if (staark_hub_current_page() === 'staark-hub-performance') {
+        wp_enqueue_style(
+            'staark-hub-performance',
+            plugin_dir_url(__FILE__) . 'assets/performance.css',
+            ['staark-hub-admin'],
+            STAARK_HUB_VERSION
+        );
+    }
+
+    if (in_array(staark_hub_current_page(), ['staark-hub-branding', 'staark-hub-seo'], true)) {
         wp_enqueue_media();
         wp_enqueue_script(
             'staark-hub-admin',
@@ -1295,6 +1338,9 @@ function staark_hub_nav(): void
     $items = [
         STAARK_HUB_SLUG => 'Overview',
         'staark-hub-website' => 'Website',
+        'staark-hub-security' => 'Security',
+        'staark-hub-seo' => 'SEO',
+        'staark-hub-performance' => 'Performance',
         'staark-hub-support' => 'Support',
         'staark-hub-branding' => 'Branding',
         'staark-hub-connect' => 'Connect',
@@ -1448,7 +1494,7 @@ function staark_hub_render_overview(): void
             <section class="staark-hub-card">
                 <span class="staark-hub-card-label">Maintenance</span>
                 <h2>Keep WordPress tidy</h2>
-                <p>Review updates and health checks here now. Security, SEO and performance modules will get their own Staark controls in the dedicated 05.x patches.</p>
+                <p>Review updates and health checks here. Security, SEO and Performance now have dedicated Staark controls while hosting-level tuning stays explicit.</p>
                 <div class="staark-hub-maintenance-stats">
                     <span><strong><?php echo esc_html((string) $updates['plugins']); ?></strong><small>Plugin updates</small></span>
                     <span><strong><?php echo esc_html((string) $updates['themes']); ?></strong><small>Theme updates</small></span>
@@ -1476,18 +1522,33 @@ function staark_hub_render_overview(): void
                     <span><strong>Website</strong><small>Starter pages and website setup</small></span>
                     <b aria-hidden="true">→</b>
                 </a>
-                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-support')); ?>">
+                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-security')); ?>">
                     <span class="staark-hub-tool-icon" aria-hidden="true">02</span>
+                    <span><strong>Security</strong><small>Scanner, integrity checks and safe hardening</small></span>
+                    <b aria-hidden="true">→</b>
+                </a>
+                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-seo')); ?>">
+                    <span class="staark-hub-tool-icon" aria-hidden="true">03</span>
+                    <span><strong>SEO</strong><small>Metadata, schema, sitemap and local SEO</small></span>
+                    <b aria-hidden="true">→</b>
+                </a>
+                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-performance')); ?>">
+                    <span class="staark-hub-tool-icon" aria-hidden="true">04</span>
+                    <span><strong>Performance</strong><small>Cache, assets, images, fonts and CWV readiness</small></span>
+                    <b aria-hidden="true">→</b>
+                </a>
+                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-support')); ?>">
+                    <span class="staark-hub-tool-icon" aria-hidden="true">05</span>
                     <span><strong>Support</strong><small><?php echo esc_html($sync_queue['tickets'] > 0 ? $sync_queue['tickets'] . ' ticket(s) waiting to sync' : 'Tickets and managed Staark support'); ?></small></span>
                     <b aria-hidden="true">→</b>
                 </a>
                 <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-branding')); ?>">
-                    <span class="staark-hub-tool-icon" aria-hidden="true">03</span>
+                    <span class="staark-hub-tool-icon" aria-hidden="true">06</span>
                     <span><strong>Branding</strong><small>Client-facing website settings</small></span>
                     <b aria-hidden="true">→</b>
                 </a>
                 <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-connect')); ?>">
-                    <span class="staark-hub-tool-icon" aria-hidden="true">04</span>
+                    <span class="staark-hub-tool-icon" aria-hidden="true">07</span>
                     <span><strong>Connect</strong><small><?php echo $connection_paired ? 'Linked to Staark Hub' : 'Pair this website with Staark'; ?></small></span>
                     <b aria-hidden="true">→</b>
                 </a>
