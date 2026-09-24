@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.5.4
+ * Version: 0.5.6
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -13,7 +13,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-const STAARK_HUB_VERSION = '0.5.4';
+const STAARK_HUB_VERSION = '0.5.6';
 const STAARK_HUB_SLUG = 'staark-hub';
 
 /**
@@ -192,6 +192,228 @@ function staark_hub_published_page_count(): int
     return isset($counts->publish) ? (int) $counts->publish : 0;
 }
 
+/**
+ * Support ticket categories exposed in the Staark Hub form.
+ *
+ * @return array<string,string>
+ */
+function staark_hub_support_categories(): array
+{
+    return [
+        'technical' => 'Technical issue',
+        'content' => 'Content change',
+        'design' => 'Design change',
+        'maintenance' => 'Maintenance',
+        'other' => 'Other',
+    ];
+}
+
+/**
+ * Support ticket priorities exposed in the Staark Hub form.
+ *
+ * @return array<string,string>
+ */
+function staark_hub_support_priorities(): array
+{
+    return [
+        'low' => 'Low',
+        'normal' => 'Normal',
+        'high' => 'High',
+        'urgent' => 'Urgent',
+    ];
+}
+
+/**
+ * Snapshot attached to every support request so Staark gets useful context
+ * without asking the client for WordPress or server details first.
+ *
+ * @return array<string,string|int>
+ */
+function staark_hub_support_environment(): array
+{
+    $theme = wp_get_theme();
+    $updates = staark_hub_pending_updates();
+
+    return [
+        'site_url' => home_url('/'),
+        'wordpress' => (string) get_bloginfo('version'),
+        'php' => PHP_VERSION,
+        'theme' => trim((string) $theme->get('Name') . ' ' . (string) $theme->get('Version')),
+        'hub' => STAARK_HUB_VERSION,
+        'updates' => $updates['total'],
+        'locale' => get_locale(),
+        'timezone' => wp_timezone_string(),
+    ];
+}
+
+/**
+ * Return recent locally stored support tickets.
+ *
+ * @return WP_Post[]
+ */
+function staark_hub_support_tickets(int $limit = 8): array
+{
+    return get_posts(
+        [
+            'post_type' => 'staark_ticket',
+            'post_status' => ['private', 'publish'],
+            'posts_per_page' => $limit,
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'suppress_filters' => true,
+        ]
+    );
+}
+
+function staark_hub_support_ticket_label(int $ticket_id): string
+{
+    return 'STK-' . str_pad((string) $ticket_id, 5, '0', STR_PAD_LEFT);
+}
+
+
+
+/**
+ * Lead statuses used by the local Staark lead inbox.
+ *
+ * @return array<string,string>
+ */
+function staark_hub_lead_statuses(): array
+{
+    return [
+        'new' => 'New',
+        'contacted' => 'Contacted',
+        'qualified' => 'Qualified',
+        'won' => 'Won',
+        'lost' => 'Lost',
+    ];
+}
+
+/**
+ * Lead source labels used until Staark Hub sync supplies richer attribution.
+ *
+ * @return array<string,string>
+ */
+function staark_hub_lead_sources(): array
+{
+    return [
+        'website' => 'Website',
+        'manual' => 'Manual',
+        'email' => 'Email',
+        'phone' => 'Phone',
+        'referral' => 'Referral',
+        'other' => 'Other',
+    ];
+}
+
+/**
+ * Return a compact human-readable lead id.
+ */
+function staark_hub_lead_label(int $lead_id): string
+{
+    return 'LEAD-' . str_pad((string) $lead_id, 5, '0', STR_PAD_LEFT);
+}
+
+/**
+ * Return counters for the local lead inbox.
+ *
+ * @return array{total:int,new:int,contacted:int,qualified:int,won:int,lost:int}
+ */
+function staark_hub_lead_counts(): array
+{
+    $counts = [
+        'total' => 0,
+        'new' => 0,
+        'contacted' => 0,
+        'qualified' => 0,
+        'won' => 0,
+        'lost' => 0,
+    ];
+
+    $lead_ids = get_posts(
+        [
+            'post_type' => 'staark_lead',
+            'post_status' => 'private',
+            'posts_per_page' => -1,
+            'fields' => 'ids',
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'suppress_filters' => true,
+        ]
+    );
+
+    foreach ($lead_ids as $lead_id) {
+        $counts['total']++;
+        $status = (string) get_post_meta((int) $lead_id, '_staark_lead_status', true);
+        $status = isset($counts[$status]) ? $status : 'new';
+        $counts[$status]++;
+    }
+
+    return $counts;
+}
+
+/**
+ * Return locally stored leads with optional status and search filtering.
+ *
+ * Search intentionally happens in PHP for now so name, company, email,
+ * phone and campaign metadata all behave consistently without custom SQL.
+ *
+ * @return WP_Post[]
+ */
+function staark_hub_leads(string $status = '', string $search = '', int $limit = 80): array
+{
+    $statuses = staark_hub_lead_statuses();
+
+    if ($status !== '' && ! isset($statuses[$status])) {
+        $status = '';
+    }
+
+    $posts = get_posts(
+        [
+            'post_type' => 'staark_lead',
+            'post_status' => 'private',
+            'posts_per_page' => max(1, min($limit, 200)),
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'suppress_filters' => true,
+        ]
+    );
+
+    $search = trim($search);
+    $needle = strtolower($search);
+    $filtered = [];
+
+    foreach ($posts as $post) {
+        $lead_status = (string) get_post_meta($post->ID, '_staark_lead_status', true);
+        $lead_status = isset($statuses[$lead_status]) ? $lead_status : 'new';
+
+        if ($status !== '' && $lead_status !== $status) {
+            continue;
+        }
+
+        if ($needle !== '') {
+            $haystack = implode(
+                ' ',
+                [
+                    $post->post_title,
+                    $post->post_content,
+                    (string) get_post_meta($post->ID, '_staark_lead_company', true),
+                    (string) get_post_meta($post->ID, '_staark_lead_email', true),
+                    (string) get_post_meta($post->ID, '_staark_lead_phone', true),
+                    (string) get_post_meta($post->ID, '_staark_lead_campaign', true),
+                    (string) get_post_meta($post->ID, '_staark_lead_source_page', true),
+                ]
+            );
+
+            if (strpos(strtolower($haystack), $needle) === false) {
+                continue;
+            }
+        }
+
+        $filtered[] = $post;
+    }
+
+    return $filtered;
+}
 
 /**
  * Branding defaults used before a client saves their own identity.
@@ -340,6 +562,40 @@ add_action('enqueue_block_editor_assets', static function (): void {
     wp_add_inline_style('wp-edit-blocks', staark_hub_branding_css());
 });
 
+add_action('init', static function (): void {
+    register_post_type(
+        'staark_ticket',
+        [
+            'labels' => [
+                'name' => __('Staark Support Tickets', 'staark-core'),
+                'singular_name' => __('Staark Support Ticket', 'staark-core'),
+            ],
+            'public' => false,
+            'show_ui' => false,
+            'show_in_rest' => false,
+            'supports' => ['title', 'editor', 'author'],
+            'capability_type' => 'post',
+            'map_meta_cap' => true,
+        ]
+    );
+
+    register_post_type(
+        'staark_lead',
+        [
+            'labels' => [
+                'name' => __('Staark Leads', 'staark-core'),
+                'singular_name' => __('Staark Lead', 'staark-core'),
+            ],
+            'public' => false,
+            'show_ui' => false,
+            'show_in_rest' => false,
+            'supports' => ['title', 'editor', 'author'],
+            'capability_type' => 'post',
+            'map_meta_cap' => true,
+        ]
+    );
+});
+
 add_action('admin_menu', static function (): void {
     add_menu_page(
         __('Staark Website Hub', 'staark-core'),
@@ -470,6 +726,214 @@ add_action('admin_post_staark_create_starter_page', static function (): void {
     exit;
 });
 
+
+add_action('admin_post_staark_submit_support_ticket', static function (): void {
+    if (! current_user_can('manage_options')) {
+        wp_die(esc_html__('You are not allowed to perform this action.', 'staark-core'));
+    }
+
+    check_admin_referer('staark_submit_support_ticket');
+
+    $categories = staark_hub_support_categories();
+    $priorities = staark_hub_support_priorities();
+    $subject = isset($_POST['subject']) ? sanitize_text_field(wp_unslash($_POST['subject'])) : '';
+    $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
+    $category = isset($_POST['category']) ? sanitize_key(wp_unslash($_POST['category'])) : 'technical';
+    $priority = isset($_POST['priority']) ? sanitize_key(wp_unslash($_POST['priority'])) : 'normal';
+    $contact_name = isset($_POST['contact_name']) ? sanitize_text_field(wp_unslash($_POST['contact_name'])) : '';
+    $contact_email = isset($_POST['contact_email']) ? sanitize_email(wp_unslash($_POST['contact_email'])) : '';
+
+    if (! isset($categories[$category])) {
+        $category = 'technical';
+    }
+
+    if (! isset($priorities[$priority])) {
+        $priority = 'normal';
+    }
+
+    if ($subject === '' || $message === '' || ! is_email($contact_email)) {
+        wp_safe_redirect(admin_url('admin.php?page=staark-hub-support&staark_support=invalid'));
+        exit;
+    }
+
+    $environment = staark_hub_support_environment();
+    $ticket_id = wp_insert_post(
+        [
+            'post_type' => 'staark_ticket',
+            'post_status' => 'private',
+            'post_title' => $subject,
+            'post_content' => $message,
+            'post_author' => get_current_user_id(),
+        ],
+        true
+    );
+
+    if (is_wp_error($ticket_id)) {
+        wp_safe_redirect(admin_url('admin.php?page=staark-hub-support&staark_support=error'));
+        exit;
+    }
+
+    update_post_meta($ticket_id, '_staark_ticket_category', $category);
+    update_post_meta($ticket_id, '_staark_ticket_priority', $priority);
+    update_post_meta($ticket_id, '_staark_ticket_status', 'open');
+    update_post_meta($ticket_id, '_staark_ticket_contact_name', $contact_name);
+    update_post_meta($ticket_id, '_staark_ticket_contact_email', $contact_email);
+    update_post_meta($ticket_id, '_staark_ticket_environment', $environment);
+    update_post_meta($ticket_id, '_staark_ticket_channel', 'local');
+
+    $recipient = (string) apply_filters('staark_hub_support_email', 'hello@staarkinc.com');
+    $ticket_label = staark_hub_support_ticket_label((int) $ticket_id);
+    $mail_subject = sprintf('[%s] %s · %s', $ticket_label, $priorities[$priority], $subject);
+    $mail_body = implode(
+        "\n",
+        [
+            'New support request from Staark Website Hub',
+            '',
+            'Ticket: ' . $ticket_label,
+            'Category: ' . $categories[$category],
+            'Priority: ' . $priorities[$priority],
+            'Contact: ' . ($contact_name !== '' ? $contact_name : 'Not provided'),
+            'Email: ' . $contact_email,
+            'Website: ' . $environment['site_url'],
+            '',
+            $message,
+            '',
+            'Environment',
+            'WordPress: ' . $environment['wordpress'],
+            'PHP: ' . $environment['php'],
+            'Theme: ' . $environment['theme'],
+            'Staark Hub: ' . $environment['hub'],
+            'Pending updates: ' . $environment['updates'],
+        ]
+    );
+
+    $headers = ['Reply-To: ' . ($contact_name !== '' ? $contact_name . ' <' . $contact_email . '>' : $contact_email)];
+    $notified = is_email($recipient) ? wp_mail($recipient, $mail_subject, $mail_body, $headers) : false;
+    update_post_meta($ticket_id, '_staark_ticket_email_notified', $notified ? 'yes' : 'no');
+
+    wp_safe_redirect(
+        add_query_arg(
+            [
+                'page' => 'staark-hub-support',
+                'staark_support' => 'created',
+                'ticket' => (int) $ticket_id,
+            ],
+            admin_url('admin.php')
+        )
+    );
+    exit;
+});
+
+
+add_action('admin_post_staark_create_lead', static function (): void {
+    if (! current_user_can('manage_options')) {
+        wp_die(esc_html__('You are not allowed to perform this action.', 'staark-core'));
+    }
+
+    check_admin_referer('staark_create_lead');
+
+    $statuses = staark_hub_lead_statuses();
+    $sources = staark_hub_lead_sources();
+
+    $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+    $company = isset($_POST['company']) ? sanitize_text_field(wp_unslash($_POST['company'])) : '';
+    $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+    $phone = isset($_POST['phone']) ? sanitize_text_field(wp_unslash($_POST['phone'])) : '';
+    $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
+    $source = isset($_POST['source']) ? sanitize_key(wp_unslash($_POST['source'])) : 'manual';
+    $source_page = isset($_POST['source_page']) ? esc_url_raw(wp_unslash($_POST['source_page'])) : '';
+    $campaign = isset($_POST['campaign']) ? sanitize_text_field(wp_unslash($_POST['campaign'])) : '';
+
+    if (! isset($sources[$source])) {
+        $source = 'manual';
+    }
+
+    if ($name === '' || ($email === '' && $phone === '')) {
+        wp_safe_redirect(admin_url('admin.php?page=staark-hub-leads&staark_lead=invalid'));
+        exit;
+    }
+
+    if ($email !== '' && ! is_email($email)) {
+        wp_safe_redirect(admin_url('admin.php?page=staark-hub-leads&staark_lead=invalid'));
+        exit;
+    }
+
+    $title = $name;
+    if ($company !== '') {
+        $title .= ' · ' . $company;
+    }
+
+    $lead_id = wp_insert_post(
+        [
+            'post_type' => 'staark_lead',
+            'post_status' => 'private',
+            'post_title' => $title,
+            'post_content' => $message,
+            'post_author' => get_current_user_id(),
+        ],
+        true
+    );
+
+    if (is_wp_error($lead_id)) {
+        wp_safe_redirect(admin_url('admin.php?page=staark-hub-leads&staark_lead=error'));
+        exit;
+    }
+
+    update_post_meta($lead_id, '_staark_lead_name', $name);
+    update_post_meta($lead_id, '_staark_lead_company', $company);
+    update_post_meta($lead_id, '_staark_lead_email', $email);
+    update_post_meta($lead_id, '_staark_lead_phone', $phone);
+    update_post_meta($lead_id, '_staark_lead_status', array_key_first($statuses));
+    update_post_meta($lead_id, '_staark_lead_source', $source);
+    update_post_meta($lead_id, '_staark_lead_source_page', $source_page);
+    update_post_meta($lead_id, '_staark_lead_campaign', $campaign);
+    update_post_meta($lead_id, '_staark_lead_sync_state', 'local');
+    update_post_meta($lead_id, '_staark_lead_updated_at', current_time('mysql'));
+
+    wp_safe_redirect(
+        add_query_arg(
+            [
+                'page' => 'staark-hub-leads',
+                'staark_lead' => 'created',
+                'lead' => (int) $lead_id,
+            ],
+            admin_url('admin.php')
+        )
+    );
+    exit;
+});
+
+add_action('admin_post_staark_update_lead_status', static function (): void {
+    if (! current_user_can('manage_options')) {
+        wp_die(esc_html__('You are not allowed to perform this action.', 'staark-core'));
+    }
+
+    $lead_id = isset($_POST['lead_id']) ? absint($_POST['lead_id']) : 0;
+    $status = isset($_POST['status']) ? sanitize_key(wp_unslash($_POST['status'])) : '';
+    $statuses = staark_hub_lead_statuses();
+
+    if ($lead_id <= 0 || get_post_type($lead_id) !== 'staark_lead' || ! isset($statuses[$status])) {
+        wp_safe_redirect(admin_url('admin.php?page=staark-hub-leads&staark_lead=invalid'));
+        exit;
+    }
+
+    check_admin_referer('staark_update_lead_status_' . $lead_id);
+
+    update_post_meta($lead_id, '_staark_lead_status', $status);
+    update_post_meta($lead_id, '_staark_lead_updated_at', current_time('mysql'));
+
+    wp_safe_redirect(
+        add_query_arg(
+            [
+                'page' => 'staark-hub-leads',
+                'staark_lead' => 'updated',
+                'lead' => $lead_id,
+            ],
+            admin_url('admin.php')
+        )
+    );
+    exit;
+});
 
 add_action('admin_post_staark_save_branding', static function (): void {
     if (! current_user_can('manage_options')) {
@@ -606,6 +1070,7 @@ function staark_hub_render_overview(): void
     $starter_installed = staark_hub_installed_page_count();
     $published_pages = staark_hub_published_page_count();
     $updates = staark_hub_pending_updates();
+    $lead_counts = staark_hub_lead_counts();
     $using_https = function_exists('wp_is_using_https') ? wp_is_using_https() : str_starts_with(home_url('/'), 'https://');
     $pretty_permalinks = (string) get_option('permalink_structure') !== '';
     ?>
@@ -739,7 +1204,7 @@ function staark_hub_render_overview(): void
                 </a>
                 <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-leads')); ?>">
                     <span class="staark-hub-tool-icon" aria-hidden="true">02</span>
-                    <span><strong>Leads</strong><small>Prepared for Staark Hub sync</small></span>
+                    <span><strong>Leads</strong><small><?php echo esc_html(sprintf('%d leads · %d new', $lead_counts['total'], $lead_counts['new'])); ?></small></span>
                     <b aria-hidden="true">→</b>
                 </a>
                 <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-branding')); ?>">
@@ -974,12 +1439,250 @@ function staark_hub_render_placeholder(string $section, string $title, string $c
 
 function staark_hub_render_leads(): void
 {
-    staark_hub_render_placeholder(
-        'Leads',
-        'Website leads in one place',
-        'Form submissions will flow from WordPress into the main Staark Hub with useful context attached automatically.',
-        ['Name, email and phone', 'Source page and campaign', 'Staark Hub lead sync']
-    );
+    $statuses = staark_hub_lead_statuses();
+    $sources = staark_hub_lead_sources();
+    $counts = staark_hub_lead_counts();
+    $status_filter = isset($_GET['lead_status']) ? sanitize_key(wp_unslash($_GET['lead_status'])) : '';
+    $search = isset($_GET['lead_search']) ? sanitize_text_field(wp_unslash($_GET['lead_search'])) : '';
+
+    if ($status_filter !== '' && ! isset($statuses[$status_filter])) {
+        $status_filter = '';
+    }
+
+    $leads = staark_hub_leads($status_filter, $search);
+    $lead_state = isset($_GET['staark_lead']) ? sanitize_key(wp_unslash($_GET['staark_lead'])) : '';
+    $created_lead_id = isset($_GET['lead']) ? absint($_GET['lead']) : 0;
+    ?>
+    <div class="wrap staark-hub-wrap">
+        <?php staark_hub_header('Leads'); ?>
+
+        <?php if ($lead_state === 'created' && $created_lead_id > 0) : ?>
+            <div class="notice notice-success is-dismissible"><p><strong><?php echo esc_html(staark_hub_lead_label($created_lead_id)); ?></strong> created and stored locally.</p></div>
+        <?php elseif ($lead_state === 'updated') : ?>
+            <div class="notice notice-success is-dismissible"><p>Lead status updated.</p></div>
+        <?php elseif ($lead_state === 'invalid') : ?>
+            <div class="notice notice-error"><p>Check the lead details and try again. A name plus email or phone is required.</p></div>
+        <?php elseif ($lead_state === 'error') : ?>
+            <div class="notice notice-error"><p>The lead could not be saved. Please try again.</p></div>
+        <?php endif; ?>
+
+        <div class="staark-hub-leads-hero">
+            <div>
+                <span class="staark-hub-card-label">Local lead inbox</span>
+                <h2>Prospects without leaving WordPress</h2>
+                <p>Store and qualify leads locally now. Website form ingestion and two-way Staark Hub sync arrive in the next integration layer.</p>
+            </div>
+            <div class="staark-hub-leads-hero-meta">
+                <span class="staark-hub-mini-status staark-hub-mini-status--ok">Local queue active</span>
+                <small><?php echo esc_html((string) $counts['new']); ?> new lead<?php echo $counts['new'] === 1 ? '' : 's'; ?> waiting.</small>
+            </div>
+        </div>
+
+        <div class="staark-hub-grid staark-hub-grid--four staark-hub-lead-stats">
+            <section class="staark-hub-card staark-hub-stat-card">
+                <span class="staark-hub-card-label">Total leads</span>
+                <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['total']); ?></strong>
+                <p>Stored in this WordPress installation.</p>
+            </section>
+            <section class="staark-hub-card staark-hub-stat-card">
+                <span class="staark-hub-card-label">New</span>
+                <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['new']); ?></strong>
+                <p>Needs first follow-up.</p>
+            </section>
+            <section class="staark-hub-card staark-hub-stat-card">
+                <span class="staark-hub-card-label">Qualified</span>
+                <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['qualified']); ?></strong>
+                <p>Good fit for the next sales step.</p>
+            </section>
+            <section class="staark-hub-card staark-hub-stat-card">
+                <span class="staark-hub-card-label">Won</span>
+                <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['won']); ?></strong>
+                <p>Ready to become clients in Staark Hub.</p>
+            </section>
+        </div>
+
+        <div class="staark-hub-leads-layout">
+            <section class="staark-hub-card staark-hub-lead-inbox">
+                <div class="staark-hub-card-heading staark-hub-card-heading--compact">
+                    <div>
+                        <span class="staark-hub-card-label">Lead inbox</span>
+                        <h2>Recent prospects</h2>
+                        <p>Search contact data, source attribution and campaign notes. Status changes stay local until Connect to Staark is enabled.</p>
+                    </div>
+                    <span class="staark-hub-mini-status staark-hub-mini-status--muted"><?php echo esc_html((string) count($leads)); ?> shown</span>
+                </div>
+
+                <form method="get" action="<?php echo esc_url(admin_url('admin.php')); ?>" class="staark-hub-lead-filters">
+                    <input type="hidden" name="page" value="staark-hub-leads">
+                    <label>
+                        <span class="screen-reader-text">Filter by status</span>
+                        <select name="lead_status">
+                            <option value="">All statuses</option>
+                            <?php foreach ($statuses as $value => $label) : ?>
+                                <option value="<?php echo esc_attr($value); ?>"<?php selected($status_filter, $value); ?>><?php echo esc_html($label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="staark-hub-lead-search">
+                        <span class="screen-reader-text">Search leads</span>
+                        <input type="search" name="lead_search" value="<?php echo esc_attr($search); ?>" placeholder="Search name, company, email, phone…">
+                    </label>
+                    <button type="submit" class="button">Filter</button>
+                    <?php if ($status_filter !== '' || $search !== '') : ?>
+                        <a class="button button-link" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-leads')); ?>">Clear</a>
+                    <?php endif; ?>
+                </form>
+
+                <?php if ($leads === []) : ?>
+                    <div class="staark-hub-lead-empty">
+                        <span><?php echo $counts['total'] === 0 ? 'No leads yet.' : 'No leads match this filter.'; ?></span>
+                        <small><?php echo $counts['total'] === 0 ? 'Add the first prospect manually. Website form capture comes in the next leads patch.' : 'Clear the filters or choose another status.'; ?></small>
+                    </div>
+                <?php else : ?>
+                    <div class="staark-hub-lead-table-wrap">
+                        <table class="staark-hub-lead-table">
+                            <thead>
+                                <tr>
+                                    <th>Lead</th>
+                                    <th>Contact</th>
+                                    <th>Source</th>
+                                    <th>Need</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($leads as $lead) :
+                                    $lead_id = (int) $lead->ID;
+                                    $name = (string) get_post_meta($lead_id, '_staark_lead_name', true);
+                                    $company = (string) get_post_meta($lead_id, '_staark_lead_company', true);
+                                    $email = (string) get_post_meta($lead_id, '_staark_lead_email', true);
+                                    $phone = (string) get_post_meta($lead_id, '_staark_lead_phone', true);
+                                    $status = (string) get_post_meta($lead_id, '_staark_lead_status', true);
+                                    $source = (string) get_post_meta($lead_id, '_staark_lead_source', true);
+                                    $source_page = (string) get_post_meta($lead_id, '_staark_lead_source_page', true);
+                                    $campaign = (string) get_post_meta($lead_id, '_staark_lead_campaign', true);
+                                    $status = isset($statuses[$status]) ? $status : 'new';
+                                    $source = isset($sources[$source]) ? $source : 'other';
+                                    $name = $name !== '' ? $name : $lead->post_title;
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <strong><?php echo esc_html($name); ?></strong>
+                                            <small><?php echo esc_html($company !== '' ? $company . ' · ' . staark_hub_lead_label($lead_id) : staark_hub_lead_label($lead_id)); ?></small>
+                                        </td>
+                                        <td>
+                                            <?php if ($email !== '') : ?><a href="mailto:<?php echo esc_attr($email); ?>"><?php echo esc_html($email); ?></a><?php endif; ?>
+                                            <?php if ($phone !== '') : ?><a href="tel:<?php echo esc_attr((string) preg_replace('/[^0-9+]/', '', $phone)); ?>"><?php echo esc_html($phone); ?></a><?php endif; ?>
+                                            <?php if ($email === '' && $phone === '') : ?><small>No contact details</small><?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <strong><?php echo esc_html($sources[$source]); ?></strong>
+                                            <?php if ($campaign !== '') : ?><small><?php echo esc_html($campaign); ?></small><?php endif; ?>
+                                            <?php if ($source_page !== '') : ?>
+                                                <a class="staark-hub-lead-source-link" href="<?php echo esc_url($source_page); ?>" target="_blank" rel="noopener">Source page ↗</a>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="staark-hub-lead-message"><?php echo esc_html($lead->post_content !== '' ? wp_trim_words(wp_strip_all_tags($lead->post_content), 14) : 'No note added.'); ?></span>
+                                        </td>
+                                        <td>
+                                            <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-lead-status-form">
+                                                <input type="hidden" name="action" value="staark_update_lead_status">
+                                                <input type="hidden" name="lead_id" value="<?php echo esc_attr((string) $lead_id); ?>">
+                                                <?php wp_nonce_field('staark_update_lead_status_' . $lead_id); ?>
+                                                <select name="status" aria-label="Lead status">
+                                                    <?php foreach ($statuses as $value => $label) : ?>
+                                                        <option value="<?php echo esc_attr($value); ?>"<?php selected($status, $value); ?>><?php echo esc_html($label); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <button type="submit" class="button button-small">Save</button>
+                                            </form>
+                                        </td>
+                                        <td><?php echo esc_html(get_the_date('Y-m-d H:i', $lead)); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </section>
+
+            <aside class="staark-hub-lead-sidebar">
+                <section class="staark-hub-card">
+                    <span class="staark-hub-card-label">Add prospect</span>
+                    <h2>New lead</h2>
+                    <p>Add a phone, email or referral lead manually so the whole sales queue stays in one place.</p>
+
+                    <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-lead-form">
+                        <input type="hidden" name="action" value="staark_create_lead">
+                        <?php wp_nonce_field('staark_create_lead'); ?>
+
+                        <label class="staark-hub-field">
+                            <span>Name</span>
+                            <input type="text" name="name" maxlength="120" required placeholder="Anna Andersson">
+                        </label>
+                        <label class="staark-hub-field">
+                            <span>Company</span>
+                            <input type="text" name="company" maxlength="160" placeholder="Example AB">
+                        </label>
+
+                        <div class="staark-hub-form-grid">
+                            <label class="staark-hub-field">
+                                <span>Email</span>
+                                <input type="email" name="email" maxlength="190" placeholder="anna@example.se">
+                            </label>
+                            <label class="staark-hub-field">
+                                <span>Phone</span>
+                                <input type="text" name="phone" maxlength="80" placeholder="+46…">
+                            </label>
+                        </div>
+
+                        <label class="staark-hub-field">
+                            <span>Source</span>
+                            <select name="source">
+                                <?php foreach ($sources as $value => $label) : ?>
+                                    <option value="<?php echo esc_attr($value); ?>"<?php selected($value, 'manual'); ?>><?php echo esc_html($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+
+                        <label class="staark-hub-field">
+                            <span>Need / note</span>
+                            <textarea name="message" rows="5" maxlength="4000" placeholder="What are they looking for?"></textarea>
+                        </label>
+
+                        <label class="staark-hub-field">
+                            <span>Source page</span>
+                            <input type="url" name="source_page" maxlength="500" placeholder="https://…">
+                        </label>
+
+                        <label class="staark-hub-field">
+                            <span>Campaign</span>
+                            <input type="text" name="campaign" maxlength="160" placeholder="Google Ads · Värnamo">
+                        </label>
+
+                        <button type="submit" class="button button-primary staark-hub-lead-create">Add lead</button>
+                        <small class="staark-hub-form-note">A name plus at least one contact method is required.</small>
+                    </form>
+                </section>
+
+                <section class="staark-hub-card staark-hub-card--dark">
+                    <span class="staark-hub-card-label">Pipeline</span>
+                    <h2>Local today, connected next</h2>
+                    <p>Lead records already carry source, campaign and status metadata. WP-05.7 will connect this local inbox to the main Staark Hub without changing the client-facing workflow.</p>
+                    <div class="staark-hub-feature-list staark-hub-feature-list--stacked staark-hub-feature-list--dark">
+                        <span><i aria-hidden="true">✓</i>Contact details</span>
+                        <span><i aria-hidden="true">✓</i>Source attribution</span>
+                        <span><i aria-hidden="true">✓</i>Sales status</span>
+                        <span><i aria-hidden="true">✓</i>Sync state prepared</span>
+                    </div>
+                    <span class="staark-hub-pill">Staark API · next layer</span>
+                </section>
+            </aside>
+        </div>
+    </div>
+    <?php
 }
 
 function staark_hub_render_branding(): void
@@ -1196,31 +1899,186 @@ function staark_hub_render_connect(): void
 
 function staark_hub_render_support(): void
 {
+    $user = wp_get_current_user();
+    $environment = staark_hub_support_environment();
+    $categories = staark_hub_support_categories();
+    $priorities = staark_hub_support_priorities();
+    $tickets = staark_hub_support_tickets();
+    $support_state = isset($_GET['staark_support']) ? sanitize_key(wp_unslash($_GET['staark_support'])) : '';
+    $created_ticket_id = isset($_GET['ticket']) ? absint($_GET['ticket']) : 0;
     ?>
     <div class="wrap staark-hub-wrap">
         <?php staark_hub_header('Support'); ?>
 
-        <div class="staark-hub-grid staark-hub-grid--two">
+        <?php if ($support_state === 'created' && $created_ticket_id > 0) : ?>
+            <div class="notice notice-success is-dismissible"><p><strong><?php echo esc_html(staark_hub_support_ticket_label($created_ticket_id)); ?></strong> created. The request is stored locally and is ready for Staark Hub sync.</p></div>
+        <?php elseif ($support_state === 'invalid') : ?>
+            <div class="notice notice-error"><p>Please add a subject, message and valid contact email before sending the request.</p></div>
+        <?php elseif ($support_state === 'error') : ?>
+            <div class="notice notice-error"><p>The support request could not be saved. Please try again or contact Staark Inc. directly.</p></div>
+        <?php endif; ?>
+
+        <div class="staark-hub-support-hero">
+            <div>
+                <span class="staark-hub-card-label">Managed support</span>
+                <h2>Send a request without leaving WordPress</h2>
+                <p>Describe what you need and Staark Hub automatically attaches the technical context that usually takes another round of messages to collect.</p>
+            </div>
+            <div class="staark-hub-support-hero-meta">
+                <span class="staark-hub-mini-status staark-hub-mini-status--ok">Local queue active</span>
+                <small>Cloud sync arrives with Connect to Staark.</small>
+            </div>
+        </div>
+
+        <div class="staark-hub-grid staark-hub-grid--split staark-hub-support-layout">
             <section class="staark-hub-card">
-                <span class="staark-hub-card-label">Need help?</span>
-                <h2>Staark support</h2>
-                <p>For changes, maintenance or technical issues, contact Staark Inc. and include the website address plus a short description of what you need.</p>
-                <div class="staark-hub-actions">
-                    <a class="button button-primary" href="mailto:hello@staarkinc.com">Email Staark</a>
-                    <a class="button" href="https://staarkinc.com/kontakt" target="_blank" rel="noopener">Contact page ↗</a>
+                <div class="staark-hub-card-heading staark-hub-card-heading--compact">
+                    <div>
+                        <span class="staark-hub-card-label">New request</span>
+                        <h2>How can we help?</h2>
+                        <p>The request is stored in this WordPress installation first. Email notification is best-effort until the main Staark Hub connection is enabled.</p>
+                    </div>
                 </div>
+
+                <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-support-form">
+                    <input type="hidden" name="action" value="staark_submit_support_ticket">
+                    <?php wp_nonce_field('staark_submit_support_ticket'); ?>
+
+                    <div class="staark-hub-form-grid">
+                        <label class="staark-hub-field">
+                            <span>Contact name</span>
+                            <input type="text" name="contact_name" maxlength="100" value="<?php echo esc_attr($user->display_name); ?>" autocomplete="name">
+                        </label>
+                        <label class="staark-hub-field">
+                            <span>Contact email</span>
+                            <input type="email" name="contact_email" maxlength="190" value="<?php echo esc_attr($user->user_email); ?>" autocomplete="email" required>
+                        </label>
+                    </div>
+
+                    <div class="staark-hub-form-grid">
+                        <label class="staark-hub-field">
+                            <span>Category</span>
+                            <select name="category">
+                                <?php foreach ($categories as $value => $label) : ?>
+                                    <option value="<?php echo esc_attr($value); ?>"><?php echo esc_html($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="staark-hub-field">
+                            <span>Priority</span>
+                            <select name="priority">
+                                <?php foreach ($priorities as $value => $label) : ?>
+                                    <option value="<?php echo esc_attr($value); ?>"<?php selected($value, 'normal'); ?>><?php echo esc_html($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                    </div>
+
+                    <label class="staark-hub-field">
+                        <span>Subject</span>
+                        <input type="text" name="subject" maxlength="160" placeholder="e.g. Update the contact section" required>
+                    </label>
+
+                    <label class="staark-hub-field">
+                        <span>Message</span>
+                        <textarea name="message" rows="7" maxlength="5000" placeholder="Tell us what is happening, what you would like changed and anything we should know before we start." required></textarea>
+                        <small>Never include passwords, API keys or other secrets in a support request.</small>
+                    </label>
+
+                    <div class="staark-hub-support-submit">
+                        <div>
+                            <strong>Technical context attached automatically</strong>
+                            <span>Site URL, WordPress, PHP, theme, Hub version and pending update count.</span>
+                        </div>
+                        <button type="submit" class="button button-primary">Create support request</button>
+                    </div>
+                </form>
             </section>
 
-            <section class="staark-hub-card">
-                <span class="staark-hub-card-label">Environment</span>
-                <dl class="staark-hub-details">
-                    <div><dt>Site URL</dt><dd><?php echo esc_html(home_url('/')); ?></dd></div>
-                    <div><dt>WordPress</dt><dd><?php echo esc_html(get_bloginfo('version')); ?></dd></div>
-                    <div><dt>PHP</dt><dd><?php echo esc_html(PHP_VERSION); ?></dd></div>
-                    <div><dt>Staark Hub</dt><dd><?php echo esc_html(STAARK_HUB_VERSION); ?></dd></div>
-                </dl>
-            </section>
+            <aside class="staark-hub-support-sidebar">
+                <section class="staark-hub-card staark-hub-card--dark">
+                    <span class="staark-hub-card-label">Attached context</span>
+                    <h2>Environment snapshot</h2>
+                    <dl class="staark-hub-details staark-hub-details--dark">
+                        <div><dt>Site</dt><dd><?php echo esc_html((string) (wp_parse_url($environment['site_url'], PHP_URL_HOST) ?: $environment['site_url'])); ?></dd></div>
+                        <div><dt>WordPress</dt><dd><?php echo esc_html((string) $environment['wordpress']); ?></dd></div>
+                        <div><dt>PHP</dt><dd><?php echo esc_html((string) $environment['php']); ?></dd></div>
+                        <div><dt>Theme</dt><dd><?php echo esc_html((string) $environment['theme']); ?></dd></div>
+                        <div><dt>Pending updates</dt><dd><?php echo esc_html((string) $environment['updates']); ?></dd></div>
+                        <div><dt>Staark Hub</dt><dd><?php echo esc_html((string) $environment['hub']); ?></dd></div>
+                    </dl>
+                </section>
+
+                <section class="staark-hub-card">
+                    <span class="staark-hub-card-label">Direct contact</span>
+                    <h2>Prefer email?</h2>
+                    <p>You can still contact Staark Inc. directly. The in-Hub form is preferred because it attaches site context automatically.</p>
+                    <div class="staark-hub-actions">
+                        <a class="button" href="mailto:hello@staarkinc.com">hello@staarkinc.com</a>
+                        <a class="button" href="https://staarkinc.com/kontakt" target="_blank" rel="noopener">Contact page ↗</a>
+                    </div>
+                </section>
+            </aside>
         </div>
+
+        <section class="staark-hub-section staark-hub-support-history">
+            <div class="staark-hub-section-heading">
+                <div>
+                    <span class="staark-hub-card-label">Request history</span>
+                    <h2>Recent support requests</h2>
+                    <p>Stored locally for now. When this site is connected, the same queue can sync to the main Staark Hub.</p>
+                </div>
+                <span class="staark-hub-mini-status staark-hub-mini-status--muted"><?php echo esc_html((string) count($tickets)); ?> shown</span>
+            </div>
+
+            <?php if ($tickets === []) : ?>
+                <div class="staark-hub-support-empty">
+                    <span>No support requests yet.</span>
+                    <small>Your first request will appear here with its ticket number and status.</small>
+                </div>
+            <?php else : ?>
+                <div class="staark-hub-support-table-wrap">
+                    <table class="staark-hub-support-table">
+                        <thead>
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Request</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($tickets as $ticket) :
+                                $category = (string) get_post_meta($ticket->ID, '_staark_ticket_category', true);
+                                $priority = (string) get_post_meta($ticket->ID, '_staark_ticket_priority', true);
+                                $status = (string) get_post_meta($ticket->ID, '_staark_ticket_status', true);
+                                $email_notified = (string) get_post_meta($ticket->ID, '_staark_ticket_email_notified', true);
+                                $category_label = $categories[$category] ?? ucfirst($category ?: 'Other');
+                                $priority_label = $priorities[$priority] ?? ucfirst($priority ?: 'Normal');
+                                $status = $status !== '' ? $status : 'open';
+                                ?>
+                                <tr>
+                                    <td><strong><?php echo esc_html(staark_hub_support_ticket_label($ticket->ID)); ?></strong></td>
+                                    <td>
+                                        <strong><?php echo esc_html($ticket->post_title); ?></strong>
+                                        <small><?php echo esc_html(wp_trim_words(wp_strip_all_tags($ticket->post_content), 13)); ?></small>
+                                    </td>
+                                    <td><?php echo esc_html($category_label); ?></td>
+                                    <td><span class="staark-hub-priority staark-hub-priority--<?php echo esc_attr($priority ?: 'normal'); ?>"><?php echo esc_html($priority_label); ?></span></td>
+                                    <td>
+                                        <span class="staark-hub-ticket-status staark-hub-ticket-status--<?php echo esc_attr($status); ?>"><?php echo esc_html(ucwords(str_replace('_', ' ', $status))); ?></span>
+                                        <small><?php echo $email_notified === 'yes' ? 'Email sent' : 'Stored locally'; ?></small>
+                                    </td>
+                                    <td><?php echo esc_html(get_the_date('Y-m-d H:i', $ticket)); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
     </div>
     <?php
 }
