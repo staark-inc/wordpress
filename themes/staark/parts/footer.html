@@ -1,48 +1,55 @@
-<!-- wp:group {"align":"full","className":"staark-site-footer","style":{"spacing":{"padding":{"top":"64px","bottom":"32px"}}},"backgroundColor":"surface","layout":{"type":"constrained"}} -->
-<div class="wp-block-group alignfull staark-site-footer has-surface-background-color has-background" style="padding-top:64px;padding-bottom:32px">
-  <!-- wp:columns {"align":"wide","style":{"spacing":{"blockGap":{"left":"48px"}}}} -->
-  <div class="wp-block-columns alignwide">
-    <!-- wp:column {"width":"45%"} -->
-    <div class="wp-block-column" style="flex-basis:45%">
+<!-- wp:group {"align":"full","className":"staark-site-footer","backgroundColor":"ink","textColor":"white","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignfull staark-site-footer has-white-color has-ink-background-color has-text-color has-background">
+  <!-- wp:group {"align":"wide","className":"staark-footer-top","layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between","verticalAlignment":"top"}} -->
+  <div class="wp-block-group alignwide staark-footer-top">
+    <!-- wp:group {"className":"staark-footer-intro","layout":{"type":"constrained","justifyContent":"left"}} -->
+    <div class="wp-block-group staark-footer-intro">
       <!-- wp:shortcode -->
       [staark_brand]
       <!-- /wp:shortcode -->
-      <!-- wp:shortcode -->
-      [staark_brand_tagline]
-      <!-- /wp:shortcode -->
+      <!-- wp:paragraph {"textColor":"line","fontSize":"lg"} -->
+      <p class="has-line-color has-text-color has-lg-font-size">Webbplatser för företag som vill se lika professionella ut online som de är i verkligheten.</p>
+      <!-- /wp:paragraph -->
     </div>
-    <!-- /wp:column -->
+    <!-- /wp:group -->
 
-    <!-- wp:column -->
-    <div class="wp-block-column">
-      <!-- wp:heading {"level":3,"fontSize":"md"} -->
-      <h3 class="wp-block-heading has-md-font-size">Tjänster</h3>
-      <!-- /wp:heading -->
-      <!-- wp:list {"className":"is-style-plain"} -->
-      <ul class="is-style-plain"><li>Webbdesign</li><li>SEO</li><li>Support</li></ul>
-      <!-- /wp:list -->
-    </div>
-    <!-- /wp:column -->
+    <!-- wp:columns {"className":"staark-footer-links"} -->
+    <div class="wp-block-columns staark-footer-links">
+      <!-- wp:column -->
+      <div class="wp-block-column">
+        <!-- wp:heading {"level":3,"textColor":"white","fontSize":"sm"} -->
+        <h3 class="wp-block-heading has-white-color has-text-color has-sm-font-size">Navigera</h3>
+        <!-- /wp:heading -->
+        <!-- wp:list {"className":"is-style-plain"} -->
+        <ul class="is-style-plain"><li><a href="/tjanster">Tjänster</a></li><li><a href="/om-oss">Om oss</a></li><li><a href="/kontakt">Kontakt</a></li></ul>
+        <!-- /wp:list -->
+      </div>
+      <!-- /wp:column -->
 
-    <!-- wp:column -->
-    <div class="wp-block-column">
-      <!-- wp:heading {"level":3,"fontSize":"md"} -->
-      <h3 class="wp-block-heading has-md-font-size">Företaget</h3>
-      <!-- /wp:heading -->
-      <!-- wp:list {"className":"is-style-plain"} -->
-      <ul class="is-style-plain"><li><a href="/om-oss">Om oss</a></li><li><a href="/kontakt">Kontakt</a></li><li><a href="/integritetspolicy">Integritetspolicy</a></li></ul>
-      <!-- /wp:list -->
+      <!-- wp:column -->
+      <div class="wp-block-column">
+        <!-- wp:heading {"level":3,"textColor":"white","fontSize":"sm"} -->
+        <h3 class="wp-block-heading has-white-color has-text-color has-sm-font-size">Kontakt</h3>
+        <!-- /wp:heading -->
+        <!-- wp:list {"className":"is-style-plain"} -->
+        <ul class="is-style-plain"><li><a href="mailto:hello@staarkinc.com">hello@staarkinc.com</a></li><li><a href="/kontakt">Starta ett projekt</a></li></ul>
+        <!-- /wp:list -->
+      </div>
+      <!-- /wp:column -->
     </div>
-    <!-- /wp:column -->
+    <!-- /wp:columns -->
   </div>
-  <!-- /wp:columns -->
+  <!-- /wp:group -->
 
-  <!-- wp:separator {"align":"wide","backgroundColor":"border"} -->
-  <hr class="wp-block-separator alignwide has-text-color has-border-color has-alpha-channel-opacity has-border-background-color has-background"/>
-  <!-- /wp:separator -->
-
-  <!-- wp:shortcode -->
-  [staark_brand_copyright]
-  <!-- /wp:shortcode -->
+  <!-- wp:group {"align":"wide","className":"staark-footer-bottom","layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
+  <div class="wp-block-group alignwide staark-footer-bottom">
+    <!-- wp:shortcode -->
+    [staark_brand_copyright]
+    <!-- /wp:shortcode -->
+    <!-- wp:paragraph {"fontSize":"sm","textColor":"line"} -->
+    <p class="has-line-color has-text-color has-sm-font-size"><a href="/integritetspolicy">Integritetspolicy</a></p>
+    <!-- /wp:paragraph -->
+  </div>
+  <!-- /wp:group -->
 </div>
 <!-- /wp:group -->
