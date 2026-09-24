@@ -34,7 +34,7 @@ function staark_hub_render_managed(): void
             <div>
                 <span class="staark-hub-card-label">Staark 6.0</span>
                 <h2>Separate client administration from Staark operations.</h2>
-                <p>Managed Mode establishes the authority model used by plugin protection and the future MU-loader. The foundation never removes access without a recoverable Staark operator.</p>
+                <p>Managed Mode now protects the Staark plugin from client-side mutation while keeping Staark operators and WP-CLI as recovery paths. Locked mode receives its MU-loader in the next deployment patch.</p>
             </div>
             <span class="staark-managed-mode is-<?php echo esc_attr($mode); ?>"><?php echo esc_html($summary['label']); ?></span>
         </section>
@@ -73,11 +73,11 @@ function staark_hub_render_managed(): void
                     </article>
                     <article class="<?php echo $mode === 'managed' ? 'is-current' : ''; ?>">
                         <strong>Managed</strong>
-                        <p>Policy state for client sites maintained by Staark. Protection hooks are layered on top in 6.0B.</p>
+                        <p>Client administrators cannot deactivate, delete, overwrite or edit Staark Core through WordPress. Staark operators keep control.</p>
                     </article>
                     <article class="<?php echo $mode === 'locked' ? 'is-current' : ''; ?>">
                         <strong>Locked</strong>
-                        <p>Reserved for MU-loader deployments. Do not use as the final lock until the loader patch is installed.</p>
+                        <p>Uses the same WordPress-level protection as Managed. The MU-loader in 6.0C will make the lock independent of the normal plugin activation state.</p>
                     </article>
                 </div>
 
@@ -92,7 +92,7 @@ function staark_hub_render_managed(): void
                             <select name="managed_mode">
                                 <option value="normal" <?php selected($mode, 'normal'); ?>>Normal</option>
                                 <option value="managed" <?php selected($mode, 'managed'); ?>>Managed</option>
-                                <option value="locked" <?php selected($mode, 'locked'); ?>>Locked · policy only in 6.0A</option>
+                                <option value="locked" <?php selected($mode, 'locked'); ?>>Locked · MU-loader arrives in 6.0C</option>
                             </select>
                         </label>
                         <button type="submit" class="button button-primary">Save deployment mode</button>
@@ -141,9 +141,9 @@ function staark_hub_render_managed(): void
                 </section>
 
                 <section class="staark-hub-card staark-managed-warning">
-                    <span class="staark-hub-card-label">6.0A guardrail</span>
-                    <h2>No fake lock</h2>
-                    <p>This patch records mode and authority only. It does not yet hide Staark Hub from Plugins or prevent deactivation/deletion. Those protections are intentionally added after this foundation is tested.</p>
+                    <span class="staark-hub-card-label">6.0B protection</span>
+                    <h2>Client mutation blocked</h2>
+                    <p>Non-operator administrators no longer see Staark Hub in the Plugins list and cannot deactivate, delete, overwrite or edit it through WordPress. WP-CLI and explicit Staark operators remain recovery paths.</p>
                 </section>
             </aside>
         </div>

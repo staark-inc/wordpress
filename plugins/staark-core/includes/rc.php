@@ -32,6 +32,7 @@ function staark_hub_rc_checks(): array
         'includes/performance.php',
         'includes/lifecycle.php',
         'includes/managed.php',
+        'includes/managed-protection.php',
         'admin/security-page.php',
         'admin/seo-page.php',
         'admin/performance-page.php',
@@ -58,7 +59,7 @@ function staark_hub_rc_checks(): array
         'performance' => function_exists('staark_hub_performance_run_audit') && function_exists('staark_hub_render_performance'),
         'support' => function_exists('staark_hub_support_tickets') && function_exists('staark_hub_render_support'),
         'connect' => function_exists('staark_hub_connection_request') && function_exists('staark_hub_render_connect'),
-        'managed' => function_exists('staark_hub_managed_summary') && function_exists('staark_hub_render_managed'),
+        'managed' => function_exists('staark_hub_managed_summary') && function_exists('staark_hub_render_managed') && function_exists('staark_hub_managed_protection_summary'),
     ];
     $missing_modules = array_keys(array_filter($modules, static fn (bool $loaded): bool => ! $loaded));
 
@@ -82,6 +83,9 @@ function staark_hub_rc_checks(): array
     $managed_mode = isset($managed['mode']) ? (string) $managed['mode'] : 'normal';
     $managed_operators = isset($managed['operatorCount']) ? (int) $managed['operatorCount'] : 0;
     $managed_safe = $managed_mode === 'normal' || $managed_operators > 0;
+    $managed_protection = function_exists('staark_hub_managed_protection_summary') ? staark_hub_managed_protection_summary() : [];
+    $managed_protection_enabled = ! empty($managed_protection['enabled']);
+    $managed_protection_safe = $managed_mode === 'normal' || $managed_protection_enabled;
 
     $checks = [
         staark_hub_rc_check(
@@ -141,6 +145,16 @@ function staark_hub_rc_checks(): array
             $managed_safe
                 ? 'Managed Mode is ' . $managed_mode . ' with ' . $managed_operators . ' Staark operator(s).'
                 : 'Managed/Locked mode requires at least one Staark operator for recovery.'
+        ),
+        staark_hub_rc_check(
+            'managed_protection',
+            'Managed protection',
+            $managed_protection_safe,
+            $managed_mode === 'normal'
+                ? 'Managed protection is not required while the site is in Normal mode.'
+                : ($managed_protection_enabled
+                    ? 'WordPress-level Staark plugin protection is active; operator and WP-CLI recovery are retained.'
+                    : 'Managed/Locked mode is active but plugin protection is disabled or unavailable.')
         ),
     ];
 

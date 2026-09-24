@@ -88,13 +88,35 @@ function staark_hub_operator_count(): int
     return count(staark_hub_operator_ids());
 }
 
+/**
+ * Check the administrator capability without calling user_can()/current_user_can().
+ *
+ * Managed protection hooks into map_meta_cap. Calling user_can() while that
+ * filter is executing re-enters map_meta_cap and can recurse until PHP exhausts
+ * memory. WP_User::allcaps is already resolved from roles/capabilities and is
+ * safe to inspect directly here.
+ */
+function staark_hub_user_has_manage_options(int $user_id): bool
+{
+    if ($user_id <= 0) {
+        return false;
+    }
+
+    $user = get_userdata($user_id);
+    if (! $user instanceof WP_User) {
+        return false;
+    }
+
+    return ! empty($user->allcaps['manage_options']);
+}
+
 function staark_hub_user_is_operator(int $user_id = 0): bool
 {
     if ($user_id <= 0) {
         $user_id = get_current_user_id();
     }
 
-    if ($user_id <= 0 || ! user_can($user_id, 'manage_options')) {
+    if (! staark_hub_user_has_manage_options($user_id)) {
         return false;
     }
 
@@ -116,7 +138,7 @@ function staark_hub_set_operator(int $user_id, bool $enabled)
         return new WP_Error('staark_operator_missing', 'The requested WordPress user does not exist.');
     }
 
-    if ($enabled && ! user_can($user_id, 'manage_options')) {
+    if ($enabled && ! staark_hub_user_has_manage_options($user_id)) {
         return new WP_Error('staark_operator_capability', 'A Staark operator must be a WordPress administrator.');
     }
 
@@ -163,7 +185,7 @@ function staark_hub_set_managed_mode(string $mode)
 /**
  * Safe connector/lifecycle summary. No user identifiers are exposed.
  *
- * @return array{mode:string,label:string,source:string,forced:bool,operatorCount:int,loader:string}
+ * @return array{mode:string,label:string,source:string,forced:bool,operatorCount:int,loader:string,protection:?array<string,mixed>}
  */
 function staark_hub_managed_summary(): array
 {
@@ -176,6 +198,7 @@ function staark_hub_managed_summary(): array
         'forced' => staark_hub_managed_mode_forced(),
         'operatorCount' => staark_hub_operator_count(),
         'loader' => 'plugin',
+        'protection' => function_exists('staark_hub_managed_protection_summary') ? staark_hub_managed_protection_summary() : null,
     ];
 }
 
@@ -299,6 +322,33 @@ if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
             }
 
             \WP_CLI::success('Staark operator revoked from user #' . (int) $user->ID . '.');
+        }
+
+        public function inspect(array $args, array $assoc_args): void
+        {
+            unset($assoc_args);
+            $value = isset($args[0]) ? trim((string) $args[0]) : '';
+            $user = $value !== '' ? staark_hub_managed_cli_user($value) : null;
+            if (! $user instanceof WP_User) {
+                \WP_CLI::error('User not found. Pass a WordPress user ID, login or email.');
+            }
+
+            $restricted = function_exists('staark_hub_managed_user_is_restricted')
+                ? staark_hub_managed_user_is_restricted((int) $user->ID)
+                : false;
+
+            \WP_CLI\Utils\format_items(
+                'table',
+                [
+                    ['key' => 'Mode', 'value' => staark_hub_managed_mode_label()],
+                    ['key' => 'User', 'value' => '#' . (int) $user->ID . ' ' . $user->user_login],
+                    ['key' => 'Staark operator', 'value' => staark_hub_user_is_operator((int) $user->ID) ? 'yes' : 'no'],
+                    ['key' => 'Client restrictions', 'value' => $restricted ? 'active' : 'bypassed'],
+                    ['key' => 'Plugin row', 'value' => $restricted ? 'hidden' : 'visible'],
+                    ['key' => 'Mutation controls', 'value' => $restricted ? 'blocked' : 'available'],
+                ],
+                ['key', 'value']
+            );
         }
 
         public function operators(array $args, array $assoc_args): void

@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.0.0
+ * Version: 0.6.0.2
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -13,7 +13,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-const STAARK_HUB_VERSION = '0.6.0.0';
+const STAARK_HUB_VERSION = '0.6.0.2';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
@@ -21,6 +21,7 @@ define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/helpers.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/accessibility.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/managed.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/managed-protection.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/security.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/seo.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';
@@ -1363,6 +1364,10 @@ function staark_hub_nav(): void
         'staark-hub-managed' => 'Managed',
         'staark-hub-connect' => 'Connect',
     ];
+
+    if (function_exists('staark_hub_managed_client_restrictions_apply') && staark_hub_managed_client_restrictions_apply()) {
+        unset($items['staark-hub-managed']);
+    }
     ?>
     <nav class="staark-hub-nav" aria-label="Staark Hub sections">
         <?php foreach ($items as $slug => $label) : ?>
