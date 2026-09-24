@@ -33,11 +33,13 @@ function staark_hub_rc_checks(): array
         'includes/lifecycle.php',
         'includes/managed.php',
         'includes/managed-protection.php',
+        'includes/managed-deployment.php',
         'deployment/staark-loader.php',
         'admin/security-page.php',
         'admin/seo-page.php',
         'admin/performance-page.php',
         'admin/managed-page.php',
+        'admin/support-detail.php',
         'assets/admin.css',
         'assets/cleanup.css',
         'assets/accessibility.js',
@@ -58,7 +60,7 @@ function staark_hub_rc_checks(): array
         'security' => function_exists('staark_hub_security_scan') && function_exists('staark_hub_render_security'),
         'seo' => function_exists('staark_hub_seo_settings') && function_exists('staark_hub_render_seo'),
         'performance' => function_exists('staark_hub_performance_run_audit') && function_exists('staark_hub_render_performance'),
-        'support' => function_exists('staark_hub_support_tickets') && function_exists('staark_hub_render_support'),
+        'support' => function_exists('staark_hub_support_tickets') && function_exists('staark_hub_render_support') && function_exists('staark_hub_render_support_ticket_detail'),
         'connect' => function_exists('staark_hub_connection_request') && function_exists('staark_hub_render_connect'),
         'managed' => function_exists('staark_hub_managed_summary') && function_exists('staark_hub_render_managed') && function_exists('staark_hub_managed_protection_summary'),
     ];
@@ -91,6 +93,19 @@ function staark_hub_rc_checks(): array
     $managed_loader_installed = ! empty($managed['loaderInstalled']);
     $managed_bootstrapped_by_mu = ! empty($managed['bootstrappedByMu']);
     $locked_runtime_safe = $managed_mode !== 'locked' || ($managed_loader === 'mu' && $managed_bootstrapped_by_mu);
+    $deployment = function_exists('staark_hub_managed_deployment_status')
+        ? staark_hub_managed_deployment_status()
+        : [];
+    $deployment_required = $managed_mode !== 'normal';
+    $deployment_current_readable = ! empty($deployment['currentReadable']);
+    $deployment_manifest_version = isset($deployment['manifestVersion']) ? (string) $deployment['manifestVersion'] : '';
+    $deployment_runtime_source = isset($deployment['runtimeSource']) ? (string) $deployment['runtimeSource'] : '';
+    $managed_deployment_safe = ! $deployment_required
+        || (
+            $deployment_current_readable
+            && $deployment_manifest_version !== ''
+            && ($managed_mode !== 'locked' || $deployment_runtime_source === 'managed')
+        );
 
     $checks = [
         staark_hub_rc_check(
@@ -160,6 +175,16 @@ function staark_hub_rc_checks(): array
                 : ($managed_protection_enabled
                     ? 'WordPress-level Staark plugin protection is active; operator and WP-CLI recovery are retained.'
                     : 'Managed/Locked mode is active but plugin protection is disabled or unavailable.')
+        ),
+        staark_hub_rc_check(
+            'managed_deployment',
+            'Managed deployment',
+            $managed_deployment_safe,
+            ! $deployment_required
+                ? 'Managed release deployment is not required while the site is in Normal mode.'
+                : ($managed_deployment_safe
+                    ? 'Managed release is readable at version ' . $deployment_manifest_version . ($managed_mode === 'locked' ? ' and Locked runtime source is managed.' : '.')
+                    : 'Managed/Locked mode requires a readable deployed release; Locked mode must run from runtime source managed.')
         ),
         staark_hub_rc_check(
             'locked_runtime',

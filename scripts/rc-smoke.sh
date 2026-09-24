@@ -68,6 +68,8 @@ Automated smoke checks complete.
 
 Manual RC gates still required:
   - Overview / Website / Security / SEO / Performance / Support / Branding / Managed / Connect
+  - Support: open a stored ticket detail and verify full message/contact/environment/sync metadata
+  - Managed deployment: current release is readable and `wp staark deployment verify` passes
   - browser console: zero new JS errors
   - PHP debug.log: zero new warnings/notices from Staark
   - responsive: 1440 / 1024 / 782 / 600 / 390 px

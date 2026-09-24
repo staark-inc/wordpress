@@ -1,6 +1,6 @@
-# Staark WordPress — WP-05.12 RC checklist
+# Staark WordPress — WP-6.0F Final RC checklist
 
-Target plugin version: `0.5.12.0`
+Target plugin version: `0.6.0.11`
 
 This release candidate is a stabilization gate. Do not add new product features
 while running this checklist; log defects and fix only release blockers.
@@ -23,7 +23,7 @@ Expected:
 
 1. Start a clean wp-env with no old Staark options/posts.
 2. Activate Staark Hub.
-3. Confirm `staark_hub_installed_version = 0.5.12.0`.
+3. Confirm `staark_hub_installed_version = 0.6.0.11`.
 4. Confirm Security and Performance cron events exist when their modules are enabled.
 5. Open every Staark tab once and verify no PHP fatal/warning/notices.
 
@@ -31,9 +31,9 @@ Expected:
 
 1. Start from the previous stable checkpoint.
 2. Keep existing branding, support tickets, connector pairing and module settings.
-3. Replace/update the plugin to 0.5.12.0.
+3. Replace/update the plugin to 0.6.0.11.
 4. Confirm all existing data remains intact.
-5. Confirm the installed-version marker updates to 0.5.12.0.
+5. Confirm the installed-version marker updates to 0.6.0.11.
 
 ## 4. Tab smoke matrix
 
@@ -134,3 +134,56 @@ wp staark managed mode managed
 
 Do not call `wp plugin activate staark-core` from an already-bootstrapped
 managed Locked request; WordPress activation sandbox-includes the plugin file.
+
+## 10. WP-6.0D production deployment gate
+
+Managed and Locked production sites must have a readable managed release:
+
+```bash
+wp staark deployment status
+wp staark deployment verify
+wp staark rc-check
+```
+
+Expected in Managed mode: a readable `current` release with a manifest version.
+Expected in Locked mode: the same plus runtime source `managed`.
+
+The rollback round-trip must already have been exercised on the release candidate.
+Return the `current` pointer to the newest tested release before release sign-off.
+
+## 11. WP-6.0E support detail gate
+
+Create a local support ticket and open it from the Support history table.
+
+Verify the full message, category/priority/status, requester details, delivery/sync state,
+stored environment snapshot, controlled invalid-ticket view, Back to Support, and responsive
+behavior at 1440 / 1024 / 782 / 600 / 390 px.
+
+## 12. WP-6.0F final release gate
+
+No new product features are added during this phase.
+
+Before sign-off:
+
+```bash
+git diff --check
+bash scripts/rc-smoke.sh
+wp staark deployment status
+wp staark deployment verify
+wp staark rc-check
+```
+
+Then run one final Locked handoff:
+
+```bash
+wp staark managed mode locked
+wp staark deployment verify
+wp staark rc-check
+wp staark managed mode managed
+wp staark rc-check
+```
+
+Release only when all automated checks pass, the managed release is readable, Locked runtime
+boots from the managed source, Support detail passes its manual gate, browser/PHP logs are clean,
+the client-facing smoke matrix passes, and only intentional files are staged.
+
