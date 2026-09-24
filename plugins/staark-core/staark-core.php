@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.5.10.0
+ * Version: 0.5.11.0
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -13,12 +13,13 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-const STAARK_HUB_VERSION = '0.5.10.0';
+const STAARK_HUB_VERSION = '0.5.11.0';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
 
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/helpers.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/accessibility.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/security.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/seo.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';

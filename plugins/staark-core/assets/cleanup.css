@@ -1,0 +1,372 @@
+/* WP-05.11 — responsive, keyboard, contrast and final admin cleanup. */
+:root {
+  --staark-hub-text: var(--staark-hub-ink, #0f172a);
+  --staark-hub-focus: #1d4ed8;
+  --staark-hub-focus-ring: rgba(37, 99, 235, 0.22);
+}
+
+.staark-hub-wrap,
+.staark-hub-wrap .staark-hub-card,
+.staark-hub-wrap .staark-hub-section,
+.staark-hub-wrap .staark-hub-grid > *,
+.staark-hub-wrap .staark-hub-title-row > *,
+.staark-hub-wrap .staark-hub-section-heading > *,
+.staark-hub-wrap .staark-hub-card-heading > * {
+  min-width: 0;
+}
+
+.staark-hub-wrap img,
+.staark-hub-wrap svg {
+  max-width: 100%;
+}
+
+.staark-hub-wrap code,
+.staark-hub-wrap dd,
+.staark-hub-wrap p,
+.staark-hub-wrap small,
+.staark-hub-wrap strong {
+  overflow-wrap: anywhere;
+}
+
+/* A visible keyboard focus is mandatory across both WordPress controls and custom cards. */
+.staark-hub-wrap :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--staark-hub-focus) !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--staark-hub-focus-ring) !important;
+}
+
+.staark-hub-wrap :where(.staark-hub-tool-card, .staark-hub-quick-action, .staark-hub-nav-link):focus-visible {
+  border-color: var(--staark-hub-focus) !important;
+}
+
+.staark-hub-wrap :where(
+  input[type="text"],
+  input[type="email"],
+  input[type="url"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="number"],
+  select
+) {
+  min-height: 42px;
+  max-width: 100%;
+}
+
+.staark-hub-wrap textarea {
+  max-width: 100%;
+}
+
+.staark-hub-wrap :where(input[type="checkbox"], input[type="radio"]) {
+  flex: 0 0 auto;
+}
+
+.staark-hub-wrap .button {
+  min-height: 36px;
+}
+
+/* Some module copy used very light gray at 9–10px. Keep secondary text readable. */
+.staark-hub-wrap .staark-hub-card:not(.staark-hub-card--dark) small,
+.staark-hub-wrap .staark-hub-section small,
+.staark-security-page .staark-security-check p,
+.staark-security-page .staark-security-check small,
+.staark-security-page .staark-security-settings > p,
+.staark-security-page .staark-security-toggle small,
+.staark-security-page .staark-security-note {
+  color: #475569;
+}
+
+.staark-hub-card--dark small,
+.staark-hub-card--dark .staark-hub-details dt {
+  color: #cbd5e1;
+}
+
+.staark-hub-wrap p a,
+.staark-hub-wrap dd a,
+.staark-hub-wrap small a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+/* Keyboard-scrollable table regions get a clear boundary on focus. */
+.staark-hub-scroll-region {
+  scroll-padding: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.staark-hub-scroll-region:focus-visible {
+  border-color: var(--staark-hub-focus) !important;
+}
+
+/* The Hub tab strip remains usable at narrow widths without wrapping into chaos. */
+.staark-hub-nav {
+  scroll-behavior: smooth;
+  overscroll-behavior-inline: contain;
+}
+
+.staark-hub-nav-link {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Prevent dense status rows and module controls from overflowing translated/long content. */
+.staark-hub-mini-status,
+.staark-hub-pill,
+.staark-hub-badge,
+.staark-hub-priority,
+.staark-hub-ticket-status,
+.staark-security-severity,
+.staark-performance-severity {
+  max-width: 100%;
+}
+
+.staark-hub-connect-endpoints code,
+.staark-hub-connect-details code {
+  word-break: break-word;
+}
+
+.staark-hub-support-table-wrap {
+  scrollbar-gutter: stable;
+}
+
+/* Tablet: cards become simpler before WordPress collapses its admin sidebar. */
+@media (max-width: 1180px) {
+  .staark-hub-grid--four,
+  .staark-hub-tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staark-hub-grid--split {
+    grid-template-columns: 1fr;
+  }
+
+  .staark-hub-brand-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 960px) {
+  .staark-hub-title-row,
+  .staark-hub-section-heading,
+  .staark-hub-card-heading,
+  .staark-hub-support-hero,
+  .staark-hub-connect-hero,
+  .staark-performance-hero,
+  .staark-seo-page .staark-seo-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .staark-hub-header-meta,
+  .staark-hub-support-hero-meta,
+  .staark-hub-connect-hero-status,
+  .staark-seo-hero-status {
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .staark-hub-header-actions {
+    justify-content: flex-start;
+  }
+
+  .staark-hub-section-heading > .button,
+  .staark-hub-card-heading > .button {
+    align-self: flex-start;
+  }
+}
+
+/* WordPress mobile breakpoint. */
+@media (max-width: 782px) {
+  .staark-hub-wrap {
+    width: auto;
+    margin: 12px 10px 0 0;
+  }
+
+  .staark-hub-header,
+  .staark-hub-card,
+  .staark-hub-section,
+  .staark-security-hero,
+  .staark-performance-hero,
+  .staark-seo-page .staark-seo-hero,
+  .staark-hub-support-hero,
+  .staark-hub-connect-hero {
+    padding: 20px;
+  }
+
+  .staark-hub-grid--four,
+  .staark-hub-grid--three,
+  .staark-hub-grid--two,
+  .staark-hub-grid--split,
+  .staark-hub-tool-grid,
+  .staark-hub-quick-grid,
+  .staark-security-summary,
+  .staark-performance-summary,
+  .staark-seo-toggle-grid,
+  .staark-seo-address-row,
+  .staark-hub-form-grid,
+  .staark-hub-color-grid,
+  .staark-hub-asset-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .staark-hub-nav {
+    margin-right: -4px;
+    margin-left: -4px;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .staark-hub-nav-link {
+    min-height: 42px;
+    padding: 10px 12px;
+  }
+
+  .staark-hub-actions,
+  .staark-hub-connect-actions,
+  .staark-hub-asset-actions {
+    row-gap: 8px;
+  }
+
+  .staark-security-check,
+  .staark-performance-check {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .staark-security-check > b,
+  .staark-performance-check > b {
+    grid-column: 2;
+  }
+
+  .staark-security-toggle,
+  .staark-performance-toggle,
+  .staark-performance-field,
+  .staark-seo-toggle {
+    align-items: flex-start;
+  }
+
+  .staark-seo-savebar {
+    position: static;
+  }
+
+  .staark-hub-support-table {
+    min-width: 760px;
+  }
+}
+
+@media (max-width: 600px) {
+  .staark-hub-header,
+  .staark-hub-card,
+  .staark-hub-section,
+  .staark-security-hero,
+  .staark-performance-hero,
+  .staark-seo-page .staark-seo-hero,
+  .staark-hub-support-hero,
+  .staark-hub-connect-hero {
+    padding: 17px;
+    border-radius: 13px;
+  }
+
+  .staark-hub-title-row h1 {
+    font-size: clamp(28px, 9vw, 36px);
+  }
+
+  .staark-hub-section-heading,
+  .staark-hub-card-heading {
+    gap: 12px;
+  }
+
+  .staark-hub-support-submit,
+  .staark-hub-brand-savebar,
+  .staark-seo-savebar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .staark-hub-support-submit .button,
+  .staark-hub-brand-savebar .button,
+  .staark-seo-savebar .button,
+  .staark-hub-connect-form .button {
+    width: 100%;
+    min-height: 42px;
+    text-align: center;
+  }
+
+  .staark-hub-page-table-row {
+    padding: 14px;
+  }
+
+  .staark-hub-details div,
+  .staark-hub-details--website div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .staark-hub-wrap {
+    margin-right: 8px;
+  }
+
+  .staark-hub-header-actions,
+  .staark-hub-header-actions .button,
+  .staark-hub-connect-actions,
+  .staark-hub-connect-actions form,
+  .staark-hub-connect-actions .button {
+    width: 100%;
+  }
+
+  .staark-hub-header-actions .button,
+  .staark-hub-connect-actions .button {
+    min-height: 42px;
+    text-align: center;
+  }
+
+  .staark-hub-tool-card,
+  .staark-hub-quick-action {
+    min-height: 78px;
+    padding: 14px;
+  }
+
+  .staark-security-score-card,
+  .staark-performance-score-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .staark-security-toggle,
+  .staark-performance-toggle,
+  .staark-seo-toggle {
+    gap: 12px;
+  }
+}
+
+/* Respect OS accessibility preferences and avoid decorative movement. */
+@media (prefers-reduced-motion: reduce) {
+  .staark-hub-wrap,
+  .staark-hub-wrap *,
+  .staark-hub-wrap *::before,
+  .staark-hub-wrap *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .staark-hub-tool-card:hover,
+  .staark-hub-quick-action:hover {
+    transform: none;
+  }
+}
+
+/* Windows High Contrast / forced-colors should retain visible boundaries. */
+@media (forced-colors: active) {
+  .staark-hub-wrap :where(.staark-hub-card, .staark-hub-section, .staark-hub-tool-card, .staark-hub-quick-action) {
+    border: 1px solid CanvasText;
+  }
+
+  .staark-hub-wrap :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid Highlight !important;
+    box-shadow: none !important;
+  }
+}
