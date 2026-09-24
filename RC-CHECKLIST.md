@@ -126,9 +126,11 @@ wp staark rc-check
 ```
 
 The command must still exist and pass because the MU-loader is authoritative.
-Before leaving Locked, restore the normal activation flag:
+Leave Locked directly; Staark restores the regular activation flag safely:
 
 ```bash
-wp plugin activate staark-core
 wp staark managed mode managed
 ```
+
+Do not call `wp plugin activate staark-core` from an already-bootstrapped
+managed Locked request; WordPress activation sandbox-includes the plugin file.

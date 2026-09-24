@@ -72,7 +72,7 @@ function staark_hub_managed_client_restrictions_apply(int $user_id = 0): bool
 
 function staark_hub_managed_plugin_file(): string
 {
-    return plugin_basename(STAARK_HUB_PLUGIN_FILE);
+    return staark_hub_standard_plugin_basename();
 }
 
 function staark_hub_managed_plugin_slug(): string

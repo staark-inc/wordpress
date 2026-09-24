@@ -74,7 +74,7 @@ Manual RC gates still required:
   - keyboard-only navigation and visible focus
   - Managed: deactivate -> verify cron removed and data preserved, then reactivate
   - Locked: deactivate normal plugin -> verify MU runtime still passes rc-check
-  - before leaving Locked after deactivation: reactivate staark-core first
+  - leave Locked with `wp staark managed mode managed`; it restores the plugin activation flag safely
   - fresh install in a clean wp-env
   - upgrade from the previous checkpoint
   - uninstall default preserves data; destructive cleanup only with explicit constant

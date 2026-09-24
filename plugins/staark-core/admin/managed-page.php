@@ -142,9 +142,8 @@ function staark_hub_render_managed(): void
                     <code>wp staark managed loader status</code>
                     <code>wp staark managed loader install</code>
                     <code>wp staark managed mode locked</code>
-                    <code>wp plugin activate staark-core</code>
                     <code>wp staark managed mode managed</code>
-                    <p>When leaving Locked mode after a server-side deactivation, reactivate <code>staark-core</code> first so the regular plugin lifecycle can resume safely.</p>
+                    <p>Leaving Locked mode safely restores the regular <code>staark-core</code> activation flag without compiling the plugin twice in the same request.</p>
                 </section>
 
                 <section class="staark-hub-card staark-managed-warning">

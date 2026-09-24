@@ -126,16 +126,15 @@ wp staark rc-check
 Staark must still load and the RC check must stay green because the MU-loader
 boots core first. This is the defining 6.0C behavior.
 
-Before returning from Locked to Managed/Normal after such a test, restore the
-normal plugin lifecycle first:
+Return from Locked directly with Staark's managed-mode command:
 
 ```bash
-wp plugin activate staark-core
 wp staark managed mode managed
 ```
 
-Staark refuses to leave Locked while the regular plugin is inactive, preventing
-a mode change from accidentally removing its own runtime on the next request.
+If the regular plugin activation flag was removed, Staark restores it without
+sandbox-including the plugin a second time in the already-running Locked
+request. The next request then resumes the normal plugin lifecycle safely.
 
 ### MU-loader recovery controls
 

@@ -195,7 +195,7 @@ function staark_hub_runtime_loader(): string
  */
 function staark_hub_standard_plugin_active(): bool
 {
-    $plugin = plugin_basename(STAARK_HUB_PLUGIN_FILE);
+    $plugin = staark_hub_standard_plugin_basename();
     $active = get_option('active_plugins', []);
     $active = is_array($active) ? $active : [];
 
@@ -211,6 +211,50 @@ function staark_hub_standard_plugin_active(): bool
     }
 
     return false;
+}
+
+/**
+ * Restore the regular plugin activation flag without loading the plugin file.
+ *
+ * In Locked mode the managed runtime is already compiled for the current
+ * request. Calling WordPress's normal `activate_plugin()` path would sandbox-
+ * include staark-core.php a second time and can redeclare functions. Updating
+ * the activation option is safe: the regular package is picked up on the next
+ * request, after Locked mode has been left.
+ *
+ * @return true|WP_Error
+ */
+function staark_hub_restore_standard_plugin_activation()
+{
+    $plugin = staark_hub_standard_plugin_basename();
+    $plugin_file = function_exists('staark_hub_standard_plugin_file')
+        ? staark_hub_standard_plugin_file()
+        : trailingslashit(WP_PLUGIN_DIR) . $plugin;
+
+    if (! is_file($plugin_file) || ! is_readable($plugin_file)) {
+        return new WP_Error(
+            'staark_plugin_package_missing',
+            'The regular Staark Core plugin package is missing or unreadable; Locked mode cannot hand control back safely.'
+        );
+    }
+
+    $active = get_option('active_plugins', []);
+    $active = is_array($active) ? array_values($active) : [];
+
+    if (! in_array($plugin, $active, true)) {
+        $active[] = $plugin;
+        $active = array_values(array_unique(array_map('strval', $active)));
+        update_option('active_plugins', $active);
+    }
+
+    if (! in_array($plugin, (array) get_option('active_plugins', []), true)) {
+        return new WP_Error(
+            'staark_plugin_activation_flag',
+            'WordPress could not restore the Staark Core activation flag.'
+        );
+    }
+
+    return true;
 }
 
 /** @return true|WP_Error */
@@ -404,13 +448,20 @@ function staark_hub_set_managed_mode(string $mode)
 
     $current_mode = staark_hub_managed_mode();
     if ($current_mode === 'locked' && $mode !== 'locked' && ! staark_hub_standard_plugin_active()) {
-        return new WP_Error(
-            'staark_mode_plugin_inactive',
-            'Staark Core is running through the MU-loader but is not active as a normal plugin. Activate staark-core before leaving Locked mode.'
-        );
+        $restored = staark_hub_restore_standard_plugin_activation();
+        if (is_wp_error($restored)) {
+            return $restored;
+        }
     }
 
     update_option(STAARK_HUB_MANAGED_MODE_OPTION, $mode, false);
+
+    // A normal WordPress activation hook cannot be run through activate_plugin()
+    // while the managed runtime is already loaded. Re-establish Staark-owned
+    // schedules/state directly after the safe handoff instead.
+    if ($current_mode === 'locked' && $mode !== 'locked' && function_exists('staark_hub_activate')) {
+        staark_hub_activate();
+    }
 
     return true;
 }

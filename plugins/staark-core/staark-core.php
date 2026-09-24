@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.0.5
+ * Version: 0.6.0.9
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -13,10 +13,41 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-const STAARK_HUB_VERSION = '0.6.0.5';
+// Managed releases and the regular plugin package can both be present in
+// Locked mode. The MU runtime wins; the later normal-plugin include becomes a
+// no-op instead of redeclaring every Staark function.
+if (defined('STAARK_HUB_RUNTIME_LOADED')) {
+    return;
+}
+define('STAARK_HUB_RUNTIME_LOADED', true);
+
+const STAARK_HUB_VERSION = '0.6.0.9';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
+
+/**
+ * Build an asset URL for both regular-plugin and wp-content/staark-managed
+ * runtimes. plugin_dir_url() cannot safely map a runtime outside WP_PLUGIN_DIR.
+ */
+function staark_hub_runtime_url(string $relative = ''): string
+{
+    if (defined('STAARK_HUB_RUNTIME_URL') && trim((string) STAARK_HUB_RUNTIME_URL) !== '') {
+        $base = trailingslashit((string) STAARK_HUB_RUNTIME_URL);
+    } else {
+        $runtime_dir = untrailingslashit(wp_normalize_path(STAARK_HUB_PLUGIN_DIR));
+        $content_dir = untrailingslashit(wp_normalize_path(WP_CONTENT_DIR));
+
+        if ($runtime_dir === $content_dir || str_starts_with($runtime_dir . '/', $content_dir . '/')) {
+            $content_relative = ltrim(substr($runtime_dir, strlen($content_dir)), '/');
+            $base = trailingslashit(content_url('/' . $content_relative));
+        } else {
+            $base = plugin_dir_url(STAARK_HUB_PLUGIN_FILE);
+        }
+    }
+
+    return $base . ltrim($relative, '/');
+}
 
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/helpers.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/accessibility.php';
@@ -26,6 +57,7 @@ require_once STAARK_HUB_PLUGIN_DIR . 'includes/security.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/seo.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/lifecycle.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/managed-deployment.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/rc.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/security-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/seo-page.php';
@@ -842,7 +874,7 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
 
     wp_enqueue_style(
         'staark-hub-admin',
-        plugin_dir_url(__FILE__) . 'assets/admin.css',
+        staark_hub_runtime_url('assets/admin.css'),
         [],
         STAARK_HUB_VERSION
     );
@@ -850,7 +882,7 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
     if (staark_hub_current_page() === 'staark-hub-security') {
         wp_enqueue_style(
             'staark-hub-security',
-            plugin_dir_url(__FILE__) . 'assets/security.css',
+            staark_hub_runtime_url('assets/security.css'),
             ['staark-hub-admin'],
             STAARK_HUB_VERSION
         );
@@ -859,7 +891,7 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
     if (staark_hub_current_page() === 'staark-hub-seo') {
         wp_enqueue_style(
             'staark-hub-seo',
-            plugin_dir_url(__FILE__) . 'assets/seo.css',
+            staark_hub_runtime_url('assets/seo.css'),
             ['staark-hub-admin'],
             STAARK_HUB_VERSION
         );
@@ -868,7 +900,7 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
     if (staark_hub_current_page() === 'staark-hub-performance') {
         wp_enqueue_style(
             'staark-hub-performance',
-            plugin_dir_url(__FILE__) . 'assets/performance.css',
+            staark_hub_runtime_url('assets/performance.css'),
             ['staark-hub-admin'],
             STAARK_HUB_VERSION
         );
@@ -877,7 +909,7 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
     if (staark_hub_current_page() === 'staark-hub-managed') {
         wp_enqueue_style(
             'staark-hub-managed',
-            plugin_dir_url(__FILE__) . 'assets/managed.css',
+            staark_hub_runtime_url('assets/managed.css'),
             ['staark-hub-admin'],
             STAARK_HUB_VERSION
         );
@@ -887,7 +919,7 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
         wp_enqueue_media();
         wp_enqueue_script(
             'staark-hub-admin',
-            plugin_dir_url(__FILE__) . 'assets/admin.js',
+            staark_hub_runtime_url('assets/admin.js'),
             [],
             STAARK_HUB_VERSION,
             true
