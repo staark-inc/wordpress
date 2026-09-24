@@ -16,8 +16,6 @@
   "config": {
     "WP_DEBUG": true,
     "SCRIPT_DEBUG": true,
-    "WP_HOME": "https://wp.staarkinc.com",
-    "WP_SITEURL": "https://wp.staarkinc.com"
   },
   
   "lifecycleScripts": {
