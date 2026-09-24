@@ -4,15 +4,12 @@
   <div class="wp-block-columns alignwide">
     <!-- wp:column {"width":"45%"} -->
     <div class="wp-block-column" style="flex-basis:45%">
-      <!-- wp:html -->
-      <a class="staark-brand staark-brand--footer" aria-label="Staark Inc. startsida" href="/">
-        <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg>
-        <strong>Staark Inc</strong><span aria-hidden="true"></span>
-      </a>
-      <!-- /wp:html -->
-      <!-- wp:paragraph {"textColor":"muted"} -->
-      <p class="has-muted-color has-text-color">Moderna, snabba och genomtänkta webbplatser för svenska företag.</p>
-      <!-- /wp:paragraph -->
+      <!-- wp:shortcode -->
+      [staark_brand]
+      <!-- /wp:shortcode -->
+      <!-- wp:shortcode -->
+      [staark_brand_tagline]
+      <!-- /wp:shortcode -->
     </div>
     <!-- /wp:column -->
 
@@ -44,8 +41,8 @@
   <hr class="wp-block-separator alignwide has-text-color has-border-color has-alpha-channel-opacity has-border-background-color has-background"/>
   <!-- /wp:separator -->
 
-  <!-- wp:paragraph {"align":"center","textColor":"muted","fontSize":"sm"} -->
-  <p class="has-text-align-center has-muted-color has-text-color has-sm-font-size">© 2026 Staark Inc. All rights reserved.</p>
-  <!-- /wp:paragraph -->
+  <!-- wp:shortcode -->
+  [staark_brand_copyright]
+  <!-- /wp:shortcode -->
 </div>
 <!-- /wp:group -->

@@ -12,6 +12,12 @@ if (! defined('ABSPATH')) {
 add_action('after_setup_theme', static function (): void {
     add_theme_support('wp-block-styles');
     add_theme_support('editor-styles');
+    add_theme_support('custom-logo', [
+        'height' => 96,
+        'width' => 320,
+        'flex-height' => true,
+        'flex-width' => true,
+    ]);
     add_editor_style('assets/css/theme.css');
 });
 

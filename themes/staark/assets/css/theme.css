@@ -581,3 +581,22 @@ a {
     border-radius: var(--staark-radius-sm);
   }
 }
+
+/* WP-05.4 — client branding */
+.staark-brand__logo {
+  display: block;
+  width: auto;
+  max-width: 46px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.staark-brand-tagline {
+  max-width: 420px;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.staark-brand-copyright {
+  margin-bottom: 0;
+}
