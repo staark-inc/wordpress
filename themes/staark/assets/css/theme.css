@@ -1212,8 +1212,8 @@ a {
   border-radius: 50%;
 }
 
-.staark-showcase-benefit strong,
-.staark-showcase-benefit span {
+.staark-showcase-benefit > div strong,
+.staark-showcase-benefit > div span {
   display: block;
 }
 

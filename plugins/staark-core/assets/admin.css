@@ -2062,19 +2062,14 @@
   max-width: 720px;
 }
 
+.staark-hub-ticket-detail-title {
+  flex-direction: column;
+}
 
-  .staark-hub-ticket-detail-title {
-    flex-direction: column;
-  }
+.staark-hub-ticket-detail-badges {
+  justify-content: flex-start;
+}
 
-  .staark-hub-ticket-detail-badges {
-    justify-content: flex-start;
-  }
-
-  .staark-hub-ticket-detail-meta {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  .staark-hub-ticket-detail-meta {
-    grid-template-columns: 1fr !important;
-  }
+.staark-hub-ticket-detail-meta {
+  grid-template-columns: 1fr !important;
+}
