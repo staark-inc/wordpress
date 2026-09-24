@@ -102,3 +102,33 @@ stored Staark support tickets. It must never be enabled by the plugin itself.
 RC passes only when all automated checks pass, every tab has completed the smoke
 matrix, no release-blocking PHP/JS issue remains, responsive/accessibility gates
 pass, and lifecycle behavior matches this document.
+
+
+## 9. WP-6.0C Locked runtime gate
+
+After the MU-loader is deployed:
+
+```bash
+wp staark managed loader status
+wp staark managed mode locked
+wp staark managed status
+wp staark rc-check
+```
+
+Expected in Locked mode: runtime loader `mu`, MU bootstrap `yes`, and all RC
+checks pass including **Locked MU runtime**.
+
+Then prove activation-state independence:
+
+```bash
+wp plugin deactivate staark-core
+wp staark rc-check
+```
+
+The command must still exist and pass because the MU-loader is authoritative.
+Before leaving Locked, restore the normal activation flag:
+
+```bash
+wp plugin activate staark-core
+wp staark managed mode managed
+```

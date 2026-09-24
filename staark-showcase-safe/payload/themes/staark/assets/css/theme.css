@@ -920,8 +920,6 @@ a {
   margin-top: 4px;
   color: var(--showcase-muted);
   font-size: .76rem;
-  display: grid;
-  place-items: center;
 }
 
 /* Shared section heading */

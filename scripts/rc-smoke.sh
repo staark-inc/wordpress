@@ -55,7 +55,8 @@ echo "  OK"
 
 echo "[5/5] wp-env runtime"
 if command -v npx >/dev/null 2>&1 && [[ -f package.json ]]; then
-  npx wp-env run cli wp plugin is-active staark-core >/dev/null
+  # In Locked mode Staark Core may be intentionally absent from active_plugins;
+  # the MU-loader must still make the CLI/runtime available.
   npx wp-env run cli wp staark rc-check
 else
   echo "  SKIP: npx/package.json unavailable"
@@ -71,8 +72,9 @@ Manual RC gates still required:
   - PHP debug.log: zero new warnings/notices from Staark
   - responsive: 1440 / 1024 / 782 / 600 / 390 px
   - keyboard-only navigation and visible focus
-  - deactivate -> verify cron removed and data preserved
-  - reactivate -> verify cron restored and settings preserved
+  - Managed: deactivate -> verify cron removed and data preserved, then reactivate
+  - Locked: deactivate normal plugin -> verify MU runtime still passes rc-check
+  - before leaving Locked after deactivation: reactivate staark-core first
   - fresh install in a clean wp-env
   - upgrade from the previous checkpoint
   - uninstall default preserves data; destructive cleanup only with explicit constant

@@ -33,6 +33,7 @@ function staark_hub_rc_checks(): array
         'includes/lifecycle.php',
         'includes/managed.php',
         'includes/managed-protection.php',
+        'deployment/staark-loader.php',
         'admin/security-page.php',
         'admin/seo-page.php',
         'admin/performance-page.php',
@@ -86,6 +87,10 @@ function staark_hub_rc_checks(): array
     $managed_protection = function_exists('staark_hub_managed_protection_summary') ? staark_hub_managed_protection_summary() : [];
     $managed_protection_enabled = ! empty($managed_protection['enabled']);
     $managed_protection_safe = $managed_mode === 'normal' || $managed_protection_enabled;
+    $managed_loader = isset($managed['loader']) ? (string) $managed['loader'] : 'plugin';
+    $managed_loader_installed = ! empty($managed['loaderInstalled']);
+    $managed_bootstrapped_by_mu = ! empty($managed['bootstrappedByMu']);
+    $locked_runtime_safe = $managed_mode !== 'locked' || ($managed_loader === 'mu' && $managed_bootstrapped_by_mu);
 
     $checks = [
         staark_hub_rc_check(
@@ -155,6 +160,16 @@ function staark_hub_rc_checks(): array
                 : ($managed_protection_enabled
                     ? 'WordPress-level Staark plugin protection is active; operator and WP-CLI recovery are retained.'
                     : 'Managed/Locked mode is active but plugin protection is disabled or unavailable.')
+        ),
+        staark_hub_rc_check(
+            'locked_runtime',
+            'Locked MU runtime',
+            $locked_runtime_safe,
+            $managed_mode !== 'locked'
+                ? ($managed_loader_installed ? 'MU-loader is installed and ready; Locked runtime is not currently required.' : 'Locked runtime is not required in the current mode.')
+                : ($locked_runtime_safe
+                    ? 'Locked mode bootstrapped Staark Core through the MU-loader.'
+                    : 'Locked mode is configured but this request was not bootstrapped by the Staark MU-loader.')
         ),
     ];
 

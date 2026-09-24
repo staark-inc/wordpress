@@ -1,6 +1,6 @@
 # Staark WordPress 6.0 — Managed Mode deployment
 
-WP-6.0B adds WordPress-level plugin protection on top of the 6.0A authority model. Managed and Locked modes now hide Staark Core from non-operator plugin management and block client-side deactivation, deletion, manual replacement and file editing. The MU-loader arrives in 6.0C.
+WP-6.0C adds the Locked must-use runtime on top of the 6.0A authority model and 6.0B WordPress-level plugin protection. Managed mode keeps the regular plugin lifecycle; Locked mode is bootstrapped by an MU-loader and no longer depends on the normal `active_plugins` flag.
 
 ## Safe bootstrap
 
@@ -40,8 +40,7 @@ define('STAARK_HUB_MANAGED_MODE', 'managed');
 Accepted values are `normal`, `managed`, and `locked`. An invalid value safely
 falls back to Normal.
 
-Do not use `locked` as the final production lock until the MU-loader/protection
-patches are installed and their recovery path has been tested.
+Do not force `locked` in server configuration until the MU-loader is installed and its recovery path has been tested.
 
 
 ## 6.0B plugin protection
@@ -78,3 +77,106 @@ managed runtime no longer depends on normal plugin activation state.
 ## 6.0B.1 operator-capability recursion hotfix
 
 Managed protection runs inside WordPress capability mapping. Operator detection must therefore never call `user_can()`/`current_user_can()` from that path, because doing so re-enters `map_meta_cap`. 0.6.0.2 uses the already-resolved `WP_User::allcaps` map for the administrator prerequisite and keeps the operator meta check separate.
+
+
+## 6.0C MU-loader / Locked runtime
+
+The bundled loader lives at:
+
+```text
+plugins/staark-core/deployment/staark-loader.php
+```
+
+Production target:
+
+```text
+wp-content/mu-plugins/staark-loader.php
+```
+
+In the development `wp-env` the target is mapped automatically. After applying
+6.0C restart `wp-env` once so the new mapping is mounted.
+
+Check/install from WP-CLI:
+
+```bash
+wp staark managed loader status
+wp staark managed loader install
+```
+
+Locked mode refuses to enable unless the loader exists. Then:
+
+```bash
+wp staark managed mode locked
+wp staark managed status
+wp staark rc-check
+```
+
+A Locked request must report `Loader = mu` / `Bootstrapped by MU = yes`, and the
+RC check gains the **Locked MU runtime** gate.
+
+### Activation-state independence test
+
+While Locked, server/WP-CLI may remove the regular activation flag:
+
+```bash
+wp plugin deactivate staark-core
+wp staark rc-check
+```
+
+Staark must still load and the RC check must stay green because the MU-loader
+boots core first. This is the defining 6.0C behavior.
+
+Before returning from Locked to Managed/Normal after such a test, restore the
+normal plugin lifecycle first:
+
+```bash
+wp plugin activate staark-core
+wp staark managed mode managed
+```
+
+Staark refuses to leave Locked while the regular plugin is inactive, preventing
+a mode change from accidentally removing its own runtime on the next request.
+
+### MU-loader recovery controls
+
+Emergency server bypass:
+
+```php
+define('STAARK_HUB_DISABLE_MU_LOADER', true);
+```
+
+This does not modify the saved mode. If Staark Core is still active normally,
+`wp staark rc-check` will deliberately fail the Locked MU runtime gate so the
+bypass cannot be mistaken for a healthy Locked deployment.
+
+An alternative server-controlled core path can be provided with:
+
+```php
+define('STAARK_HUB_LOCKED_CORE_FILE', '/absolute/path/to/staark-core.php');
+```
+
+The loader does not obfuscate or encrypt Staark source. Direct filesystem/server
+access remains authoritative by design.
+
+
+## 6.0C.1 wp-env mapped-loader behavior
+
+`wp-env` mounts `deployment/staark-loader.php` directly at the MU-plugin target.
+Because that target is a container mount point, WordPress must not try to overwrite
+or unlink it like a normal copied file.
+
+`wp staark managed loader install` is therefore idempotent when the mounted/copied
+loader already matches the bundled source. `wp staark managed loader remove` emits
+a warning instead of failing when the target is deployment-mounted; remove the
+mapping in `.wp-env.json` and restart wp-env if the development mount itself must
+be removed. Production copies that are not deployment-mounted remain removable in
+Managed/Normal mode.
+
+
+## 6.0C.2 container mount-point detection
+
+Some Docker storage drivers expose a wp-env file mapping with different device/inode
+values at the source and mounted target. 0.6.0.5 therefore detects the exact MU-loader
+target in `/proc/self/mountinfo` before falling back to device/inode comparison. This
+keeps `loader remove` non-destructive for bind-mounted development files and makes
+`Deployment mapped` accurate across wp-env/Docker variants.

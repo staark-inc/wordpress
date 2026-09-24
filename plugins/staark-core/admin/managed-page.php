@@ -34,7 +34,7 @@ function staark_hub_render_managed(): void
             <div>
                 <span class="staark-hub-card-label">Staark 6.0</span>
                 <h2>Separate client administration from Staark operations.</h2>
-                <p>Managed Mode now protects the Staark plugin from client-side mutation while keeping Staark operators and WP-CLI as recovery paths. Locked mode receives its MU-loader in the next deployment patch.</p>
+                <p>Managed Mode now protects the Staark plugin from client-side mutation while keeping Staark operators and WP-CLI as recovery paths. Locked mode uses the Staark MU-loader so the managed runtime no longer depends on the normal plugin activation state.</p>
             </div>
             <span class="staark-managed-mode is-<?php echo esc_attr($mode); ?>"><?php echo esc_html($summary['label']); ?></span>
         </section>
@@ -57,8 +57,8 @@ function staark_hub_render_managed(): void
             </section>
             <section class="staark-hub-card">
                 <span class="staark-hub-card-label">Loader</span>
-                <strong>Plugin</strong>
-                <p>MU-loader enforcement is introduced separately after policy validation.</p>
+                <strong><?php echo esc_html($summary['loader']); ?></strong>
+                <p><?php echo $summary['bootstrappedByMu'] ? 'Staark Core was bootstrapped by the must-use loader for this request.' : ($summary['loaderInstalled'] ? 'MU-loader installed and ready for Locked mode.' : 'Regular plugin runtime; install the MU-loader before Locked mode.'); ?></p>
             </section>
         </div>
 
@@ -77,9 +77,13 @@ function staark_hub_render_managed(): void
                     </article>
                     <article class="<?php echo $mode === 'locked' ? 'is-current' : ''; ?>">
                         <strong>Locked</strong>
-                        <p>Uses the same WordPress-level protection as Managed. The MU-loader in 6.0C will make the lock independent of the normal plugin activation state.</p>
+                        <p>Uses the same WordPress-level protection as Managed. The MU-loader boots Staark Core before normal plugins, so runtime remains available even if the regular plugin activation flag is removed.</p>
                     </article>
                 </div>
+
+                <?php if (! $summary['loaderInstalled']) : ?>
+                    <div class="staark-managed-callout"><strong>MU-loader required for Locked</strong><p>Install it with <code>wp staark managed loader install</code> or deploy <code>deployment/staark-loader.php</code> to <code>wp-content/mu-plugins/staark-loader.php</code>.</p></div>
+                <?php endif; ?>
 
                 <?php if ($summary['forced']) : ?>
                     <div class="staark-managed-callout"><strong>Server controlled</strong><p><code>STAARK_HUB_MANAGED_MODE</code> is defined, so wp-admin cannot change this value.</p></div>
@@ -92,7 +96,7 @@ function staark_hub_render_managed(): void
                             <select name="managed_mode">
                                 <option value="normal" <?php selected($mode, 'normal'); ?>>Normal</option>
                                 <option value="managed" <?php selected($mode, 'managed'); ?>>Managed</option>
-                                <option value="locked" <?php selected($mode, 'locked'); ?>>Locked · MU-loader arrives in 6.0C</option>
+                                <option value="locked" <?php selected($mode, 'locked'); ?> <?php disabled(! $summary['loaderInstalled'] && $mode !== 'locked'); ?>>Locked · MU-loader required</option>
                             </select>
                         </label>
                         <button type="submit" class="button button-primary">Save deployment mode</button>
@@ -135,15 +139,18 @@ function staark_hub_render_managed(): void
                     <h2>WP-CLI stays authoritative</h2>
                     <code>wp staark managed status</code>
                     <code>wp staark managed grant &lt;user&gt;</code>
+                    <code>wp staark managed loader status</code>
+                    <code>wp staark managed loader install</code>
+                    <code>wp staark managed mode locked</code>
+                    <code>wp plugin activate staark-core</code>
                     <code>wp staark managed mode managed</code>
-                    <code>wp staark managed mode normal</code>
-                    <p>Server access remains the recovery path before any UI protection or MU-loader is enabled.</p>
+                    <p>When leaving Locked mode after a server-side deactivation, reactivate <code>staark-core</code> first so the regular plugin lifecycle can resume safely.</p>
                 </section>
 
                 <section class="staark-hub-card staark-managed-warning">
-                    <span class="staark-hub-card-label">6.0B protection</span>
-                    <h2>Client mutation blocked</h2>
-                    <p>Non-operator administrators no longer see Staark Hub in the Plugins list and cannot deactivate, delete, overwrite or edit it through WordPress. WP-CLI and explicit Staark operators remain recovery paths.</p>
+                    <span class="staark-hub-card-label">6.0C Locked runtime</span>
+                    <h2>MU-loader ready</h2>
+                    <p>Locked mode now boots Staark Core from <code>mu-plugins/staark-loader.php</code>. Managed mode keeps normal plugin activation behavior, while WP-CLI and explicit Staark operators remain recovery paths.</p>
                 </section>
             </aside>
         </div>
