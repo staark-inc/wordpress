@@ -1,0 +1,104 @@
+# Staark WordPress — WP-05.12 RC checklist
+
+Target plugin version: `0.5.12.0`
+
+This release candidate is a stabilization gate. Do not add new product features
+while running this checklist; log defects and fix only release blockers.
+
+## 1. Automated smoke
+
+```bash
+bash scripts/rc-smoke.sh
+```
+
+Expected:
+
+- all PHP files pass `php -l`;
+- admin/accessibility JS passes `node --check` when Node is available;
+- plugin header and `STAARK_HUB_VERSION` match;
+- `git diff --check` is clean;
+- `wp staark rc-check` reports all PASS in wp-env.
+
+## 2. Fresh install
+
+1. Start a clean wp-env with no old Staark options/posts.
+2. Activate Staark Hub.
+3. Confirm `staark_hub_installed_version = 0.5.12.0`.
+4. Confirm Security and Performance cron events exist when their modules are enabled.
+5. Open every Staark tab once and verify no PHP fatal/warning/notices.
+
+## 3. Upgrade
+
+1. Start from the previous stable checkpoint.
+2. Keep existing branding, support tickets, connector pairing and module settings.
+3. Replace/update the plugin to 0.5.12.0.
+4. Confirm all existing data remains intact.
+5. Confirm the installed-version marker updates to 0.5.12.0.
+
+## 4. Tab smoke matrix
+
+Test:
+
+- Overview
+- Website
+- Security — scan + save switches
+- SEO — save global/local settings and edit per-page metadata
+- Performance — audit + save conservative optimizations
+- Support — create a local ticket
+- Branding — save text/colors/assets
+- Connect — test connection and support sync where a Hub endpoint is available
+
+For every tab check normal load, form submit, success/error notice, refresh and
+browser back/forward behavior.
+
+## 5. Errors and logs
+
+With development logging enabled during RC testing:
+
+- browser console has no new Staark JS errors;
+- `wp-content/debug.log` has no new Staark PHP warnings/notices/deprecations;
+- network requests do not expose the connector secret;
+- failed remote requests produce usable errors rather than fatals.
+
+## 6. Responsive + accessibility
+
+Viewport gates: `1440`, `1024`, `782`, `600`, `390` px.
+
+Verify no horizontal page overflow, cards/forms remain usable, support tables
+scroll inside their container, navigation remains reachable, and all primary
+actions work with keyboard only. Confirm visible `:focus-visible` and reduced
+motion behavior.
+
+## 7. Lifecycle
+
+Deactivate:
+
+- Staark Security/Performance cron jobs are removed;
+- settings, reports, connector identity and support tickets remain.
+
+Reactivate:
+
+- the plugin loads without migration errors;
+- installed version is refreshed;
+- enabled Security/Performance schedules are restored;
+- previous settings/data remain available.
+
+Uninstall default:
+
+- cron jobs are removed;
+- plugin-owned data is intentionally preserved for accidental reinstall recovery.
+
+Destructive uninstall is tested separately only after defining:
+
+```php
+define('STAARK_HUB_REMOVE_DATA_ON_UNINSTALL', true);
+```
+
+That mode removes Staark options, Staark per-content SEO metadata and locally
+stored Staark support tickets. It must never be enabled by the plugin itself.
+
+## 8. RC exit criteria
+
+RC passes only when all automated checks pass, every tab has completed the smoke
+matrix, no release-blocking PHP/JS issue remains, responsive/accessibility gates
+pass, and lifecycle behavior matches this document.
