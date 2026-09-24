@@ -1943,3 +1943,195 @@
     width: 100%;
   }
 }
+
+/* WP-05.7 — Connect to Staark */
+.staark-hub-connect-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
+  margin: 24px 0 18px;
+  padding: 24px 26px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.staark-hub-connect-hero h2 {
+  margin: 5px 0 8px;
+  font-size: 24px;
+}
+
+.staark-hub-connect-hero p {
+  max-width: 780px;
+  margin: 0;
+  color: var(--staark-hub-muted);
+  line-height: 1.65;
+}
+
+.staark-hub-connect-hero-status {
+  display: flex;
+  min-width: 190px;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+  text-align: right;
+}
+
+.staark-hub-connect-hero-status small {
+  color: var(--staark-hub-muted);
+}
+
+.staark-hub-connect-layout {
+  align-items: start;
+}
+
+.staark-hub-connect-form {
+  display: grid;
+  gap: 16px;
+  margin: 18px 0 22px;
+  padding: 18px;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.staark-hub-connect-form .button {
+  justify-self: start;
+  min-height: 40px;
+}
+
+.staark-hub-connect-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 18px 0 22px;
+}
+
+.staark-hub-connect-actions form {
+  margin: 0;
+}
+
+.staark-hub-button-danger {
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+}
+
+.staark-hub-button-danger:hover,
+.staark-hub-button-danger:focus {
+  border-color: #fca5a5 !important;
+  background: #fff7f7 !important;
+  color: #991b1b !important;
+}
+
+.staark-hub-connect-details {
+  margin-top: 22px;
+}
+
+.staark-hub-connect-details code {
+  display: inline-block;
+  max-width: 100%;
+  padding: 3px 6px;
+  overflow-wrap: anywhere;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 11px;
+}
+
+.staark-hub-connect-secondary {
+  margin-top: 14px;
+}
+
+.staark-hub-connect-sidebar {
+  display: grid;
+  gap: 18px;
+}
+
+.staark-hub-connect-queue {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.staark-hub-connect-queue > div {
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.staark-hub-connect-queue span,
+.staark-hub-connect-queue strong {
+  display: block;
+}
+
+.staark-hub-connect-queue span {
+  margin-bottom: 7px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.staark-hub-connect-queue strong {
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.staark-hub-connect-contract {
+  margin-top: 18px;
+}
+
+.staark-hub-connect-endpoints {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.staark-hub-connect-endpoints code {
+  display: block;
+  padding: 13px 14px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: 10px;
+  background: var(--staark-hub-surface);
+  color: #334155;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .staark-hub-connect-hero {
+    flex-direction: column;
+  }
+
+  .staark-hub-connect-hero-status {
+    min-width: 0;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .staark-hub-connect-endpoints {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .staark-hub-connect-actions,
+  .staark-hub-connect-actions form,
+  .staark-hub-connect-actions .button {
+    width: 100%;
+  }
+
+  .staark-hub-connect-actions .button {
+    text-align: center;
+  }
+
+  .staark-hub-connect-queue {
+    grid-template-columns: 1fr;
+  }
+}
