@@ -37,7 +37,7 @@ function staark_hub_support_status_key(string $status): string
 {
     $status = sanitize_key($status !== '' ? $status : 'open');
 
-    return in_array($status, ['open', 'in_progress', 'resolved'], true) ? $status : 'open';
+    return in_array($status, ['open', 'in_progress', 'waiting_client', 'resolved'], true) ? $status : 'open';
 }
 
 function staark_hub_support_status_label(string $status): string
@@ -85,14 +85,30 @@ function staark_hub_render_support_ticket_detail(int $ticket_id): void
             $priority_label = $priorities[$priority] ?? ucfirst($priority ?: 'Normal');
             $site_url = isset($environment['site_url']) ? esc_url_raw((string) $environment['site_url']) : '';
             $sync_label = $sync_state === 'synced' ? 'Synced with Staark Hub' : 'Waiting for sync';
+            $replies = function_exists('staark_hub_support_replies')
+                ? staark_hub_support_replies($ticket_id)
+                : [];
             ?>
 
             <?php if ($support_state === 'created') : ?>
                 <div class="notice notice-success is-dismissible"><p><strong><?php echo esc_html(staark_hub_support_ticket_label($ticket_id)); ?></strong> created. The complete request is shown below.</p></div>
+            <?php elseif ($support_state === 'synced') : ?>
+                <div class="notice notice-success is-dismissible"><p>Support sync completed. <?php echo esc_html((string) absint($_GET['received'] ?? 0)); ?> remote ticket update(s) received.</p></div>
+            <?php elseif ($support_state === 'sync_error') : ?>
+                <div class="notice notice-error"><p>Could not refresh this ticket from Staark Hub. Check the connection status and try again.</p></div>
             <?php endif; ?>
 
             <div class="staark-hub-ticket-detail-topbar">
                 <a class="button" href="<?php echo esc_url($support_url); ?>">← Back to Support</a>
+                <?php if (function_exists('staark_hub_connection_is_connected') && staark_hub_connection_is_connected()) : ?>
+                    <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" style="display:inline-flex;margin-left:auto">
+                        <input type="hidden" name="action" value="staark_sync_now">
+                        <input type="hidden" name="return_to" value="support_ticket">
+                        <input type="hidden" name="ticket_id" value="<?php echo esc_attr((string) $ticket_id); ?>">
+                        <?php wp_nonce_field('staark_sync_now'); ?>
+                        <button type="submit" class="button">Refresh from Staark</button>
+                    </form>
+                <?php endif; ?>
                 <span class="staark-hub-mini-status staark-hub-mini-status--muted"><?php echo esc_html(staark_hub_support_ticket_label($ticket_id)); ?></span>
             </div>
 
@@ -123,6 +139,26 @@ function staark_hub_render_support_ticket_detail(int $ticket_id): void
                         <span class="staark-hub-card-label">Message</span>
                         <h2>Request details</h2>
                         <div class="staark-hub-ticket-message"><?php echo nl2br(esc_html($ticket->post_content)); ?></div>
+                    </section>
+
+                    <section class="staark-hub-card">
+                        <span class="staark-hub-card-label">Conversation</span>
+                        <h2>Staark responses</h2>
+                        <?php if ($replies === []) : ?>
+                            <p>No public response has been received yet. Use <strong>Refresh from Staark</strong> after Staark updates the ticket.</p>
+                        <?php else : ?>
+                            <?php foreach ($replies as $reply) :
+                                $reply_timestamp = strtotime($reply['createdAt']);
+                                $reply_date = $reply_timestamp !== false
+                                    ? wp_date('Y-m-d H:i', $reply_timestamp)
+                                    : $reply['createdAt'];
+                                ?>
+                                <div class="staark-hub-ticket-message" style="margin-top:12px">
+                                    <p style="margin:0 0 8px"><strong>Staark Inc.</strong> · <?php echo esc_html($reply_date); ?></p>
+                                    <?php echo nl2br(esc_html($reply['body'])); ?>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </section>
 
                     <section class="staark-hub-card">

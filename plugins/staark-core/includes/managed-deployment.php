@@ -155,6 +155,7 @@ function staark_hub_deployment_validate_source(string $source)
         'includes/managed-protection.php',
         'includes/rc.php',
         'includes/update-channel.php',
+        'includes/support-sync.php',
         'deployment/staark-loader.php',
         'admin/support-detail.php',
         'admin/updates-page.php',

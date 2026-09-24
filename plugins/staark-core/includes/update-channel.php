@@ -461,7 +461,7 @@ function staark_hub_update_validate_core_source(string $source, array $release)
     // The request performing the first WP-6.1 update can still be running the
     // WP-6.0 deployment validator. Guard the new bootstrap dependencies here
     // as well so a package can never switch in without its updater UI/runtime.
-    foreach (['includes/update-channel.php', 'admin/updates-page.php', 'assets/updates.css'] as $relative) {
+    foreach (['includes/update-channel.php', 'includes/support-sync.php', 'admin/updates-page.php', 'assets/updates.css'] as $relative) {
         if (! is_readable(trailingslashit($source) . $relative)) {
             return new WP_Error('staark_updates_core_structure', 'Core package is missing: ' . $relative);
         }

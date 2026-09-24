@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.1.0
+ * Version: 0.6.1.1
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -21,7 +21,7 @@ if (defined('STAARK_HUB_RUNTIME_LOADED')) {
 }
 define('STAARK_HUB_RUNTIME_LOADED', true);
 
-const STAARK_HUB_VERSION = '0.6.1.0';
+const STAARK_HUB_VERSION = '0.6.1.1';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
@@ -59,6 +59,7 @@ require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/lifecycle.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/managed-deployment.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/update-channel.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/support-sync.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/rc.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/security-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/seo-page.php';
@@ -630,22 +631,26 @@ function staark_hub_sync_ticket_payload(int $ticket_id): array
 }
 
 /**
- * Push pending support requests. Records are only marked synced when the Hub
- * explicitly acknowledges their local IDs.
+ * Exchange support state with the main Staark Hub.
  *
- * @return array{ok:bool,synced:int,error:string}
+ * Pending local requests are pushed and acknowledged, while status changes and
+ * public Staark replies are pulled back into the local ticket copy. A request is
+ * still made when there is no local queue so remote updates can be received.
+ *
+ * @return array{ok:bool,synced:int,received:int,error:string}
  */
 function staark_hub_sync_pending_records(): array
 {
     if (! staark_hub_connection_is_connected()) {
-        return ['ok' => false, 'synced' => 0, 'error' => 'Connect this website before syncing.'];
+        return [
+            'ok' => false,
+            'synced' => 0,
+            'received' => 0,
+            'error' => 'Connect this website before syncing.',
+        ];
     }
 
     $queue = staark_hub_sync_queue();
-    if ($queue['total'] === 0) {
-        return ['ok' => true, 'synced' => 0, 'error' => ''];
-    }
-
     $tickets = array_values(array_filter(array_map('staark_hub_sync_ticket_payload', $queue['ticket_ids'])));
 
     $result = staark_hub_connection_request(
@@ -658,7 +663,12 @@ function staark_hub_sync_pending_records(): array
     );
 
     if (! $result['ok']) {
-        return ['ok' => false, 'synced' => 0, 'error' => $result['error']];
+        return [
+            'ok' => false,
+            'synced' => 0,
+            'received' => 0,
+            'error' => $result['error'],
+        ];
     }
 
     $synced = 0;
@@ -673,7 +683,19 @@ function staark_hub_sync_pending_records(): array
         }
     }
 
-    return ['ok' => true, 'synced' => $synced, 'error' => ''];
+    $remote = isset($result['data']['remote']) && is_array($result['data']['remote'])
+        ? $result['data']['remote']
+        : [];
+    $received = function_exists('staark_hub_support_apply_remote_tickets')
+        ? staark_hub_support_apply_remote_tickets($remote)
+        : 0;
+
+    return [
+        'ok' => true,
+        'synced' => $synced,
+        'received' => $received,
+        'error' => '',
+    ];
 }
 
 /**
@@ -1256,12 +1278,35 @@ add_action('admin_post_staark_sync_now', static function (): void {
     }
     update_option('staark_hub_connection', $connection, false);
 
+    $return_to = isset($_POST['return_to']) ? sanitize_key(wp_unslash($_POST['return_to'])) : '';
+    $return_ticket_id = isset($_POST['ticket_id']) ? absint($_POST['ticket_id']) : 0;
+
+    if (
+        $return_to === 'support_ticket'
+        && $return_ticket_id > 0
+        && get_post_type($return_ticket_id) === 'staark_ticket'
+        && function_exists('staark_hub_support_ticket_detail_url')
+    ) {
+        wp_safe_redirect(
+            add_query_arg(
+                [
+                    'staark_support' => $result['ok'] ? 'synced' : 'sync_error',
+                    'synced' => (int) $result['synced'],
+                    'received' => (int) $result['received'],
+                ],
+                staark_hub_support_ticket_detail_url($return_ticket_id)
+            )
+        );
+        exit;
+    }
+
     wp_safe_redirect(
         add_query_arg(
             [
                 'page' => 'staark-hub-connect',
                 'staark_connect' => $result['ok'] ? 'synced' : 'sync_error',
                 'synced' => (int) $result['synced'],
+                'received' => (int) $result['received'],
             ],
             admin_url('admin.php')
         )
@@ -2130,7 +2175,7 @@ function staark_hub_render_connect(): void
                         <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
                             <input type="hidden" name="action" value="staark_sync_now">
                             <?php wp_nonce_field('staark_sync_now'); ?>
-                            <button type="submit" class="button"<?php echo $queue['total'] === 0 ? ' disabled' : ''; ?>>Sync now<?php echo $queue['total'] > 0 ? ' · ' . esc_html((string) $queue['total']) : ''; ?></button>
+                            <button type="submit" class="button">Sync now<?php echo $queue['total'] > 0 ? ' · ' . esc_html((string) $queue['total']) . ' pending' : ''; ?></button>
                         </form>
                         <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" onsubmit="return confirm('Disconnect this website from Staark Hub? Local data will remain in WordPress.');">
                             <input type="hidden" name="action" value="staark_disconnect_site">
@@ -2202,6 +2247,10 @@ function staark_hub_render_connect(): void
 
 function staark_hub_render_support(): void
 {
+    if (function_exists('staark_hub_support_maybe_refresh')) {
+        staark_hub_support_maybe_refresh();
+    }
+
     $ticket_id = isset($_GET['ticket']) ? absint($_GET['ticket']) : 0;
     if ($ticket_id > 0) {
         staark_hub_render_support_ticket_detail($ticket_id);

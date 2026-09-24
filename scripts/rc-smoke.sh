@@ -6,7 +6,7 @@ cd "$ROOT"
 
 PLUGIN="plugins/staark-core"
 
-echo "== Staark WP 6.0 managed smoke =="
+echo "== Staark WP 6.1.1 final polish smoke =="
 echo
 
 echo "[1/5] PHP syntax"
@@ -68,7 +68,7 @@ Automated smoke checks complete.
 
 Manual RC gates still required:
   - Overview / Website / Security / SEO / Performance / Support / Branding / Updates / Managed / Connect
-  - Support: open a stored ticket detail and verify full message/contact/environment/sync metadata
+  - Support: sync a WordPress ticket to Hub, change status + send a public reply, refresh locally, and verify the reply/status round-trip
   - Managed deployment: current release is readable and `wp staark deployment verify` passes
   - Updates: check manifest, verify status page, and exercise Core/Theme install on a non-mounted production-style test target
   - browser console: zero new JS errors
