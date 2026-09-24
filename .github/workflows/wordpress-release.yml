@@ -1,0 +1,179 @@
+name: WordPress Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wordpress-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read and validate versions
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="${GITHUB_REF_NAME}"
+
+          CORE_VERSION="$(sed -n 's/^ \* Version: *//p' plugins/staark-core/staark-core.php | head -n1 | tr -d '\r')"
+          THEME_VERSION="$(sed -n 's/^Version: *//p' themes/staark/style.css | head -n1 | tr -d '\r')"
+
+          test -n "$CORE_VERSION"
+          test -n "$THEME_VERSION"
+
+          if [[ "$TAG" != "v${CORE_VERSION}" && "$TAG" != "v${CORE_VERSION}-"* ]]; then
+            echo "Tag $TAG does not match Core version $CORE_VERSION" >&2
+            exit 1
+          fi
+
+          CHANNEL="stable"
+          PRERELEASE="false"
+
+          if [[ "$TAG" == *-* ]]; then
+            CHANNEL="beta"
+            PRERELEASE="true"
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "core_version=$CORE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "theme_version=$THEME_VERSION" >> "$GITHUB_OUTPUT"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Build packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf dist
+          mkdir -p dist/package/staark-core
+          mkdir -p dist/package/staark
+
+          cp -a plugins/staark-core/. dist/package/staark-core/
+          cp -a themes/staark/. dist/package/staark/
+
+          (
+            cd dist/package
+            zip -qr9 ../staark-core.zip staark-core
+            zip -qr9 ../staark-theme.zip staark
+          )
+
+          test -s dist/staark-core.zip
+          test -s dist/staark-theme.zip
+
+      - name: Generate manifest
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          CHANNEL: ${{ steps.meta.outputs.channel }}
+          CORE_VERSION: ${{ steps.meta.outputs.core_version }}
+          THEME_VERSION: ${{ steps.meta.outputs.theme_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CORE_SHA="$(sha256sum dist/staark-core.zip | awk '{print $1}')"
+          THEME_SHA="$(sha256sum dist/staark-theme.zip | awk '{print $1}')"
+
+          BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
+          GENERATED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          export CORE_SHA THEME_SHA BASE_URL GENERATED_AT
+
+          python3 - <<'PY'
+          import json
+          import os
+
+          manifest = {
+              "schema": 1,
+              "channel": os.environ["CHANNEL"],
+              "generatedAt": os.environ["GENERATED_AT"],
+              "releases": {
+                  "core": {
+                      "version": os.environ["CORE_VERSION"],
+                      "package": f'{os.environ["BASE_URL"]}/staark-core.zip',
+                      "sha256": os.environ["CORE_SHA"],
+                      "requires": {
+                          "wordpress": "6.6",
+                          "php": "8.0"
+                      },
+                      "notes": f'Staark Core {os.environ["CORE_VERSION"]}'
+                  },
+                  "theme": {
+                      "slug": "staark",
+                      "version": os.environ["THEME_VERSION"],
+                      "package": f'{os.environ["BASE_URL"]}/staark-theme.zip',
+                      "sha256": os.environ["THEME_SHA"],
+                      "requires": {
+                          "wordpress": "6.6",
+                          "php": "8.0"
+                      },
+                      "notes": f'Staark Theme {os.environ["THEME_VERSION"]}'
+                  }
+              }
+          }
+
+          with open("dist/staark-wordpress-manifest.json", "w", encoding="utf-8") as f:
+              json.dump(manifest, f, indent=2)
+              f.write("\n")
+          PY
+
+          cat dist/staark-wordpress-manifest.json
+
+      - name: Verify artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          unzip -l dist/staark-core.zip | grep -q 'staark-core/staark-core.php'
+          unzip -l dist/staark-theme.zip | grep -q 'staark/style.css'
+          unzip -l dist/staark-theme.zip | grep -q 'staark/theme.json'
+
+          python3 -m json.tool dist/staark-wordpress-manifest.json >/dev/null
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          CORE_VERSION: ${{ steps.meta.outputs.core_version }}
+          THEME_VERSION: ${{ steps.meta.outputs.theme_version }}
+          PRERELEASE: ${{ steps.meta.outputs.prerelease }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          EXTRA_ARGS=()
+
+          if [[ "$PRERELEASE" == "true" ]]; then
+            EXTRA_ARGS+=(--prerelease)
+          else
+            EXTRA_ARGS+=(--latest)
+          fi
+
+          gh release create "$TAG" \
+            dist/staark-core.zip \
+            dist/staark-theme.zip \
+            dist/staark-wordpress-manifest.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "Staark WordPress ${TAG}" \
+            --notes "Staark Core ${CORE_VERSION}
+
+          Staark Theme ${THEME_VERSION}
+
+          Built automatically from tag ${TAG}." \
+            "${EXTRA_ARGS[@]}"
