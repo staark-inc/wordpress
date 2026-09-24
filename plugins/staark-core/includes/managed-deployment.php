@@ -154,9 +154,12 @@ function staark_hub_deployment_validate_source(string $source)
         'includes/managed-deployment.php',
         'includes/managed-protection.php',
         'includes/rc.php',
+        'includes/update-channel.php',
         'deployment/staark-loader.php',
         'admin/support-detail.php',
+        'admin/updates-page.php',
         'assets/admin.css',
+        'assets/updates.css',
     ];
 
     foreach ($required as $relative) {

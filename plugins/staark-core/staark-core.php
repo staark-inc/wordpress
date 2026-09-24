@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.0.11
+ * Version: 0.6.1.0
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -21,7 +21,7 @@ if (defined('STAARK_HUB_RUNTIME_LOADED')) {
 }
 define('STAARK_HUB_RUNTIME_LOADED', true);
 
-const STAARK_HUB_VERSION = '0.6.0.11';
+const STAARK_HUB_VERSION = '0.6.1.0';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
@@ -58,11 +58,13 @@ require_once STAARK_HUB_PLUGIN_DIR . 'includes/seo.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/lifecycle.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/managed-deployment.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/update-channel.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/rc.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/security-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/seo-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/performance-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/managed-page.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'admin/updates-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/support-detail.php';
 
 /**
@@ -498,11 +500,13 @@ function staark_hub_connection_site_payload(): array
             'seo' => staark_hub_module_enabled('seo', true),
             'performance' => staark_hub_module_enabled('performance', true),
             'managed' => true,
+            'updates' => true,
         ],
         'security' => function_exists('staark_hub_security_summary') ? staark_hub_security_summary() : null,
         'seo' => function_exists('staark_hub_seo_summary') ? staark_hub_seo_summary() : null,
         'performance' => function_exists('staark_hub_performance_summary') ? staark_hub_performance_summary() : null,
         'managed' => function_exists('staark_hub_managed_summary') ? staark_hub_managed_summary() : null,
+        'updates' => function_exists('staark_hub_update_summary') ? staark_hub_update_summary() : null,
     ];
 }
 
@@ -855,6 +859,7 @@ add_action('admin_menu', static function (): void {
     add_submenu_page(STAARK_HUB_SLUG, __('Performance', 'staark-core'), __('Performance', 'staark-core'), 'manage_options', 'staark-hub-performance', 'staark_hub_render_performance');
     add_submenu_page(STAARK_HUB_SLUG, __('Support', 'staark-core'), __('Support', 'staark-core'), 'manage_options', 'staark-hub-support', 'staark_hub_render_support');
     add_submenu_page(STAARK_HUB_SLUG, __('Branding', 'staark-core'), __('Branding', 'staark-core'), 'manage_options', 'staark-hub-branding', 'staark_hub_render_branding');
+    add_submenu_page(STAARK_HUB_SLUG, __('Updates', 'staark-core'), __('Updates', 'staark-core'), 'manage_options', 'staark-hub-updates', 'staark_hub_render_updates');
     add_submenu_page(STAARK_HUB_SLUG, __('Managed Mode', 'staark-core'), __('Managed', 'staark-core'), 'manage_options', 'staark-hub-managed', 'staark_hub_render_managed');
     add_submenu_page(STAARK_HUB_SLUG, __('Connect', 'staark-core'), __('Connect to Staark', 'staark-core'), 'manage_options', 'staark-hub-connect', 'staark_hub_render_connect');
 });
@@ -911,6 +916,15 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
         wp_enqueue_style(
             'staark-hub-managed',
             staark_hub_runtime_url('assets/managed.css'),
+            ['staark-hub-admin'],
+            STAARK_HUB_VERSION
+        );
+    }
+
+    if (staark_hub_current_page() === 'staark-hub-updates') {
+        wp_enqueue_style(
+            'staark-hub-updates',
+            staark_hub_runtime_url('assets/updates.css'),
             ['staark-hub-admin'],
             STAARK_HUB_VERSION
         );
@@ -1394,6 +1408,7 @@ function staark_hub_nav(): void
         'staark-hub-performance' => 'Performance',
         'staark-hub-support' => 'Support',
         'staark-hub-branding' => 'Branding',
+        'staark-hub-updates' => 'Updates',
         'staark-hub-managed' => 'Managed',
         'staark-hub-connect' => 'Connect',
     ];

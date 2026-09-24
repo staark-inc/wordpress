@@ -67,9 +67,10 @@ cat <<'EOF'
 Automated smoke checks complete.
 
 Manual RC gates still required:
-  - Overview / Website / Security / SEO / Performance / Support / Branding / Managed / Connect
+  - Overview / Website / Security / SEO / Performance / Support / Branding / Updates / Managed / Connect
   - Support: open a stored ticket detail and verify full message/contact/environment/sync metadata
   - Managed deployment: current release is readable and `wp staark deployment verify` passes
+  - Updates: check manifest, verify status page, and exercise Core/Theme install on a non-mounted production-style test target
   - browser console: zero new JS errors
   - PHP debug.log: zero new warnings/notices from Staark
   - responsive: 1440 / 1024 / 782 / 600 / 390 px

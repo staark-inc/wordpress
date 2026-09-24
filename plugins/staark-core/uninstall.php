@@ -15,6 +15,8 @@ if (! defined('WP_UNINSTALL_PLUGIN')) {
 
 wp_clear_scheduled_hook('staark_hub_security_daily_scan');
 wp_clear_scheduled_hook('staark_hub_performance_daily_audit');
+wp_clear_scheduled_hook('staark_hub_update_check_twicedaily');
+delete_transient('staark_hub_update_manifest');
 
 if (! defined('STAARK_HUB_REMOVE_DATA_ON_UNINSTALL') || STAARK_HUB_REMOVE_DATA_ON_UNINSTALL !== true) {
     return;
@@ -32,6 +34,7 @@ $options = [
     'staark_hub_installed_version',
     'staark_hub_installed_at',
     'staark_hub_managed_mode',
+    'staark_hub_update_state',
 ];
 
 foreach ($options as $option) {

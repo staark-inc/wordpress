@@ -1,0 +1,125 @@
+/* WP-6.1 — Staark Update Channel */
+.staark-hub-updates-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 18px;
+  padding: 24px 26px;
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  background: radial-gradient(circle at 92% 8%, rgba(37, 99, 235, 0.13), transparent 34%), #eff6ff;
+}
+
+.staark-hub-updates-hero h2 {
+  margin: 7px 0 5px;
+  color: var(--staark-hub-ink);
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.staark-hub-updates-hero p {
+  max-width: 820px;
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.staark-hub-updates-grid {
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.staark-hub-update-card {
+  display: grid;
+  gap: 18px;
+}
+
+.staark-hub-update-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.staark-hub-update-card-head h2 {
+  margin: 6px 0 4px;
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+
+.staark-hub-update-card-head p,
+.staark-hub-update-last-action p {
+  margin: 0;
+  color: var(--staark-hub-muted);
+}
+
+.staark-hub-update-details {
+  margin-top: 0;
+}
+
+.staark-hub-update-details code {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.staark-hub-update-notes,
+.staark-hub-update-managed-note,
+.staark-hub-update-error {
+  padding: 14px 16px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: 12px;
+  background: var(--staark-hub-surface);
+  color: #475569;
+  line-height: 1.55;
+}
+
+.staark-hub-update-managed-note {
+  margin: 0;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.staark-hub-update-error {
+  display: grid;
+  gap: 4px;
+  margin-top: 18px;
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
+.staark-hub-update-error strong {
+  color: #991b1b;
+}
+
+.staark-hub-update-error span {
+  color: #7f1d1d;
+}
+
+.staark-hub-update-last-action {
+  margin-top: 18px;
+}
+
+.staark-hub-update-last-action h2 {
+  margin: 7px 0 5px;
+  font-size: 17px;
+}
+
+@media (max-width: 900px) {
+  .staark-hub-updates-hero,
+  .staark-hub-update-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 600px) {
+  .staark-hub-updates-hero .button,
+  .staark-hub-update-card form .button {
+    width: 100%;
+    min-height: 42px;
+    text-align: center;
+  }
+}

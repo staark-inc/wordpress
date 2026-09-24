@@ -1,6 +1,6 @@
-# Staark WordPress — WP-6.0F Final RC checklist
+# Staark WordPress — WP-6.1 Update Channel RC checklist
 
-Target plugin version: `0.6.0.11`
+Target plugin version: `0.6.1.0`
 
 This release candidate is a stabilization gate. Do not add new product features
 while running this checklist; log defects and fix only release blockers.
@@ -23,7 +23,7 @@ Expected:
 
 1. Start a clean wp-env with no old Staark options/posts.
 2. Activate Staark Hub.
-3. Confirm `staark_hub_installed_version = 0.6.0.11`.
+3. Confirm `staark_hub_installed_version = 0.6.1.0`.
 4. Confirm Security and Performance cron events exist when their modules are enabled.
 5. Open every Staark tab once and verify no PHP fatal/warning/notices.
 
@@ -31,9 +31,9 @@ Expected:
 
 1. Start from the previous stable checkpoint.
 2. Keep existing branding, support tickets, connector pairing and module settings.
-3. Replace/update the plugin to 0.6.0.11.
+3. Replace/update the plugin to 0.6.1.0.
 4. Confirm all existing data remains intact.
-5. Confirm the installed-version marker updates to 0.6.0.11.
+5. Confirm the installed-version marker updates to 0.6.1.0.
 
 ## 4. Tab smoke matrix
 
@@ -46,6 +46,7 @@ Test:
 - Performance — audit + save conservative optimizations
 - Support — create a local ticket, open its detail view, read the full message and verify contact/environment/sync metadata
 - Branding — save text/colors/assets
+- Updates — check the manifest, verify channel state and operator-only install controls
 - Connect — test connection and support sync where a Hub endpoint is available
 
 For every tab check normal load, form submit, success/error notice, refresh and
@@ -73,14 +74,14 @@ motion behavior.
 
 Deactivate:
 
-- Staark Security/Performance cron jobs are removed;
+- Staark Security/Performance/Update cron jobs are removed;
 - settings, reports, connector identity and support tickets remain.
 
 Reactivate:
 
 - the plugin loads without migration errors;
 - installed version is refreshed;
-- enabled Security/Performance schedules are restored;
+- enabled Security/Performance schedules and the Update schedule are restored;
 - previous settings/data remain available.
 
 Uninstall default:
@@ -187,3 +188,46 @@ Release only when all automated checks pass, the managed release is readable, Lo
 boots from the managed source, Support detail passes its manual gate, browser/PHP logs are clean,
 the client-facing smoke matrix passes, and only intentional files are staged.
 
+## 13. WP-6.1 Update Channel gate
+
+Configure a development manifest endpoint or deploy the production endpoint described in
+`WP-6.1-UPDATE-CHANNEL.md`.
+
+Check discovery:
+
+```bash
+wp staark updates check
+wp staark updates status
+wp staark rc-check
+```
+
+Expected: manifest fetch succeeds, Core/Theme latest versions are visible, the twice-daily update
+cron exists, and RC remains green.
+
+Package verification gate:
+
+- wrong SHA256 must fail without changing installed files;
+- an invalid PHP package must fail preflight before the switch;
+- an invalid package version/structure must fail before the switch;
+- HTTP package URLs must fail outside local/development environments;
+- when signed updates are required, missing/invalid signatures must fail closed.
+
+Production-style install gate (do not use bind-mounted wp-env plugin/theme directories):
+
+```bash
+wp staark updates install core --yes
+wp staark deployment status
+wp staark deployment verify
+wp staark rc-check
+
+wp staark updates install theme --yes
+wp staark updates status
+```
+
+After Core install, perform a second WordPress request and confirm the pending Core health marker
+clears. A forced RC health failure must restore the previous regular plugin package and managed
+`previous` release. Theme post-install verification must restore the previous theme on failure.
+
+Final WP-6.1 exit criteria: discovery, integrity verification, Core managed deployment, Theme
+switch/rollback, next-request Core health verification, Locked mode and all previous WP-6.0 gates
+pass without new PHP/JS warnings.

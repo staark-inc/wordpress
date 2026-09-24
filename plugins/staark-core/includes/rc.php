@@ -34,12 +34,14 @@ function staark_hub_rc_checks(): array
         'includes/managed.php',
         'includes/managed-protection.php',
         'includes/managed-deployment.php',
+        'includes/update-channel.php',
         'deployment/staark-loader.php',
         'admin/security-page.php',
         'admin/seo-page.php',
         'admin/performance-page.php',
         'admin/managed-page.php',
         'admin/support-detail.php',
+        'admin/updates-page.php',
         'assets/admin.css',
         'assets/cleanup.css',
         'assets/accessibility.js',
@@ -47,6 +49,7 @@ function staark_hub_rc_checks(): array
         'assets/seo.css',
         'assets/performance.css',
         'assets/managed.css',
+        'assets/updates.css',
     ];
 
     $missing = [];
@@ -63,6 +66,7 @@ function staark_hub_rc_checks(): array
         'support' => function_exists('staark_hub_support_tickets') && function_exists('staark_hub_render_support') && function_exists('staark_hub_render_support_ticket_detail'),
         'connect' => function_exists('staark_hub_connection_request') && function_exists('staark_hub_render_connect'),
         'managed' => function_exists('staark_hub_managed_summary') && function_exists('staark_hub_render_managed') && function_exists('staark_hub_managed_protection_summary'),
+        'updates' => function_exists('staark_hub_update_summary') && function_exists('staark_hub_render_updates'),
     ];
     $missing_modules = array_keys(array_filter($modules, static fn (bool $loaded): bool => ! $loaded));
 
@@ -75,6 +79,7 @@ function staark_hub_rc_checks(): array
 
     $security_cron = wp_next_scheduled('staark_hub_security_daily_scan');
     $performance_cron = wp_next_scheduled('staark_hub_performance_daily_audit');
+    $update_cron = wp_next_scheduled('staark_hub_update_check_twicedaily');
 
     $version_option = (string) get_option('staark_hub_installed_version', '');
     $php_ok = PHP_VERSION_ID >= 80000;
@@ -132,7 +137,7 @@ function staark_hub_rc_checks(): array
             'modules',
             'Module bootstrap',
             $missing_modules === [],
-            $missing_modules === [] ? 'Security, SEO, Performance, Support, Connect and Managed functions are loaded.' : 'Missing: ' . implode(', ', $missing_modules)
+            $missing_modules === [] ? 'Security, SEO, Performance, Support, Connect, Managed and Updates functions are loaded.' : 'Missing: ' . implode(', ', $missing_modules)
         ),
         staark_hub_rc_check(
             'security_cron',
@@ -149,6 +154,12 @@ function staark_hub_rc_checks(): array
             ! $performance_enabled
                 ? 'Performance module is disabled; no scheduled audit is required.'
                 : ($performance_cron !== false ? 'Daily performance audit is scheduled.' : 'Performance is enabled but its daily audit is not scheduled.')
+        ),
+        staark_hub_rc_check(
+            'update_cron',
+            'Update channel schedule',
+            $update_cron !== false,
+            $update_cron !== false ? 'Twice-daily Staark update checks are scheduled.' : 'Staark update channel is loaded but its scheduled check is missing.'
         ),
         staark_hub_rc_check(
             'connection_secret',
