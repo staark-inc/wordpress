@@ -1,0 +1,6 @@
+.wp-env
+node_modules
+.idea
+.vscode
+.DS_Store
+AGENTS.md

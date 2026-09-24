@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/wp-env.json",
+
+  "core": null,
+
+  "themes": [
+    "./themes/staark"
+  ],
+
+  "plugins": [
+    "./plugins/staark-core"
+  ],
+
+  "port": 8888,
+
+  "config": {
+    "WP_DEBUG": true,
+    "SCRIPT_DEBUG": true,
+    "WP_HOME": "https://wp.staarkinc.com",
+    "WP_SITEURL": "https://wp.staarkinc.com"
+  },
+  
+  "lifecycleScripts": {
+    "afterStart": "wp-env run cli wp config set WP_HOME https://wp.staarkinc.com --type=constant && wp-env run cli wp config set WP_SITEURL https://wp.staarkinc.com --type=constant"
+  }
+}

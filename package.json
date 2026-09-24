@@ -1,0 +1,19 @@
+{
+  "name": "staark-wp-kit",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "wp": "wp-env",
+    "dev": "wp-env start",
+    "stop": "wp-env stop",
+    "destroy": "wp-env destroy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@wordpress/env": "^11.16.0"
+  }
+}
