@@ -80,5 +80,6 @@ function staark_hub_lifecycle_status(): array
         'installedAt' => (string) get_option('staark_hub_installed_at', ''),
         'securityCron' => (int) (wp_next_scheduled('staark_hub_security_daily_scan') ?: 0),
         'performanceCron' => (int) (wp_next_scheduled('staark_hub_performance_daily_audit') ?: 0),
+        'managed' => function_exists('staark_hub_managed_summary') ? staark_hub_managed_summary() : null,
     ];
 }

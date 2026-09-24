@@ -6,7 +6,7 @@ cd "$ROOT"
 
 PLUGIN="plugins/staark-core"
 
-echo "== Staark WP 05.12 RC smoke =="
+echo "== Staark WP 6.0 managed smoke =="
 echo
 
 echo "[1/5] PHP syntax"
@@ -66,7 +66,7 @@ cat <<'EOF'
 Automated smoke checks complete.
 
 Manual RC gates still required:
-  - Overview / Website / Security / SEO / Performance / Support / Branding / Connect
+  - Overview / Website / Security / SEO / Performance / Support / Branding / Managed / Connect
   - browser console: zero new JS errors
   - PHP debug.log: zero new warnings/notices from Staark
   - responsive: 1440 / 1024 / 782 / 600 / 390 px

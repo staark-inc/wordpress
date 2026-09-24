@@ -31,15 +31,18 @@ function staark_hub_rc_checks(): array
         'includes/seo.php',
         'includes/performance.php',
         'includes/lifecycle.php',
+        'includes/managed.php',
         'admin/security-page.php',
         'admin/seo-page.php',
         'admin/performance-page.php',
+        'admin/managed-page.php',
         'assets/admin.css',
         'assets/cleanup.css',
         'assets/accessibility.js',
         'assets/security.css',
         'assets/seo.css',
         'assets/performance.css',
+        'assets/managed.css',
     ];
 
     $missing = [];
@@ -55,6 +58,7 @@ function staark_hub_rc_checks(): array
         'performance' => function_exists('staark_hub_performance_run_audit') && function_exists('staark_hub_render_performance'),
         'support' => function_exists('staark_hub_support_tickets') && function_exists('staark_hub_render_support'),
         'connect' => function_exists('staark_hub_connection_request') && function_exists('staark_hub_render_connect'),
+        'managed' => function_exists('staark_hub_managed_summary') && function_exists('staark_hub_render_managed'),
     ];
     $missing_modules = array_keys(array_filter($modules, static fn (bool $loaded): bool => ! $loaded));
 
@@ -74,6 +78,10 @@ function staark_hub_rc_checks(): array
         ? staark_hub_connection_ensure_identity()
         : [];
     $connection_secret = isset($connection['site_secret']) ? (string) $connection['site_secret'] : '';
+    $managed = function_exists('staark_hub_managed_summary') ? staark_hub_managed_summary() : ['mode' => 'normal', 'operatorCount' => 0];
+    $managed_mode = isset($managed['mode']) ? (string) $managed['mode'] : 'normal';
+    $managed_operators = isset($managed['operatorCount']) ? (int) $managed['operatorCount'] : 0;
+    $managed_safe = $managed_mode === 'normal' || $managed_operators > 0;
 
     $checks = [
         staark_hub_rc_check(
@@ -100,7 +108,7 @@ function staark_hub_rc_checks(): array
             'modules',
             'Module bootstrap',
             $missing_modules === [],
-            $missing_modules === [] ? 'Security, SEO, Performance, Support and Connect functions are loaded.' : 'Missing: ' . implode(', ', $missing_modules)
+            $missing_modules === [] ? 'Security, SEO, Performance, Support, Connect and Managed functions are loaded.' : 'Missing: ' . implode(', ', $missing_modules)
         ),
         staark_hub_rc_check(
             'security_cron',
@@ -125,6 +133,14 @@ function staark_hub_rc_checks(): array
             $connection_secret !== ''
                 ? 'Connector identity exists locally and its secret is omitted from RC output.'
                 : 'Connector identity could not be initialized.'
+        ),
+        staark_hub_rc_check(
+            'managed_authority',
+            'Managed authority',
+            $managed_safe,
+            $managed_safe
+                ? 'Managed Mode is ' . $managed_mode . ' with ' . $managed_operators . ' Staark operator(s).'
+                : 'Managed/Locked mode requires at least one Staark operator for recovery.'
         ),
     ];
 

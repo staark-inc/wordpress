@@ -31,11 +31,16 @@ $options = [
     'staark_hub_performance_report',
     'staark_hub_installed_version',
     'staark_hub_installed_at',
+    'staark_hub_managed_mode',
 ];
 
 foreach ($options as $option) {
     delete_option($option);
 }
+
+// Staark operator markers are plugin-owned authority metadata. They are kept on
+// normal uninstall, but removed during explicit destructive cleanup.
+delete_metadata('user', 0, '_staark_hub_operator', '', true);
 
 // Per-content SEO metadata belongs to Staark SEO and is removed only in the
 // explicit destructive-uninstall mode.

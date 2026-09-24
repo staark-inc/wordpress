@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.5.12.0
+ * Version: 0.6.0.0
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -13,13 +13,14 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-const STAARK_HUB_VERSION = '0.5.12.0';
+const STAARK_HUB_VERSION = '0.6.0.0';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
 
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/helpers.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/accessibility.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/managed.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/security.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/seo.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';
@@ -28,6 +29,7 @@ require_once STAARK_HUB_PLUGIN_DIR . 'includes/rc.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/security-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/seo-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/performance-page.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'admin/managed-page.php';
 
 /**
  * Return the current Staark Hub admin page slug.
@@ -461,10 +463,12 @@ function staark_hub_connection_site_payload(): array
             'security' => staark_hub_module_enabled('security', true),
             'seo' => staark_hub_module_enabled('seo', true),
             'performance' => staark_hub_module_enabled('performance', true),
+            'managed' => true,
         ],
         'security' => function_exists('staark_hub_security_summary') ? staark_hub_security_summary() : null,
         'seo' => function_exists('staark_hub_seo_summary') ? staark_hub_seo_summary() : null,
         'performance' => function_exists('staark_hub_performance_summary') ? staark_hub_performance_summary() : null,
+        'managed' => function_exists('staark_hub_managed_summary') ? staark_hub_managed_summary() : null,
     ];
 }
 
@@ -817,6 +821,7 @@ add_action('admin_menu', static function (): void {
     add_submenu_page(STAARK_HUB_SLUG, __('Performance', 'staark-core'), __('Performance', 'staark-core'), 'manage_options', 'staark-hub-performance', 'staark_hub_render_performance');
     add_submenu_page(STAARK_HUB_SLUG, __('Support', 'staark-core'), __('Support', 'staark-core'), 'manage_options', 'staark-hub-support', 'staark_hub_render_support');
     add_submenu_page(STAARK_HUB_SLUG, __('Branding', 'staark-core'), __('Branding', 'staark-core'), 'manage_options', 'staark-hub-branding', 'staark_hub_render_branding');
+    add_submenu_page(STAARK_HUB_SLUG, __('Managed Mode', 'staark-core'), __('Managed', 'staark-core'), 'manage_options', 'staark-hub-managed', 'staark_hub_render_managed');
     add_submenu_page(STAARK_HUB_SLUG, __('Connect', 'staark-core'), __('Connect to Staark', 'staark-core'), 'manage_options', 'staark-hub-connect', 'staark_hub_render_connect');
 });
 
@@ -863,6 +868,15 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
         wp_enqueue_style(
             'staark-hub-performance',
             plugin_dir_url(__FILE__) . 'assets/performance.css',
+            ['staark-hub-admin'],
+            STAARK_HUB_VERSION
+        );
+    }
+
+    if (staark_hub_current_page() === 'staark-hub-managed') {
+        wp_enqueue_style(
+            'staark-hub-managed',
+            plugin_dir_url(__FILE__) . 'assets/managed.css',
             ['staark-hub-admin'],
             STAARK_HUB_VERSION
         );
@@ -1346,6 +1360,7 @@ function staark_hub_nav(): void
         'staark-hub-performance' => 'Performance',
         'staark-hub-support' => 'Support',
         'staark-hub-branding' => 'Branding',
+        'staark-hub-managed' => 'Managed',
         'staark-hub-connect' => 'Connect',
     ];
     ?>
