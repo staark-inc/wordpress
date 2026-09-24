@@ -1936,3 +1936,145 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* WP-6.0E — Support ticket detail */
+.staark-hub-ticket-link {
+  color: var(--staark-hub-ink);
+  text-decoration: none;
+}
+
+.staark-hub-ticket-link:hover,
+.staark-hub-ticket-link:focus {
+  color: var(--staark-hub-blue);
+  text-decoration: underline;
+}
+
+.staark-hub-ticket-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.staark-hub-ticket-detail-hero {
+  margin-bottom: 18px;
+}
+
+.staark-hub-ticket-detail-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.staark-hub-ticket-detail-title h2 {
+  margin: 6px 0 7px;
+  font-size: clamp(22px, 2.2vw, 30px);
+  letter-spacing: -0.025em;
+}
+
+.staark-hub-ticket-detail-title p {
+  margin: 0;
+  color: var(--staark-hub-muted);
+}
+
+.staark-hub-ticket-detail-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.staark-hub-ticket-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--staark-hub-border);
+}
+
+.staark-hub-ticket-detail-meta > div {
+  padding: 12px 14px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: 11px;
+  background: var(--staark-hub-surface);
+}
+
+.staark-hub-ticket-detail-meta span,
+.staark-hub-ticket-detail-meta strong {
+  display: block;
+}
+
+.staark-hub-ticket-detail-meta span {
+  margin-bottom: 4px;
+  color: var(--staark-hub-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.staark-hub-ticket-detail-meta strong {
+  color: var(--staark-hub-ink);
+  font-size: 13px;
+}
+
+.staark-hub-ticket-detail-layout {
+  align-items: start;
+}
+
+.staark-hub-ticket-detail-main,
+.staark-hub-ticket-detail-sidebar {
+  display: grid;
+  gap: 18px;
+}
+
+.staark-hub-ticket-message {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: 12px;
+  background: var(--staark-hub-surface);
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.staark-hub-ticket-contact a,
+.staark-hub-ticket-environment a {
+  color: var(--staark-hub-blue);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.staark-hub-ticket-contact a:hover,
+.staark-hub-ticket-contact a:focus,
+.staark-hub-ticket-environment a:hover,
+.staark-hub-ticket-environment a:focus {
+  text-decoration: underline;
+}
+
+.staark-hub-ticket-detail-missing {
+  max-width: 720px;
+}
+
+
+  .staark-hub-ticket-detail-title {
+    flex-direction: column;
+  }
+
+  .staark-hub-ticket-detail-badges {
+    justify-content: flex-start;
+  }
+
+  .staark-hub-ticket-detail-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staark-hub-ticket-detail-meta {
+    grid-template-columns: 1fr;
+  }

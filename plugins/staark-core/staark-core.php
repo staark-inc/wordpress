@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.0.9
+ * Version: 0.6.0.10
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -21,7 +21,7 @@ if (defined('STAARK_HUB_RUNTIME_LOADED')) {
 }
 define('STAARK_HUB_RUNTIME_LOADED', true);
 
-const STAARK_HUB_VERSION = '0.6.0.9';
+const STAARK_HUB_VERSION = '0.6.0.10';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
@@ -63,6 +63,7 @@ require_once STAARK_HUB_PLUGIN_DIR . 'admin/security-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/seo-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/performance-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/managed-page.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'admin/support-detail.php';
 
 /**
  * Return the current Staark Hub admin page slug.
@@ -2186,6 +2187,11 @@ function staark_hub_render_connect(): void
 
 function staark_hub_render_support(): void
 {
+    $ticket_id = isset($_GET['ticket']) ? absint($_GET['ticket']) : 0;
+    if ($ticket_id > 0) {
+        staark_hub_render_support_ticket_detail($ticket_id);
+        return;
+    }
     $user = wp_get_current_user();
     $environment = staark_hub_support_environment();
     $categories = staark_hub_support_categories();
@@ -2347,11 +2353,12 @@ function staark_hub_render_support(): void
                                 $category_label = $categories[$category] ?? ucfirst($category ?: 'Other');
                                 $priority_label = $priorities[$priority] ?? ucfirst($priority ?: 'Normal');
                                 $status = $status !== '' ? $status : 'open';
+                                $detail_url = staark_hub_support_ticket_detail_url($ticket->ID);
                                 ?>
                                 <tr>
-                                    <td><strong><?php echo esc_html(staark_hub_support_ticket_label($ticket->ID)); ?></strong></td>
+                                    <td><strong><a class="staark-hub-ticket-link" href="<?php echo esc_url($detail_url); ?>"><?php echo esc_html(staark_hub_support_ticket_label($ticket->ID)); ?></a></strong></td>
                                     <td>
-                                        <strong><?php echo esc_html($ticket->post_title); ?></strong>
+                                        <strong><a class="staark-hub-ticket-link" href="<?php echo esc_url($detail_url); ?>"><?php echo esc_html($ticket->post_title); ?></a></strong>
                                         <small><?php echo esc_html(wp_trim_words(wp_strip_all_tags($ticket->post_content), 13)); ?></small>
                                     </td>
                                     <td><?php echo esc_html($category_label); ?></td>

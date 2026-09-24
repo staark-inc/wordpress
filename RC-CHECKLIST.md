@@ -44,7 +44,7 @@ Test:
 - Security — scan + save switches
 - SEO — save global/local settings and edit per-page metadata
 - Performance — audit + save conservative optimizations
-- Support — create a local ticket
+- Support — create a local ticket, open its detail view, read the full message and verify contact/environment/sync metadata
 - Branding — save text/colors/assets
 - Connect — test connection and support sync where a Hub endpoint is available
 
