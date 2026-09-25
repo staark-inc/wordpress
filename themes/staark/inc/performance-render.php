@@ -60,8 +60,15 @@ add_action(
             'assets/css/critical.css'
         );
 
+        // S-Hub Light 2 ships one render-blocking stylesheet (light.css);
+        // the legacy critical CSS only applies to child themes.
+        if (function_exists('staark_light_design_active') && staark_light_design_active()) {
+            $critical_file = '';
+        }
+
         if (
-            is_file($critical_file)
+            $critical_file !== ''
+            && is_file($critical_file)
             && is_readable($critical_file)
         ) {
             $critical_css = file_get_contents(

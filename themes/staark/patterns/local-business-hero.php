@@ -5,32 +5,26 @@
  * Categories: staark, staark-heroes
  * Inserter: yes
  */
-?>
-<!-- wp:group {"align":"full","className":"staark-local-hero","layout":{"type":"default"}} -->
-<div class="wp-block-group alignfull staark-local-hero">
-  <!-- wp:html -->
-  <div class="staark-local-shell staark-local-hero-grid">
-    <div class="staark-local-hero-copy">
-      <p class="staark-local-kicker">Lokalt företag · Personlig service</p>
-      <h1>Pålitlig hjälp när du behöver den.</h1>
-      <p>Vi hjälper privatpersoner och företag med tydliga offerter, snabb återkoppling och ett arbete vi kan stå för.</p>
-      <div class="wp-block-buttons staark-local-actions">
-        <div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/kontakt">Begär kostnadsfri offert</a></div>
-        <div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#tjanster">Se våra tjänster</a></div>
-      </div>
-      <div class="staark-local-trustline">
-        <span>Snabb återkoppling</span>
-        <span>Tydliga priser</span>
-        <span>Lokal service</span>
-      </div>
-    </div>
-    <aside class="staark-local-hero-card">
-      <p class="staark-local-hero-card-label">Behöver du hjälp?</p>
-      <h2>Berätta vad du behöver så tar vi nästa steg tillsammans.</h2>
-      <p>Skicka en kort förfrågan. Vi återkommer normalt inom en arbetsdag.</p>
-      <a class="staark-local-phone" href="/kontakt">Kontakta oss idag</a>
-    </aside>
-  </div>
-  <!-- /wp:html -->
-</div>
-<!-- /wp:group -->
+
+// S-Hub Light pattern — composed with inc/pattern-kit.php.
+echo staark_sl_section(
+    'hero',
+    staark_sl_split(
+        staark_sl_p('Lokalt företag · Personlig service', 'sl-eyebrow')
+        . staark_sl_h('Pålitlig hjälp när du behöver den.', 1, 'sl-display')
+        . staark_sl_p('Vi hjälper privatpersoner och företag med tydliga offerter, snabb återkoppling och ett arbete vi kan stå för.', 'sl-lead')
+        . staark_sl_buttons([['Begär kostnadsfri offert', '/kontakt'], ['Se våra tjänster', '#tjanster', 'outline']])
+        . staark_sl_list(['Snabb återkoppling', 'Tydliga priser', 'Lokal service'], 'sl-checks sl-checks--inline'),
+        staark_sl_group(
+            staark_sl_p('Behöver du hjälp?', 'sl-eyebrow')
+            . staark_sl_h('Berätta vad du behöver så tar vi nästa steg tillsammans.', 3, 'sl-panel-title')
+            . staark_sl_p('Skicka en kort förfrågan. Vi återkommer normalt inom en arbetsdag.', 'sl-panel-text')
+            . staark_sl_p('[staark_contact field="phone" link="1"]', 'sl-panel-phone')
+            . staark_sl_buttons([['Kontakta oss idag', '/kontakt']], 'sl-actions sl-actions--panel'),
+            'sl-panel sl-panel--dark'
+        ),
+        'sl-hero-grid',
+        '56%'
+    ),
+    'light'
+);
