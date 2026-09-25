@@ -59,6 +59,7 @@ require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance-media.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/forms.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/first-install.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/starter-repair.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/lifecycle.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/managed-deployment.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/update-channel.php';
