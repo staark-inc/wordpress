@@ -239,6 +239,7 @@ add_filter('page_template_hierarchy', static function (array $templates): array 
 $staark_salong_includes = [
     'inc/shortcodes.php',
     'inc/first-install.php',
+    'inc/starter-content.php',
 ];
 
 foreach ($staark_salong_includes as $staark_salong_include) {
