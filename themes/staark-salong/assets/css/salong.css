@@ -532,6 +532,32 @@ body {
   gap: clamp(20px, 3vw, 32px) !important;
 }
 
+/* Explicit columns: core grid layout output differs between WordPress
+   6.x and 7.x (columnCount + minimumColumnWidth), so do not rely on it. */
+.salong-service-grid.is-layout-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.salong-price-grid.is-layout-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.salong-review-grid.is-layout-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 1080px) {
+  .salong-service-grid.is-layout-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .salong-review-grid.is-layout-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 .salong-price-group {
   padding: clamp(26px, 3vw, 40px);
   border-radius: var(--salong-radius-lg);
@@ -1384,9 +1410,9 @@ a.salong-contact:hover {
 }
 
 @media (max-width: 680px) {
-  .salong-price-grid,
-  .salong-review-grid,
-  .salong-service-grid {
+  .salong-price-grid.is-layout-grid,
+  .salong-review-grid.is-layout-grid,
+  .salong-service-grid.is-layout-grid {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
