@@ -58,10 +58,18 @@ jobs:
               | tr -d '\r'
           )"
 
+          GAST_VERSION="$(
+            sed -n 's/^Version: *//p' \
+              themes/staark-gastfrihet/style.css \
+              | head -n1 \
+              | tr -d '\r'
+          )"
+
           test -n "$CORE_VERSION"
           test -n "$THEME_VERSION"
           test -n "$SALONG_VERSION"
           test -n "$BYGG_VERSION"
+          test -n "$GAST_VERSION"
 
           if [[ "$TAG" != "v${CORE_VERSION}" && "$TAG" != "v${CORE_VERSION}-"* ]]; then
             echo "Tag $TAG does not match Core version $CORE_VERSION" >&2
@@ -81,6 +89,7 @@ jobs:
           echo "theme_version=$THEME_VERSION" >> "$GITHUB_OUTPUT"
           echo "salong_version=$SALONG_VERSION" >> "$GITHUB_OUTPUT"
           echo "bygg_version=$BYGG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "gast_version=$GAST_VERSION" >> "$GITHUB_OUTPUT"
           echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
           echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
 
@@ -95,11 +104,13 @@ jobs:
           mkdir -p dist/package/staark
           mkdir -p dist/package/staark-salong
           mkdir -p dist/package/staark-bygg
+          mkdir -p dist/package/staark-gastfrihet
 
           cp -a plugins/staark-core/. dist/package/staark-core/
           cp -a themes/staark/. dist/package/staark/
           cp -a themes/staark-salong/. dist/package/staark-salong/
           cp -a themes/staark-bygg/. dist/package/staark-bygg/
+          cp -a themes/staark-gastfrihet/. dist/package/staark-gastfrihet/
 
           (
             cd dist/package
@@ -108,12 +119,14 @@ jobs:
             zip -qr9 ../staark-theme.zip staark
             zip -qr9 ../staark-salong-theme.zip staark-salong
             zip -qr9 ../staark-bygg-theme.zip staark-bygg
+            zip -qr9 ../staark-gastfrihet-theme.zip staark-gastfrihet
           )
 
           test -s dist/staark-core.zip
           test -s dist/staark-theme.zip
           test -s dist/staark-salong-theme.zip
           test -s dist/staark-bygg-theme.zip
+          test -s dist/staark-gastfrihet-theme.zip
 
       - name: Generate manifest
         env:
@@ -124,6 +137,7 @@ jobs:
           THEME_VERSION: ${{ steps.meta.outputs.theme_version }}
           SALONG_VERSION: ${{ steps.meta.outputs.salong_version }}
           BYGG_VERSION: ${{ steps.meta.outputs.bygg_version }}
+          GAST_VERSION: ${{ steps.meta.outputs.gast_version }}
 
         shell: bash
         run: |
@@ -145,6 +159,10 @@ jobs:
             sha256sum dist/staark-bygg-theme.zip | awk '{print $1}'
           )"
 
+          GAST_SHA="$(
+            sha256sum dist/staark-gastfrihet-theme.zip | awk '{print $1}'
+          )"
+
           BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
           GENERATED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
@@ -153,6 +171,7 @@ jobs:
             THEME_SHA \
             SALONG_SHA \
             BYGG_SHA \
+            GAST_SHA \
             BASE_URL \
             GENERATED_AT
 
@@ -221,6 +240,18 @@ jobs:
                           + os.environ["BYGG_VERSION"]
                       ),
                   },
+
+                  "gastfrihet": {
+                      "slug": "staark-gastfrihet",
+                      "version": os.environ["GAST_VERSION"],
+                      "package": f"{base}/staark-gastfrihet-theme.zip",
+                      "sha256": os.environ["GAST_SHA"],
+                      "requires": requirements,
+                      "notes": (
+                          "S-Hub Gästfrihet "
+                          + os.environ["GAST_VERSION"]
+                      ),
+                  },
               },
           }
 
@@ -244,6 +275,7 @@ jobs:
           unzip -tq dist/staark-theme.zip
           unzip -tq dist/staark-salong-theme.zip
           unzip -tq dist/staark-bygg-theme.zip
+          unzip -tq dist/staark-gastfrihet-theme.zip
 
           unzip -l dist/staark-core.zip \
             | grep -q 'staark-core/staark-core.php'
@@ -266,6 +298,15 @@ jobs:
           unzip -l dist/staark-bygg-theme.zip \
             | grep -q 'staark-bygg/presets/bygg.json'
 
+          unzip -l dist/staark-gastfrihet-theme.zip \
+            | grep -q 'staark-gastfrihet/style.css'
+
+          unzip -l dist/staark-gastfrihet-theme.zip \
+            | grep -q 'staark-gastfrihet/presets/restaurang.json'
+
+          unzip -l dist/staark-gastfrihet-theme.zip \
+            | grep -q 'staark-gastfrihet/presets/hotell.json'
+
           python3 - <<'PY'
           import json
 
@@ -278,7 +319,7 @@ jobs:
 
           releases = manifest["releases"]
 
-          for key in ("core", "theme", "salong", "bygg"):
+          for key in ("core", "theme", "salong", "bygg", "gastfrihet"):
               assert key in releases
               assert releases[key]["version"]
               assert releases[key]["package"].startswith("https://")
@@ -287,6 +328,7 @@ jobs:
           assert releases["theme"]["slug"] == "staark"
           assert releases["salong"]["slug"] == "staark-salong"
           assert releases["bygg"]["slug"] == "staark-bygg"
+          assert releases["gastfrihet"]["slug"] == "staark-gastfrihet"
 
           print("Release manifest OK")
           PY
@@ -301,6 +343,7 @@ jobs:
           THEME_VERSION: ${{ steps.meta.outputs.theme_version }}
           SALONG_VERSION: ${{ steps.meta.outputs.salong_version }}
           BYGG_VERSION: ${{ steps.meta.outputs.bygg_version }}
+          GAST_VERSION: ${{ steps.meta.outputs.gast_version }}
 
           PRERELEASE: ${{ steps.meta.outputs.prerelease }}
 
@@ -321,6 +364,7 @@ jobs:
             dist/staark-theme.zip \
             dist/staark-salong-theme.zip \
             dist/staark-bygg-theme.zip \
+            dist/staark-gastfrihet-theme.zip \
             dist/staark-wordpress-manifest.json \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
@@ -331,6 +375,7 @@ jobs:
           S-Hub Light ${THEME_VERSION}
           S-Hub Salong ${SALONG_VERSION}
           S-Hub Bygg ${BYGG_VERSION}
+          S-Hub Gästfrihet ${GAST_VERSION}
 
           Built automatically from tag ${TAG}." \
             "${EXTRA_ARGS[@]}"
