@@ -31,6 +31,42 @@
   font-weight: 700;
 }
 
+/* Let the installed pages use the same full-width sections as Home. */
+.staark-preset-local-business.page:not(.home) .staark-page-shell {
+  padding: 0 !important;
+}
+
+.staark-preset-local-business.page:not(.home) .staark-page-shell > .wp-block-post-content {
+  width: 100%;
+  max-width: none;
+}
+
+.staark-preset-local-business.page:not(.home) .staark-page-shell > .wp-block-post-title {
+  width: min(calc(100% - 40px), var(--staark-system-wrap));
+  max-width: none;
+  margin: 0 auto;
+  padding-top: clamp(44px, 5vw, 78px);
+  color: var(--staark-system-ink);
+}
+
+.staark-preset-local-business.page:not(.home) .staark-page-shell > .wp-block-post-content > .staark-privacy {
+  width: min(calc(100% - 40px), 760px);
+  max-width: none;
+  margin-inline: auto;
+  padding-block: clamp(48px, 6vw, 88px);
+}
+
+.staark-preset-local-business :is(.staark-local-hero, .staark-local-proof, .staark-local-section, .staark-local-cta) {
+  margin-block: 0;
+}
+
+.staark-preset-local-business .staark-site-footer .staark-brand-tagline {
+  max-width: 620px;
+  margin-top: 18px;
+  color: rgba(255, 255, 255, .76) !important;
+  line-height: 1.65;
+}
+
 .staark-preset-local-business .wp-block-button:not(.is-style-outline) .wp-block-button__link,
 .staark-preset-local-business .staark-header-cta .wp-block-button__link {
   border-radius: var(--staark-system-radius-button);
@@ -498,6 +534,11 @@
 
 @media (max-width: 781px) {
   .staark-local-shell {
+    width: min(calc(100% - 32px), var(--staark-system-wrap));
+  }
+
+  .staark-preset-local-business.page:not(.home) .staark-page-shell > .wp-block-post-title,
+  .staark-preset-local-business.page:not(.home) .staark-page-shell > .wp-block-post-content > .staark-privacy {
     width: min(calc(100% - 32px), var(--staark-system-wrap));
   }
 

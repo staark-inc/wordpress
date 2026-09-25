@@ -541,15 +541,16 @@ function staark_hub_forms_shortcode(array $atts = []): string
 
 add_shortcode(STAARK_HUB_FORM_SHORTCODE, 'staark_hub_forms_shortcode');
 
-// WordPress renders shortcode blocks inside template patterns before the usual
-// post-content shortcode pass. Resolve only our own form shortcode at that
-// point so the same pattern works in both templates and regular pages.
+// Shortcode blocks in patterns and template parts can render before the usual
+// post-content shortcode pass. Resolve the Hub shortcodes in either location.
 add_filter('render_block_core/shortcode', static function (string $content): string {
-    if (! has_shortcode($content, STAARK_HUB_FORM_SHORTCODE)) {
-        return $content;
+    foreach ([STAARK_HUB_FORM_SHORTCODE, 'staark_brand', 'staark_brand_tagline', 'staark_brand_copyright', 'staark_theme_page_links'] as $shortcode) {
+        if (has_shortcode($content, $shortcode)) {
+            return do_shortcode(shortcode_unautop($content));
+        }
     }
 
-    return do_shortcode(shortcode_unautop($content));
+    return $content;
 });
 
 /**

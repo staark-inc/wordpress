@@ -52,6 +52,74 @@ add_filter('render_block_core/post-content', static function (string $content): 
 BLOCKS);
 });
 
+// A starter page can already contain its own H1 (for example, About).
+// Avoid printing the page title as a second H1 above that page's layout.
+add_filter('render_block_core/post-title', static function (string $content): string {
+    if (! is_page() || is_front_page() || ! function_exists('staark_local_business_pack_is_active')
+        || ! staark_local_business_pack_is_active()) {
+        return $content;
+    }
+
+    $page = get_queried_object();
+    if (! $page instanceof WP_Post) {
+        return $content;
+    }
+
+    $source = (string) $page->post_content;
+    $has_h1 = preg_match('/<!--\s+wp:heading\s+\{[^}]*"level"\s*:\s*1\b/s', $source)
+        || preg_match('/<h1\b/i', $source);
+
+    return $has_h1 ? '' : $content;
+});
+
+/**
+ * Keep the built-in navigation in sync with the pages actually published.
+ * Extra Projekt / Blogg links still appear on sites that already have them.
+ *
+ * @return array<string,string>
+ */
+function staark_theme_page_link_labels(): array
+{
+    return [
+        'tjanster' => 'Tjänster',
+        'projekt' => 'Projekt',
+        'om-oss' => 'Om oss',
+        'blogg' => 'Blogg',
+        'kontakt' => 'Kontakt',
+    ];
+}
+
+function staark_theme_published_page(string $slug): ?WP_Post
+{
+    $page = get_page_by_path($slug);
+
+    return $page instanceof WP_Post && $page->post_status === 'publish' ? $page : null;
+}
+
+add_filter('render_block_core/navigation-link', static function (string $content, array $block): string {
+    $url = (string) ($block['attrs']['url'] ?? '');
+    $slug = trim($url, '/');
+
+    if (! array_key_exists($slug, staark_theme_page_link_labels())) {
+        return $content;
+    }
+
+    return staark_theme_published_page($slug) ? $content : '';
+}, 10, 2);
+
+add_shortcode('staark_theme_page_links', static function (): string {
+    $links = [];
+
+    foreach (staark_theme_page_link_labels() as $slug => $label) {
+        $page = staark_theme_published_page($slug);
+        if ($page instanceof WP_Post) {
+            $links[] = '<li><a href="' . esc_url(get_permalink($page)) . '">' . esc_html($label) . '</a></li>';
+        }
+    }
+
+    return $links === [] ? '' : '<ul class="is-style-plain">' . implode('', $links) . '</ul>';
+});
+
 // Starter forms live inside referenced block patterns, outside post_content.
 function staark_theme_page_uses_contact_pattern(): bool
 {
