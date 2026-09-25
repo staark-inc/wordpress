@@ -4,7 +4,8 @@
   "core": null,
 
   "themes": [
-    "./themes/staark"
+    "./themes/staark",
+    "./themes/staark-salong"
   ],
 
   "plugins": [

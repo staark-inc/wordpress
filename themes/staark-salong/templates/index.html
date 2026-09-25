@@ -1,0 +1,25 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","className":"salong-main salong-page","layout":{"type":"constrained"}} -->
+<main class="wp-block-group salong-main salong-page"><!-- wp:group {"className":"salong-page-head","layout":{"type":"constrained"}} -->
+<div class="wp-block-group salong-page-head"><!-- wp:query-title {"type":"archive","showPrefix":false,"className":"salong-page-title"} /--></div>
+<!-- /wp:group -->
+
+<!-- wp:query {"queryId":0,"query":{"perPage":10,"pages":0,"offset":0,"postType":"post","order":"desc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":true},"className":"salong-posts"} -->
+<div class="wp-block-query salong-posts"><!-- wp:post-template -->
+<!-- wp:post-date {"className":"salong-eyebrow"} /-->
+
+<!-- wp:post-title {"isLink":true} /-->
+
+<!-- wp:post-excerpt /-->
+<!-- /wp:post-template -->
+
+<!-- wp:query-pagination {"layout":{"type":"flex","justifyContent":"space-between"}} -->
+<!-- wp:query-pagination-previous /-->
+
+<!-- wp:query-pagination-next /-->
+<!-- /wp:query-pagination --></div>
+<!-- /wp:query --></main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

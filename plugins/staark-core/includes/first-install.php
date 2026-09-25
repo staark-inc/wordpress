@@ -68,6 +68,48 @@ function staark_hub_first_install_available_locales(): array
  */
 function staark_hub_first_install_page_blueprints(string $preset_id): array
 {
+    $blueprints = staark_hub_first_install_default_page_blueprints($preset_id);
+
+    /**
+     * Filters the starter pages created by First Install.
+     *
+     * Themes and design packs (for example the S-Hub Salong child theme) can
+     * supply their own pages for their preset. Each entry is keyed by page
+     * slug and holds a title and block content. A "home" entry becomes the
+     * static front page when that option is selected.
+     *
+     * @param array<string,array{title:string,content:string}> $blueprints
+     * @param string $preset_id Selected theme preset.
+     */
+    $filtered = apply_filters('staark_hub_first_install_page_blueprints', $blueprints, $preset_id);
+
+    if (! is_array($filtered)) {
+        return $blueprints;
+    }
+
+    $clean = [];
+    foreach ($filtered as $slug => $page) {
+        $slug = sanitize_title((string) $slug);
+        if ($slug === '' || ! is_array($page) || ! isset($page['title'], $page['content'])) {
+            continue;
+        }
+
+        $clean[$slug] = [
+            'title' => (string) $page['title'],
+            'content' => (string) $page['content'],
+        ];
+    }
+
+    return $clean !== [] ? $clean : $blueprints;
+}
+
+/**
+ * Built-in starter pages.
+ *
+ * @return array<string,array{title:string,content:string}>
+ */
+function staark_hub_first_install_default_page_blueprints(string $preset_id): array
+{
     if ($preset_id === 'local-business') {
         return [
             'home' => [
