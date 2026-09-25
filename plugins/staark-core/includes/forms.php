@@ -419,8 +419,12 @@ function staark_hub_forms_should_enqueue_assets(): bool
 
     $post = get_post();
 
-    return $post instanceof WP_Post
+    $in_post = $post instanceof WP_Post
         && has_shortcode((string) $post->post_content, STAARK_HUB_FORM_SHORTCODE);
+
+    // A block theme can place the form inside a template pattern rather than
+    // the post body. Let that theme request the existing form stylesheet.
+    return (bool) apply_filters('staark_hub_forms_should_enqueue_assets', $in_post);
 }
 
 add_action('wp_enqueue_scripts', static function (): void {

@@ -32,15 +32,24 @@ add_action('wp_enqueue_scripts', static function (): void {
     );
 });
 
-// The homepage form lives in a block pattern, outside post_content.
+// Starter forms live inside referenced block patterns, outside post_content.
+function staark_theme_page_uses_contact_pattern(): bool
+{
+    $post = get_post();
+
+    return $post instanceof WP_Post
+        && str_contains((string) $post->post_content, 'staark/local-business-contact');
+}
+
 add_filter('staark_hub_forms_should_enqueue_assets', static function (bool $enqueue): bool {
-    return $enqueue || is_front_page();
+    return $enqueue || is_front_page() || staark_theme_page_uses_contact_pattern();
 });
 
 // Older installed Hub builds only detect forms in post_content. Load their
 // existing form CSS for the template pattern until the Hub update is installed.
 add_action('wp_enqueue_scripts', static function (): void {
-    if (! is_front_page() || ! shortcode_exists('staark_contact_form')
+    if ((! is_front_page() && ! staark_theme_page_uses_contact_pattern())
+        || ! shortcode_exists('staark_contact_form')
         || ! function_exists('staark_hub_runtime_url')) {
         return;
     }
@@ -92,4 +101,10 @@ $staark_theme_system = get_theme_file_path(
 
 if (is_file($staark_theme_system)) {
     require_once $staark_theme_system;
+}
+
+/* Local Business preset, used by the First Install wizard. */
+$staark_local_business_pack = get_theme_file_path('inc/theme-pack-local-business.php');
+if (is_file($staark_local_business_pack)) {
+    require_once $staark_local_business_pack;
 }
