@@ -1,0 +1,1339 @@
+/*
+ * Staark Hub UI 2
+ *
+ * Dedicated design layer loaded after admin.css on every Staark Hub screen.
+ * It re-tokens the shared components (header, navigation, cards, buttons,
+ * statuses) so all modules follow one visual system, and styles the
+ * redesigned Overview and Connect screens. Module-specific stylesheets keep
+ * working because they read the same --staark-hub-* tokens.
+ */
+
+:root {
+  --staark-hub-blue: #2457f5;
+  --staark-hub-blue-dark: #173bb7;
+  --staark-hub-ink: #0b1220;
+  --staark-hub-muted: #5f6b7a;
+  --staark-hub-border: #e4e7ec;
+  --staark-hub-surface: #f7f8fa;
+
+  --hub-bg: #f3f4f6;
+  --hub-card: #ffffff;
+  --hub-text: #1d2433;
+  --hub-line-strong: #d3d8e0;
+  --hub-accent-soft: #eef2ff;
+  --hub-ok: #0b8a5f;
+  --hub-ok-soft: #e6f6ef;
+  --hub-warn: #b45309;
+  --hub-warn-soft: #fef3e2;
+  --hub-danger: #c2410c;
+  --hub-forest: #10201b;
+  --hub-forest-2: #173029;
+  --hub-gold: #d59531;
+  --hub-radius: 14px;
+  --hub-radius-sm: 10px;
+  --hub-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .05);
+  --hub-shadow-hover: 0 10px 28px -12px rgba(16, 24, 40, .18);
+  --hub-ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* ------------------------------------------------------------------ */
+/* Canvas                                                              */
+/* ------------------------------------------------------------------ */
+
+body.staark-hub-admin-page,
+body.staark-hub-admin-page #wpwrap,
+body.staark-hub-admin-page #wpcontent {
+  background: var(--hub-bg);
+}
+
+.staark-hub-wrap {
+  max-width: 1360px;
+  margin: 0 20px 0 0;
+  padding: 0 0 48px;
+  color: var(--hub-text);
+  font-size: 14px;
+}
+
+.staark-hub-wrap h1,
+.staark-hub-wrap h2,
+.staark-hub-wrap h3 {
+  color: var(--staark-hub-ink);
+  letter-spacing: -.015em;
+}
+
+.staark-hub-wrap a {
+  color: var(--staark-hub-blue);
+}
+
+.staark-hub-wrap :focus-visible {
+  outline: 2px solid var(--staark-hub-blue);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Header                                                              */
+/* ------------------------------------------------------------------ */
+
+.staark-hub-wrap .staark-hub-header {
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.staark-hub-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--staark-hub-border);
+}
+
+.staark-hub-topbar-start {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.staark-hub-wrap .staark-hub-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--staark-hub-ink);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.staark-hub-wrap .staark-hub-brand > .staark-hub-brand-mark,
+.staark-hub-brand-mark {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--staark-hub-ink);
+  color: #fff;
+}
+
+.staark-hub-wrap .staark-hub-brand svg {
+  color: #fff;
+}
+
+.staark-hub-wrap .staark-hub-brand > span:not(.staark-hub-brand-mark) {
+  display: none;
+}
+
+.staark-hub-topbar-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--hub-line-strong);
+}
+
+.staark-hub-site-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 12px 6px 10px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: 999px;
+  background: var(--hub-card);
+  color: var(--hub-text) !important;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color .15s ease;
+}
+
+.staark-hub-site-chip:hover {
+  border-color: var(--hub-line-strong);
+}
+
+.staark-hub-site-chip i {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, .16);
+}
+
+.staark-hub-site-chip span,
+.staark-hub-site-chip small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staark-hub-site-chip small {
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.staark-hub-wrap .staark-hub-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.staark-hub-connection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-right: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef0f3;
+  color: var(--staark-hub-muted) !important;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.staark-hub-connection-chip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #98a2b3;
+}
+
+.staark-hub-connection-chip.is-linked {
+  background: var(--hub-ok-soft);
+  color: var(--hub-ok) !important;
+}
+
+.staark-hub-connection-chip.is-linked i {
+  background: var(--hub-ok);
+}
+
+.staark-hub-wrap .staark-hub-title-row {
+  display: block;
+  margin: 28px 0 0;
+}
+
+.staark-hub-wrap .staark-hub-kicker {
+  margin: 0 0 8px;
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: none;
+}
+
+.staark-hub-wrap .staark-hub-title-row h1 {
+  margin: 0;
+  padding: 0;
+  font-size: clamp(26px, 2.6vw, 34px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -.025em;
+}
+
+.staark-hub-wrap .staark-hub-subtitle {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: var(--staark-hub-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Navigation: underline tabs */
+.staark-hub-wrap .staark-hub-nav {
+  display: flex;
+  gap: 2px;
+  margin: 22px 0 0;
+  padding: 0;
+  overflow-x: auto;
+  border-top: 0;
+  border-bottom: 1px solid var(--staark-hub-border);
+  scrollbar-width: none;
+}
+
+.staark-hub-wrap .staark-hub-nav-link {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 12px 12px 14px;
+  border-radius: 0;
+  background: none !important;
+  box-shadow: none !important;
+  color: var(--staark-hub-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.staark-hub-wrap .staark-hub-nav-link::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: -1px;
+  left: 10px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: transparent;
+  transition: background-color .15s ease;
+}
+
+.staark-hub-wrap .staark-hub-nav-link:hover,
+.staark-hub-wrap .staark-hub-nav-link:focus {
+  color: var(--staark-hub-ink);
+}
+
+.staark-hub-wrap .staark-hub-nav-link:hover::after {
+  background: var(--hub-line-strong);
+}
+
+.staark-hub-wrap .staark-hub-nav-link.is-active {
+  color: var(--staark-hub-ink);
+}
+
+.staark-hub-wrap .staark-hub-nav-link.is-active::after {
+  background: var(--staark-hub-ink);
+}
+
+.staark-hub-backlink {
+  margin: -8px 0 18px;
+}
+
+.staark-hub-backlink a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Cards, sections, labels                                             */
+/* ------------------------------------------------------------------ */
+
+.staark-hub-wrap .staark-hub-card,
+.staark-hub-wrap .staark-hub-section {
+  border: 1px solid var(--staark-hub-border);
+  border-radius: var(--hub-radius);
+  background: var(--hub-card);
+  box-shadow: var(--hub-shadow);
+}
+
+.staark-hub-wrap .staark-hub-card {
+  padding: 24px;
+}
+
+.staark-hub-wrap .staark-hub-section {
+  margin-bottom: 20px;
+  padding: 24px;
+}
+
+.staark-hub-wrap .staark-hub-section:hover,
+.staark-hub-wrap .staark-hub-stat-card:hover {
+  border-color: var(--staark-hub-border);
+  box-shadow: var(--hub-shadow);
+}
+
+.staark-hub-wrap .staark-hub-grid {
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.staark-hub-wrap .staark-hub-card h2,
+.staark-hub-wrap .staark-hub-section h2 {
+  margin: 6px 0 6px;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.staark-hub-wrap .staark-hub-card p,
+.staark-hub-wrap .staark-hub-section p {
+  color: var(--staark-hub-muted);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.staark-hub-wrap .staark-hub-card-label {
+  color: var(--staark-hub-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.staark-hub-wrap .staark-hub-section-heading,
+.staark-hub-wrap .staark-hub-card-heading {
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.staark-hub-wrap .staark-hub-section-heading h2 {
+  margin-bottom: 0;
+}
+
+/* Dark card: Staark forest */
+.staark-hub-wrap .staark-hub-card--dark {
+  border-color: var(--hub-forest);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(213, 149, 49, .16), transparent 55%),
+    linear-gradient(160deg, var(--hub-forest-2), var(--hub-forest));
+  color: #fff;
+}
+
+.staark-hub-wrap .staark-hub-card--dark h2 {
+  color: #fff;
+}
+
+.staark-hub-wrap .staark-hub-card--dark .staark-hub-card-label {
+  color: rgba(255, 255, 255, .6);
+}
+
+.staark-hub-wrap .staark-hub-card--dark p {
+  color: rgba(236, 242, 239, .76);
+}
+
+.staark-hub-wrap .staark-hub-card--dark a:not(.button) {
+  color: #fff;
+}
+
+.staark-hub-wrap .staark-hub-pill {
+  margin-top: 16px;
+  padding: 5px 10px;
+  background: var(--hub-accent-soft);
+  color: var(--staark-hub-blue-dark);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.staark-hub-wrap .staark-hub-card--dark .staark-hub-pill {
+  background: rgba(255, 255, 255, .1);
+  color: rgba(255, 255, 255, .86);
+}
+
+/* Status chips */
+.staark-hub-wrap .staark-hub-mini-status {
+  gap: 6px;
+  min-height: 22px;
+  padding: 4px 9px;
+  background: #eef0f3;
+  color: var(--staark-hub-muted);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.staark-hub-wrap .staark-hub-mini-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .8;
+}
+
+.staark-hub-wrap .staark-hub-mini-status--ok {
+  background: var(--hub-ok-soft);
+  color: var(--hub-ok);
+}
+
+.staark-hub-wrap .staark-hub-mini-status--warn {
+  background: var(--hub-warn-soft);
+  color: var(--hub-warn);
+}
+
+/* ------------------------------------------------------------------ */
+/* Buttons and fields                                                  */
+/* ------------------------------------------------------------------ */
+
+.staark-hub-wrap .button {
+  min-height: 36px;
+  padding: 0 14px;
+  border-color: var(--hub-line-strong);
+  border-radius: 8px;
+  background: var(--hub-card);
+  color: var(--hub-text);
+  font-weight: 600;
+  line-height: 34px;
+  box-shadow: none;
+}
+
+.staark-hub-wrap .button:hover,
+.staark-hub-wrap .button:focus {
+  border-color: #b6bdc8;
+  background: var(--staark-hub-surface);
+  color: var(--staark-hub-ink);
+}
+
+.staark-hub-wrap .button-primary {
+  border-color: var(--staark-hub-ink);
+  background: var(--staark-hub-ink);
+  color: #fff;
+}
+
+.staark-hub-wrap .button-primary:hover,
+.staark-hub-wrap .button-primary:focus {
+  border-color: #1f2a3d;
+  background: #1f2a3d;
+  color: #fff;
+}
+
+.staark-hub-wrap .staark-hub-dark-button {
+  border-color: #fff;
+  background: #fff;
+  color: var(--hub-forest) !important;
+}
+
+.staark-hub-wrap .staark-hub-dark-button:hover,
+.staark-hub-wrap .staark-hub-dark-button:focus {
+  border-color: var(--hub-gold);
+  background: var(--hub-gold);
+  color: var(--hub-forest) !important;
+}
+
+.staark-hub-wrap .button-link-delete {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--hub-danger);
+  line-height: 1.4;
+}
+
+.staark-hub-wrap .staark-hub-button-danger {
+  border-color: #f3c9b4;
+  color: var(--hub-danger);
+}
+
+.staark-hub-wrap .staark-hub-field > span {
+  color: var(--staark-hub-ink);
+  font-weight: 600;
+}
+
+.staark-hub-wrap input[type="text"],
+.staark-hub-wrap input[type="url"],
+.staark-hub-wrap input[type="email"],
+.staark-hub-wrap input[type="tel"],
+.staark-hub-wrap input[type="number"],
+.staark-hub-wrap input[type="password"],
+.staark-hub-wrap select,
+.staark-hub-wrap textarea {
+  border-color: var(--hub-line-strong);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.staark-hub-wrap input[type="text"],
+.staark-hub-wrap input[type="url"],
+.staark-hub-wrap input[type="email"],
+.staark-hub-wrap input[type="tel"],
+.staark-hub-wrap input[type="password"],
+.staark-hub-wrap select {
+  min-height: 40px;
+}
+
+.staark-hub-wrap input:focus,
+.staark-hub-wrap select:focus,
+.staark-hub-wrap textarea:focus {
+  border-color: var(--staark-hub-blue);
+  box-shadow: 0 0 0 3px rgba(36, 87, 245, .14);
+  outline: none;
+}
+
+.staark-hub-wrap .staark-hub-feature-list {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.staark-hub-wrap .staark-hub-feature-list li {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 24px;
+  color: var(--hub-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.staark-hub-wrap .staark-hub-feature-list li + li {
+  margin-top: 10px;
+}
+
+.staark-hub-wrap .staark-hub-feature-list li::before {
+  content: "✓";
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--hub-ok);
+  font-weight: 800;
+}
+
+/* Admin notices inside the Hub */
+.staark-hub-admin-page #wpbody-content > .notice,
+.staark-hub-admin-page #wpbody-content > .updated,
+.staark-hub-admin-page #wpbody-content > .error,
+.staark-hub-wrap > .notice {
+  margin: 0 20px 16px 0;
+  border-radius: var(--hub-radius-sm);
+}
+
+/* ------------------------------------------------------------------ */
+/* Overview                                                            */
+/* ------------------------------------------------------------------ */
+
+.staark-hub-overview-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.staark-hub-setup-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.staark-hub-setup-head h2 {
+  font-size: 20px !important;
+}
+
+.staark-hub-setup-percent {
+  color: var(--staark-hub-ink);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.staark-hub-progress {
+  height: 6px;
+  margin: 14px 0 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eceef2;
+}
+
+.staark-hub-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--hub-ok), #22c55e);
+  transition: width .6s var(--hub-ease);
+}
+
+.staark-hub-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.staark-hub-checklist li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: var(--hub-radius-sm);
+  background: var(--hub-card);
+}
+
+.staark-hub-checklist li.is-todo {
+  border-color: #f5dcc0;
+  background: #fffbf5;
+}
+
+.staark-hub-check-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--hub-ok-soft);
+  color: var(--hub-ok);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.is-todo .staark-hub-check-icon {
+  background: var(--hub-warn-soft);
+  color: var(--hub-warn);
+}
+
+.staark-hub-check-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.staark-hub-check-copy strong {
+  color: var(--staark-hub-ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.staark-hub-check-copy small {
+  overflow: hidden;
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staark-hub-checklist a {
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.staark-hub-cloud-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.staark-hub-cloud-card h2 {
+  font-size: 20px !important;
+}
+
+.staark-hub-cloud-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 18px 0 0;
+}
+
+.staark-hub-cloud-meta div {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .07);
+}
+
+.staark-hub-cloud-meta dt {
+  color: rgba(255, 255, 255, .6);
+  font-size: 11px;
+}
+
+.staark-hub-cloud-meta dd {
+  margin: 2px 0 0;
+  color: #fff;
+  font-weight: 650;
+}
+
+.staark-hub-cloud-request {
+  display: grid;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, .12);
+}
+
+.staark-hub-wrap .staark-hub-cloud-card .staark-hub-actions {
+  margin-bottom: 20px;
+}
+
+.staark-hub-cloud-request strong {
+  color: #fff;
+  font-size: 13px;
+}
+
+.staark-hub-wrap .staark-hub-cloud-request a {
+  color: var(--hub-gold) !important;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.staark-hub-wrap .staark-hub-cloud-request a:hover {
+  text-decoration: underline;
+}
+
+/* Stat cards as links */
+.staark-hub-wrap .staark-hub-stats .staark-hub-stat-card {
+  display: block;
+  min-height: 0;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.staark-hub-wrap .staark-hub-stats .staark-hub-stat-card:hover {
+  border-color: var(--hub-line-strong);
+  box-shadow: var(--hub-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.staark-hub-wrap .staark-hub-metric {
+  margin-top: 10px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+.staark-hub-wrap .staark-hub-metric small {
+  color: var(--staark-hub-muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.staark-hub-wrap .staark-hub-stat-card p {
+  margin: 6px 0 0;
+}
+
+/* Quick actions */
+.staark-hub-wrap .staark-hub-quick-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.staark-hub-wrap .staark-hub-quick-action {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 0;
+  padding: 16px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: var(--hub-radius-sm);
+  background: var(--hub-card);
+  box-shadow: none;
+  color: inherit;
+}
+
+.staark-hub-wrap .staark-hub-quick-action:hover,
+.staark-hub-wrap .staark-hub-quick-action:focus {
+  border-color: var(--hub-line-strong);
+  background: var(--staark-hub-surface);
+  box-shadow: none;
+  transform: none;
+}
+
+.staark-hub-wrap .staark-hub-quick-icon {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--hub-accent-soft);
+  color: var(--staark-hub-blue);
+  font-size: 15px;
+}
+
+.staark-hub-wrap .staark-hub-quick-action strong,
+.staark-hub-wrap .staark-hub-tool-card strong {
+  color: var(--staark-hub-ink);
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.staark-hub-wrap .staark-hub-quick-action small,
+.staark-hub-wrap .staark-hub-tool-card small {
+  margin-top: 2px;
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+}
+
+/* Modules */
+.staark-hub-wrap .staark-hub-tool-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.staark-hub-wrap .staark-hub-tool-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: var(--hub-radius-sm);
+  background: var(--hub-card);
+  box-shadow: none;
+  color: inherit;
+}
+
+.staark-hub-wrap .staark-hub-tool-card:hover,
+.staark-hub-wrap .staark-hub-tool-card:focus {
+  border-color: var(--hub-line-strong);
+  background: var(--staark-hub-surface);
+  box-shadow: none;
+  transform: none;
+}
+
+.staark-hub-wrap .staark-hub-tool-card b {
+  color: var(--staark-hub-muted);
+  transition: transform .15s ease, color .15s ease;
+}
+
+.staark-hub-wrap .staark-hub-tool-card:hover b {
+  color: var(--staark-hub-ink);
+  transform: translateX(2px);
+}
+
+/* Help strip */
+.staark-hub-help-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  padding: 18px 22px;
+  border: 1px dashed var(--hub-line-strong);
+  border-radius: var(--hub-radius);
+}
+
+.staark-hub-help-strip > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.staark-hub-help-strip strong {
+  color: var(--staark-hub-ink);
+  font-size: 14px;
+}
+
+.staark-hub-help-strip span {
+  color: var(--staark-hub-muted);
+}
+
+.staark-hub-wrap .staark-hub-help-strip .staark-hub-actions {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Connect                                                             */
+/* ------------------------------------------------------------------ */
+
+.staark-hub-wrap .staark-hub-connect-layout {
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, .9fr);
+  align-items: start;
+}
+
+.staark-hub-connect-main,
+.staark-hub-wrap .staark-hub-connect-sidebar {
+  display: grid;
+  gap: 16px;
+}
+
+.staark-hub-wrap .staark-hub-key-request {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  border-color: #c9d6fd;
+  background: linear-gradient(180deg, #f5f7ff, #fff 70%);
+}
+
+.staark-hub-key-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--staark-hub-blue);
+  color: #fff;
+}
+
+.staark-hub-key-request-copy h2 {
+  margin-top: 2px !important;
+}
+
+.staark-hub-key-request-copy p {
+  max-width: 640px;
+  margin: 0;
+}
+
+.staark-hub-wrap .staark-hub-key-request .staark-hub-actions {
+  margin-top: 16px;
+}
+
+.staark-hub-key-request-copy small {
+  display: block;
+  margin-top: 12px;
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+}
+
+.staark-hub-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 0;
+  counter-reset: hub-step;
+  list-style: none;
+}
+
+.staark-hub-steps li {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 12px 14px 12px 46px;
+  position: relative;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: var(--hub-radius-sm);
+  counter-increment: hub-step;
+}
+
+.staark-hub-steps li::before {
+  content: counter(hub-step);
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #eef0f3;
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+  font-weight: 700;
+  transform: translateY(-50%);
+}
+
+.staark-hub-steps li.is-current {
+  border-color: #c9d6fd;
+  background: var(--hub-accent-soft);
+}
+
+.staark-hub-steps li.is-current::before {
+  background: var(--staark-hub-blue);
+  color: #fff;
+}
+
+.staark-hub-steps strong {
+  color: var(--staark-hub-ink);
+  font-size: 13px;
+}
+
+.staark-hub-steps span {
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+}
+
+.staark-hub-wrap .staark-hub-connect-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.staark-hub-wrap .staark-hub-connect-form .staark-hub-field {
+  flex: 1;
+  margin: 0;
+}
+
+.staark-hub-wrap .staark-hub-connect-form input[name="pairing_code"] {
+  width: 100%;
+  min-height: 42px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.staark-hub-wrap .staark-hub-connect-form .button {
+  min-height: 42px;
+  line-height: 40px;
+}
+
+.staark-hub-wrap .staark-hub-connect-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 22px 0 0;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: var(--hub-radius-sm);
+  overflow: hidden;
+}
+
+.staark-hub-wrap .staark-hub-connect-details div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 0;
+  border-right: 1px solid var(--staark-hub-border);
+  border-bottom: 1px solid var(--staark-hub-border);
+}
+
+.staark-hub-wrap .staark-hub-connect-details div:nth-child(3n) {
+  border-right: 0;
+}
+
+.staark-hub-wrap .staark-hub-connect-details div:nth-last-child(-n + 3) {
+  border-bottom: 0;
+}
+
+.staark-hub-wrap .staark-hub-connect-details dt {
+  color: var(--staark-hub-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.staark-hub-wrap .staark-hub-connect-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--staark-hub-ink);
+  font-weight: 600;
+}
+
+.staark-hub-wrap .staark-hub-connect-details code {
+  padding: 0;
+  background: none;
+  font-size: 12px;
+}
+
+.staark-hub-wrap .staark-hub-connect-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Disclosure cards */
+.staark-hub-wrap .staark-hub-disclosure {
+  padding: 0;
+}
+
+.staark-hub-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 22px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.staark-hub-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.staark-hub-disclosure > summary::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--staark-hub-muted);
+  border-bottom: 2px solid var(--staark-hub-muted);
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform .2s ease;
+}
+
+.staark-hub-disclosure[open] > summary::after {
+  transform: rotate(-135deg) translateY(-2px);
+}
+
+.staark-hub-disclosure > summary > span {
+  display: grid;
+  gap: 2px;
+}
+
+.staark-hub-disclosure > summary strong {
+  color: var(--staark-hub-ink);
+  font-size: 14px;
+}
+
+.staark-hub-disclosure > summary small {
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+}
+
+.staark-hub-disclosure > :not(summary) {
+  margin: 0 22px 20px !important;
+}
+
+.staark-hub-wrap .staark-hub-connect-environment {
+  margin: 0;
+  padding: 18px 0 0;
+  border: 0;
+  border-top: 1px solid var(--staark-hub-border);
+  border-radius: 0;
+  background: none;
+}
+
+.staark-hub-wrap .staark-hub-connect-environment p {
+  margin: 0 0 14px;
+}
+
+.staark-hub-wrap .staark-hub-connect-environment .staark-hub-pill {
+  margin: 0 0 0 6px;
+}
+
+.staark-hub-wrap .staark-hub-connect-environment .staark-hub-field input {
+  width: 100%;
+}
+
+.staark-hub-wrap .staark-hub-connect-environment-options {
+  margin-bottom: 14px;
+}
+
+.staark-hub-wrap .staark-hub-connect-environment-options label {
+  border-radius: var(--hub-radius-sm);
+}
+
+.staark-hub-wrap .staark-hub-connect-secondary {
+  margin-top: 0 !important;
+  padding-top: 14px;
+  border-top: 1px solid var(--staark-hub-border);
+}
+
+.staark-hub-wrap .staark-hub-connect-contract {
+  margin: 0;
+}
+
+.staark-hub-wrap .staark-hub-connect-endpoints {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.staark-hub-wrap .staark-hub-connect-endpoints code {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--staark-hub-surface);
+  font-size: 12px;
+}
+
+.staark-hub-wrap .staark-hub-connect-queue > div {
+  border-color: rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .06);
+}
+
+.staark-hub-copy.is-copied {
+  border-color: var(--hub-ok) !important;
+  color: var(--hub-ok) !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Screens that used their own page head                               */
+/* ------------------------------------------------------------------ */
+
+.staark-hub-wrap.staark-first-install {
+  max-width: 1360px;
+}
+
+.staark-hub-wrap .staark-first-install__readiness {
+  margin-top: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                          */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 1280px) {
+  .staark-hub-wrap .staark-hub-quick-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .staark-hub-wrap .staark-hub-tool-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1080px) {
+  .staark-hub-overview-hero,
+  .staark-hub-wrap .staark-hub-connect-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .staark-hub-site-chip small {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .staark-hub-wrap .staark-hub-grid--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staark-hub-wrap .staark-hub-tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 782px) {
+  .staark-hub-wrap {
+    margin-right: 12px;
+  }
+
+  .staark-hub-topbar {
+    flex-wrap: wrap;
+  }
+
+  .staark-hub-wrap .staark-hub-header-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .staark-hub-checklist,
+  .staark-hub-steps,
+  .staark-hub-wrap .staark-hub-connect-details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .staark-hub-wrap .staark-hub-connect-details div {
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--staark-hub-border) !important;
+  }
+
+  .staark-hub-wrap .staark-hub-connect-details div:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .staark-hub-wrap .staark-hub-quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staark-hub-wrap .staark-hub-connect-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .staark-hub-wrap .staark-hub-key-request {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .staark-hub-wrap .staark-hub-grid--four,
+  .staark-hub-wrap .staark-hub-tool-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .staark-hub-topbar-divider {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staark-hub-wrap *,
+  .staark-hub-wrap *::before,
+  .staark-hub-wrap *::after {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .staark-hub-wrap .staark-hub-header-actions .button {
+    flex: 1 1 auto;
+    width: auto;
+  }
+
+  .staark-hub-connection-chip {
+    flex-basis: 100%;
+    justify-content: center;
+  }
+}
