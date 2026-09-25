@@ -30,11 +30,38 @@ jobs:
 
           TAG="${GITHUB_REF_NAME}"
 
-          CORE_VERSION="$(sed -n 's/^ \* Version: *//p' plugins/staark-core/staark-core.php | head -n1 | tr -d '\r')"
-          THEME_VERSION="$(sed -n 's/^Version: *//p' themes/staark/style.css | head -n1 | tr -d '\r')"
+          CORE_VERSION="$(
+            sed -n 's/^ \* Version: *//p' \
+              plugins/staark-core/staark-core.php \
+              | head -n1 \
+              | tr -d '\r'
+          )"
+
+          THEME_VERSION="$(
+            sed -n 's/^Version: *//p' \
+              themes/staark/style.css \
+              | head -n1 \
+              | tr -d '\r'
+          )"
+
+          SALONG_VERSION="$(
+            sed -n 's/^Version: *//p' \
+              themes/staark-salong/style.css \
+              | head -n1 \
+              | tr -d '\r'
+          )"
+
+          BYGG_VERSION="$(
+            sed -n 's/^Version: *//p' \
+              themes/staark-bygg/style.css \
+              | head -n1 \
+              | tr -d '\r'
+          )"
 
           test -n "$CORE_VERSION"
           test -n "$THEME_VERSION"
+          test -n "$SALONG_VERSION"
+          test -n "$BYGG_VERSION"
 
           if [[ "$TAG" != "v${CORE_VERSION}" && "$TAG" != "v${CORE_VERSION}-"* ]]; then
             echo "Tag $TAG does not match Core version $CORE_VERSION" >&2
@@ -52,6 +79,8 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "core_version=$CORE_VERSION" >> "$GITHUB_OUTPUT"
           echo "theme_version=$THEME_VERSION" >> "$GITHUB_OUTPUT"
+          echo "salong_version=$SALONG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "bygg_version=$BYGG_VERSION" >> "$GITHUB_OUTPUT"
           echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
           echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
 
@@ -61,6 +90,7 @@ jobs:
           set -euo pipefail
 
           rm -rf dist
+
           mkdir -p dist/package/staark-core
           mkdir -p dist/package/staark
           mkdir -p dist/package/staark-salong
@@ -73,6 +103,7 @@ jobs:
 
           (
             cd dist/package
+
             zip -qr9 ../staark-core.zip staark-core
             zip -qr9 ../staark-theme.zip staark
             zip -qr9 ../staark-salong-theme.zip staark-salong
@@ -88,23 +119,53 @@ jobs:
         env:
           TAG: ${{ steps.meta.outputs.tag }}
           CHANNEL: ${{ steps.meta.outputs.channel }}
+
           CORE_VERSION: ${{ steps.meta.outputs.core_version }}
           THEME_VERSION: ${{ steps.meta.outputs.theme_version }}
+          SALONG_VERSION: ${{ steps.meta.outputs.salong_version }}
+          BYGG_VERSION: ${{ steps.meta.outputs.bygg_version }}
+
         shell: bash
         run: |
           set -euo pipefail
 
-          CORE_SHA="$(sha256sum dist/staark-core.zip | awk '{print $1}')"
-          THEME_SHA="$(sha256sum dist/staark-theme.zip | awk '{print $1}')"
+          CORE_SHA="$(
+            sha256sum dist/staark-core.zip | awk '{print $1}'
+          )"
+
+          THEME_SHA="$(
+            sha256sum dist/staark-theme.zip | awk '{print $1}'
+          )"
+
+          SALONG_SHA="$(
+            sha256sum dist/staark-salong-theme.zip | awk '{print $1}'
+          )"
+
+          BYGG_SHA="$(
+            sha256sum dist/staark-bygg-theme.zip | awk '{print $1}'
+          )"
 
           BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
           GENERATED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
-          export CORE_SHA THEME_SHA BASE_URL GENERATED_AT
+          export \
+            CORE_SHA \
+            THEME_SHA \
+            SALONG_SHA \
+            BYGG_SHA \
+            BASE_URL \
+            GENERATED_AT
 
           python3 - <<'PY'
           import json
           import os
+
+          base = os.environ["BASE_URL"]
+
+          requirements = {
+              "wordpress": "6.6",
+              "php": "8.1",
+          }
 
           manifest = {
               "schema": 1,
@@ -113,29 +174,61 @@ jobs:
               "releases": {
                   "core": {
                       "version": os.environ["CORE_VERSION"],
-                      "package": f'{os.environ["BASE_URL"]}/staark-core.zip',
+                      "package": f"{base}/staark-core.zip",
                       "sha256": os.environ["CORE_SHA"],
                       "requires": {
                           "wordpress": "6.6",
-                          "php": "8.0"
+                          "php": "8.0",
                       },
-                      "notes": f'Staark Core {os.environ["CORE_VERSION"]}'
+                      "notes": (
+                          "Staark Core "
+                          + os.environ["CORE_VERSION"]
+                      ),
                   },
+
                   "theme": {
                       "slug": "staark",
                       "version": os.environ["THEME_VERSION"],
-                      "package": f'{os.environ["BASE_URL"]}/staark-theme.zip',
+                      "package": f"{base}/staark-theme.zip",
                       "sha256": os.environ["THEME_SHA"],
-                      "requires": {
-                          "wordpress": "6.6",
-                          "php": "8.1"
-                      },
-                      "notes": f'Staark Theme {os.environ["THEME_VERSION"]}'
-                  }
-              }
+                      "requires": requirements,
+                      "notes": (
+                          "S-Hub Light "
+                          + os.environ["THEME_VERSION"]
+                      ),
+                  },
+
+                  "salong": {
+                      "slug": "staark-salong",
+                      "version": os.environ["SALONG_VERSION"],
+                      "package": f"{base}/staark-salong-theme.zip",
+                      "sha256": os.environ["SALONG_SHA"],
+                      "requires": requirements,
+                      "notes": (
+                          "S-Hub Salong "
+                          + os.environ["SALONG_VERSION"]
+                      ),
+                  },
+
+                  "bygg": {
+                      "slug": "staark-bygg",
+                      "version": os.environ["BYGG_VERSION"],
+                      "package": f"{base}/staark-bygg-theme.zip",
+                      "sha256": os.environ["BYGG_SHA"],
+                      "requires": requirements,
+                      "notes": (
+                          "S-Hub Bygg "
+                          + os.environ["BYGG_VERSION"]
+                      ),
+                  },
+              },
           }
 
-          with open("dist/staark-wordpress-manifest.json", "w", encoding="utf-8") as f:
+          with open(
+              "dist/staark-wordpress-manifest.json",
+              "w",
+              encoding="utf-8",
+          ) as f:
               json.dump(manifest, f, indent=2)
               f.write("\n")
           PY
@@ -147,23 +240,70 @@ jobs:
         run: |
           set -euo pipefail
 
-          unzip -l dist/staark-core.zip | grep -q 'staark-core/staark-core.php'
-          unzip -l dist/staark-theme.zip | grep -q 'staark/style.css'
-          unzip -l dist/staark-theme.zip | grep -q 'staark/theme.json'
-          unzip -l dist/staark-salong-theme.zip | grep -q 'staark-salong/style.css'
-          unzip -l dist/staark-salong-theme.zip | grep -q 'staark-salong/presets/salong.json'
-          unzip -l dist/staark-bygg-theme.zip | grep -q 'staark-bygg/style.css'
-          unzip -l dist/staark-bygg-theme.zip | grep -q 'staark-bygg/presets/bygg.json'
+          unzip -tq dist/staark-core.zip
+          unzip -tq dist/staark-theme.zip
+          unzip -tq dist/staark-salong-theme.zip
+          unzip -tq dist/staark-bygg-theme.zip
 
-          python3 -m json.tool dist/staark-wordpress-manifest.json >/dev/null
+          unzip -l dist/staark-core.zip \
+            | grep -q 'staark-core/staark-core.php'
+
+          unzip -l dist/staark-theme.zip \
+            | grep -q 'staark/style.css'
+
+          unzip -l dist/staark-theme.zip \
+            | grep -q 'staark/theme.json'
+
+          unzip -l dist/staark-salong-theme.zip \
+            | grep -q 'staark-salong/style.css'
+
+          unzip -l dist/staark-salong-theme.zip \
+            | grep -q 'staark-salong/presets/salong.json'
+
+          unzip -l dist/staark-bygg-theme.zip \
+            | grep -q 'staark-bygg/style.css'
+
+          unzip -l dist/staark-bygg-theme.zip \
+            | grep -q 'staark-bygg/presets/bygg.json'
+
+          python3 - <<'PY'
+          import json
+
+          path = "dist/staark-wordpress-manifest.json"
+
+          with open(path, encoding="utf-8") as f:
+              manifest = json.load(f)
+
+          assert manifest["schema"] == 1
+
+          releases = manifest["releases"]
+
+          for key in ("core", "theme", "salong", "bygg"):
+              assert key in releases
+              assert releases[key]["version"]
+              assert releases[key]["package"].startswith("https://")
+              assert len(releases[key]["sha256"]) == 64
+
+          assert releases["theme"]["slug"] == "staark"
+          assert releases["salong"]["slug"] == "staark-salong"
+          assert releases["bygg"]["slug"] == "staark-bygg"
+
+          print("Release manifest OK")
+          PY
 
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+
           TAG: ${{ steps.meta.outputs.tag }}
+
           CORE_VERSION: ${{ steps.meta.outputs.core_version }}
           THEME_VERSION: ${{ steps.meta.outputs.theme_version }}
+          SALONG_VERSION: ${{ steps.meta.outputs.salong_version }}
+          BYGG_VERSION: ${{ steps.meta.outputs.bygg_version }}
+
           PRERELEASE: ${{ steps.meta.outputs.prerelease }}
+
         shell: bash
         run: |
           set -euo pipefail
@@ -185,9 +325,12 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
             --title "Staark WordPress ${TAG}" \
-            --notes "Staark Core ${CORE_VERSION}
+            --notes "Staark WordPress ${TAG}
 
-          Staark Theme ${THEME_VERSION}
+          Staark Core ${CORE_VERSION}
+          S-Hub Light ${THEME_VERSION}
+          S-Hub Salong ${SALONG_VERSION}
+          S-Hub Bygg ${BYGG_VERSION}
 
           Built automatically from tag ${TAG}." \
             "${EXTRA_ARGS[@]}"
