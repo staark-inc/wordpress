@@ -45,13 +45,8 @@ function staark_hub_render_forms(): void
         $consent_at = (string) get_post_meta($selected_id, '_staark_submission_consent_at', true);
         ?>
         <div class="wrap staark-hub-wrap">
-            <div class="staark-hub-page-head">
-                <div>
-                    <p class="staark-hub-eyebrow"><?php esc_html_e('Forms', 'staark-core'); ?></p>
-                    <h1><?php echo esc_html(staark_hub_form_submission_label($selected_id)); ?></h1>
-                </div>
-                <a class="button" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-forms')); ?>"><?php esc_html_e('Back to submissions', 'staark-core'); ?></a>
-            </div>
+            <?php staark_hub_header('Forms', staark_hub_form_submission_label($selected_id)); ?>
+            <p class="staark-hub-backlink"><a href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-forms')); ?>">← <?php esc_html_e('Back to submissions', 'staark-core'); ?></a></p>
 
             <?php if (isset($_GET['mail_retry'])) :
                 $retry_state = sanitize_key(wp_unslash($_GET['mail_retry']));
@@ -139,13 +134,7 @@ function staark_hub_render_forms(): void
     );
     ?>
     <div class="wrap staark-hub-wrap">
-        <div class="staark-hub-page-head">
-            <div>
-                <p class="staark-hub-eyebrow"><?php esc_html_e('Forms', 'staark-core'); ?></p>
-                <h1><?php esc_html_e('Forms & Submissions', 'staark-core'); ?></h1>
-                <p><?php esc_html_e('Native lead capture that stays on the website even if email or the remote Hub is temporarily unavailable.', 'staark-core'); ?></p>
-            </div>
-        </div>
+        <?php staark_hub_header('Forms', __('Forms & Submissions', 'staark-core')); ?>
 
         <?php if (isset($_GET['staark_forms']) && sanitize_key(wp_unslash($_GET['staark_forms'])) === 'saved') : ?>
             <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Form settings saved.', 'staark-core'); ?></p></div>

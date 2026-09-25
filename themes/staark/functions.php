@@ -18,7 +18,10 @@ add_action('after_setup_theme', static function (): void {
         'flex-height' => true,
         'flex-width' => true,
     ]);
-    add_editor_style('assets/css/theme.css');
+    if (get_stylesheet() !== get_template()) {
+        // Child themes keep the legacy stylesheet they were built on.
+        add_editor_style('assets/css/theme.css');
+    }
 });
 
 add_action('wp_enqueue_scripts', static function (): void {
@@ -168,6 +171,16 @@ add_action('init', static function (): void {
         );
     }
 });
+
+/*
+ * S-Hub Light design system: pattern kit + Light 2 layer.
+ * Loaded from the parent directory so child themes can render these patterns.
+ */
+foreach (['inc/pattern-kit.php', 'inc/light.php'] as $staark_light_file) {
+    if (is_file(get_template_directory() . '/' . $staark_light_file)) {
+        require_once get_template_directory() . '/' . $staark_light_file;
+    }
+}
 
 /*
  * Frontend critical rendering path.

@@ -5,22 +5,21 @@
  * Categories: staark, staark-sections
  * Inserter: yes
  */
-?>
-<!-- wp:group {"align":"full","className":"staark-showcase-process","layout":{"type":"default"}} -->
-<div class="wp-block-group alignfull staark-showcase-process">
-  <!-- wp:html -->
-  <div class="staark-showcase-wrap staark-showcase-process-grid">
-    <div class="staark-showcase-process-copy">
-      <p class="staark-showcase-eyebrow">Så fungerar det</p>
-      <h2 class="staark-showcase-title">Från idé till färdig webbplats.</h2>
-      <div class="staark-showcase-steps">
-        <div class="staark-showcase-step"><span class="staark-showcase-step-number">1</span><div><h3>Vi pratar om dina mål</h3><p>Vi lär känna företaget, kunderna och vad webbplatsen behöver uppnå.</p></div></div>
-        <div class="staark-showcase-step"><span class="staark-showcase-step-number">2</span><div><h3>Design &amp; utveckling</h3><p>Vi formar en modern, skräddarsydd lösning och håller processen tydlig.</p></div></div>
-        <div class="staark-showcase-step"><span class="staark-showcase-step-number">3</span><div><h3>Lansering &amp; förvaltning</h3><p>Webbplatsen går live med en stabil grund för SEO, support och fortsatt utveckling.</p></div></div>
-      </div>
-    </div>
-    <div class="staark-showcase-process-media"><img src="<?php echo esc_url( get_theme_file_uri( 'assets/images/showcase/process.jpg' ) ); ?>" alt="Modern arbetsplats med laptop"/></div>
-  </div>
-  <!-- /wp:html -->
-</div>
-<!-- /wp:group -->
+
+// S-Hub Light pattern — composed with inc/pattern-kit.php.
+echo staark_sl_section(
+    'process',
+    staark_sl_split(
+        staark_sl_p('Så fungerar det', 'sl-eyebrow')
+        . staark_sl_h('Från idé till färdig webbplats.', 2, 'sl-title')
+        . staark_sl_steps([
+            ['Vi pratar om dina mål', 'Vi lär känna företaget, kunderna och vad webbplatsen behöver uppnå.'],
+            ['Design &amp; utveckling', 'Vi formar en modern, skräddarsydd lösning och håller processen tydlig.'],
+            ['Lansering &amp; förvaltning', 'Webbplatsen går live med en stabil grund för SEO, support och fortsatt utveckling.'],
+        ], 'sl-steps--list'),
+        staark_sl_image('assets/images/showcase/process.webp', 'Modern arbetsplats med laptop', 'sl-media'),
+        'sl-process-grid',
+        '50%'
+    ),
+    'light'
+);
