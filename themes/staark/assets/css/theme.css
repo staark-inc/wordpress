@@ -1346,6 +1346,18 @@ a {
   gap: clamp(42px, 7vw, 108px);
 }
 
+.staark-showcase-form {
+  margin-top: clamp(32px, 5vw, 72px);
+  padding: clamp(24px, 4vw, 56px);
+  border: 1px solid var(--showcase-line);
+  border-radius: 18px;
+  background: var(--showcase-paper, #fbfaf7);
+}
+
+.staark-showcase-form .staark-form-shell {
+  width: 100%;
+}
+
 .staark-showcase-contact-list {
   display: grid;
 }

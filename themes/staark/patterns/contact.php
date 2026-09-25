@@ -18,7 +18,7 @@
       <!-- wp:buttons {"className":"staark-contact-actions"} -->
       <div class="wp-block-buttons staark-contact-actions">
         <!-- wp:button --><div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/kontakt">Starta ett projekt</a></div><!-- /wp:button -->
-        <!-- wp:button {"className":"is-style-outline"} --><div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="mailto:hello@staarkinc.com">hello@staarkinc.com</a></div><!-- /wp:button -->
+        <!-- wp:button {"className":"is-style-outline"} --><div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="mailto:contact@staarkinc.com">contact@staarkinc.com</a></div><!-- /wp:button -->
       </div>
       <!-- /wp:buttons -->
     </div>

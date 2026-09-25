@@ -32,6 +32,27 @@ add_action('wp_enqueue_scripts', static function (): void {
     );
 });
 
+// The homepage form lives in a block pattern, outside post_content.
+add_filter('staark_hub_forms_should_enqueue_assets', static function (bool $enqueue): bool {
+    return $enqueue || is_front_page();
+});
+
+// Older installed Hub builds only detect forms in post_content. Load their
+// existing form CSS for the template pattern until the Hub update is installed.
+add_action('wp_enqueue_scripts', static function (): void {
+    if (! is_front_page() || ! shortcode_exists('staark_contact_form')
+        || ! function_exists('staark_hub_runtime_url')) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'staark-hub-forms',
+        staark_hub_runtime_url('assets/forms.css'),
+        [],
+        defined('STAARK_HUB_VERSION') ? STAARK_HUB_VERSION : wp_get_theme()->get('Version')
+    );
+}, 20);
+
 add_action('init', static function (): void {
     $categories = [
         'staark' => __('Staark', 'staark'),

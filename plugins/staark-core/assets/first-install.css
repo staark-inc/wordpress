@@ -1,0 +1,35 @@
+.staark-first-install{max-width:1180px}
+.staark-first-install__hero{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin:22px 0 20px;padding:28px 30px;border:1px solid #dcdcde;border-radius:14px;background:linear-gradient(135deg,#fff 0%,#f4f7f5 100%)}
+.staark-first-install__hero h1{margin:2px 0 8px;font-size:32px;line-height:1.1}
+.staark-first-install__hero p{max-width:760px;margin:0;color:#50575e;font-size:15px;line-height:1.6}
+.staark-first-install__eyebrow{font-size:12px!important;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#2271b1!important}
+.staark-first-install__badge{display:inline-flex;padding:7px 10px;border-radius:999px;background:#edfaef;color:#116329;font-size:12px;font-weight:800;white-space:nowrap}
+.staark-first-install__readiness{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 18px}
+.staark-first-install__check{padding:14px 16px;border:1px solid #dcdcde;border-radius:10px;background:#fff}
+.staark-first-install__check strong,.staark-first-install__check span{display:block}
+.staark-first-install__check strong{font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.staark-first-install__check span{margin-top:6px;color:#646970;overflow-wrap:anywhere}
+.staark-first-install__check.is-ok{border-color:#a7d7b2;background:#f5fbf6}
+.staark-first-install__check.is-review{border-color:#e8d9aa;background:#fffdf5}
+.staark-first-install__grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.55fr);gap:18px;align-items:start}
+.staark-first-install__card{padding:26px;border:1px solid #dcdcde;border-radius:14px;background:#fff}
+.staark-first-install__card h2{margin:4px 0 18px;font-size:18px}
+.staark-first-install__card h2:not(:first-of-type){margin-top:30px;padding-top:26px;border-top:1px solid #f0f0f1}
+.staark-first-install__fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.staark-first-install__fields label{display:block}
+.staark-first-install__fields label.is-wide{grid-column:1/-1}
+.staark-first-install__fields label>span{display:block;margin-bottom:6px;font-weight:650}
+.staark-first-install__fields input,.staark-first-install__fields select{width:100%;min-height:42px}
+.staark-first-install__fields small{display:block;margin-top:5px;color:#646970}
+.staark-first-install__options{display:grid;gap:10px;margin:24px 0}
+.staark-first-install__options label{display:flex;align-items:center;gap:9px}
+.staark-first-install__warning{margin:22px 0;padding:16px 18px;border-left:4px solid #2271b1;background:#f5f8fb}
+.staark-first-install__warning p{margin:5px 0 0;color:#50575e;line-height:1.55}
+.staark-first-install__aside{position:sticky;top:48px}
+.staark-first-install__aside ul{display:grid;gap:0;margin:0;padding:0;list-style:none;border-top:1px solid #f0f0f1}
+.staark-first-install__aside li{display:flex;justify-content:space-between;gap:18px;padding:13px 0;border-bottom:1px solid #f0f0f1}
+.staark-first-install__aside li span{color:#646970;text-align:right}
+.staark-first-install__next{margin:22px 0;padding:17px;border-radius:10px;background:#f6f7f7}
+.staark-first-install__next p{margin:6px 0 0;color:#50575e;line-height:1.55}
+@media(max-width:900px){.staark-first-install__readiness{grid-template-columns:repeat(2,minmax(0,1fr))}.staark-first-install__grid{grid-template-columns:1fr}.staark-first-install__aside{position:static}}
+@media(max-width:600px){.staark-first-install__hero{display:block;padding:22px}.staark-first-install__badge{margin-top:16px}.staark-first-install__readiness,.staark-first-install__fields{grid-template-columns:1fr}.staark-first-install__fields label.is-wide{grid-column:auto}.staark-first-install__card{padding:20px}}
