@@ -32,6 +32,26 @@ add_action('wp_enqueue_scripts', static function (): void {
     );
 });
 
+// Keep the original Showcase homepage before a static front page is selected.
+// Once First Install creates Home, the front-page template renders that page's
+// own patterns so its selected preset controls the actual homepage layout.
+add_filter('render_block_core/post-content', static function (string $content): string {
+    if (! is_front_page() || get_option('show_on_front') === 'page') {
+        return $content;
+    }
+
+    return do_blocks(<<<'BLOCKS'
+<!-- wp:pattern {"slug":"staark/showcase-hero"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-services"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-projects"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-process"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-why"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-testimonial"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-cta"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-contact"} /-->
+BLOCKS);
+});
+
 // Starter forms live inside referenced block patterns, outside post_content.
 function staark_theme_page_uses_contact_pattern(): bool
 {
