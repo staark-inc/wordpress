@@ -161,11 +161,9 @@ BLOCKS,
 <!-- wp:pattern {"slug":"staark/showcase-hero"} /-->
 <!-- wp:pattern {"slug":"staark/showcase-services"} /-->
 <!-- wp:pattern {"slug":"staark/showcase-projects"} /-->
-<!-- wp:pattern {"slug":"staark/showcase-process"} /-->
 <!-- wp:pattern {"slug":"staark/showcase-why"} /-->
 <!-- wp:pattern {"slug":"staark/showcase-testimonial"} /-->
 <!-- wp:pattern {"slug":"staark/showcase-cta"} /-->
-<!-- wp:pattern {"slug":"staark/showcase-contact"} /-->
 BLOCKS,
         ],
         'tjanster' => [
@@ -174,6 +172,14 @@ BLOCKS,
 <!-- wp:pattern {"slug":"staark/services-three"} /-->
 <!-- wp:pattern {"slug":"staark/process-three"} /-->
 <!-- wp:pattern {"slug":"staark/cta-light"} /-->
+BLOCKS,
+        ],
+        'projekt' => [
+            'title' => 'Projekt',
+            'content' => <<<'BLOCKS'
+<!-- wp:pattern {"slug":"staark/showcase-projects"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-testimonial"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-cta"} /-->
 BLOCKS,
         ],
         'om-oss' => [

@@ -13,7 +13,7 @@ echo staark_sl_section(
         staark_sl_p('Moderna WordPress-webbplatser', 'sl-eyebrow')
         . staark_sl_h('Webbplatser som ser dyra ut och får kunder att höra av sig.', 1, 'sl-display')
         . staark_sl_p('Vi bygger snabba, snygga och säljande webbplatser för små och medelstora företag i Sverige — med tydlig struktur, SEO-grund och personlig support.', 'sl-lead')
-        . staark_sl_buttons([['Få en kostnadsfri offert', '/kontakt'], ['Se våra projekt', '#projekt', 'outline']])
+        . staark_sl_buttons([['Få en kostnadsfri offert', '/kontakt/'], ['Se våra projekt', '/projekt/', 'outline']])
         . staark_sl_list(['Mobile first', 'SEO-ready', 'Svensk support'], 'sl-checks sl-checks--inline'),
         staark_sl_image('assets/images/showcase/light-hero.webp', 'Exempel på en modern webbplats presenterad på laptop', 'sl-hero-image'),
         'sl-hero-grid',

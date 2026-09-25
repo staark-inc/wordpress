@@ -26,7 +26,7 @@ function staark_light_design_active(): bool
 function staark_light_asset_version(string $relative): string
 {
     $file = get_template_directory() . '/' . ltrim($relative, '/');
-    $version = (string) (wp_get_theme(get_template())->get('Version') ?: '0.7.0');
+    $version = (string) (wp_get_theme(get_template())->get('Version') ?: '0.8.0');
 
     return is_file($file) ? $version . '.' . filemtime($file) : $version;
 }

@@ -13,7 +13,7 @@ echo staark_sl_section(
         staark_sl_p('Webbdesign · SEO · Support', 'sl-eyebrow')
         . staark_sl_h('Din webbplats ska göra jobbet innan du behöver sälja.', 1, 'sl-display')
         . staark_sl_p('Vi bygger snabba, tydliga och välgjorda hemsidor för svenska företag — med struktur, lokal SEO och support från början.', 'sl-lead')
-        . staark_sl_buttons([['Få en kostnadsfri offert', '/kontakt'], ['Se hur vi jobbar', '#process', 'outline']]),
+        . staark_sl_buttons([['Få en kostnadsfri offert', '/kontakt/'], ['Se hur vi jobbar', '#process', 'outline']]),
         staark_sl_group(
             staark_sl_p('Byggd för förtroende', 'sl-eyebrow')
             . staark_sl_h('Tydligt budskap. Rätt känsla. Färre hinder till kontakt.', 3, 'sl-panel-title')

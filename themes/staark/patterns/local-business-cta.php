@@ -15,7 +15,7 @@ echo staark_sl_section(
             . staark_sl_h('Få ett tydligt nästa steg — utan förpliktelser.', 2, 'sl-title'),
             'sl-band-copy'
         )
-        . staark_sl_buttons([['Begär offert', '/kontakt']]),
+        . staark_sl_buttons([['Begär offert', '/kontakt/']]),
         'sl-band',
         ['type' => 'flex', 'flexWrap' => 'wrap', 'justifyContent' => 'space-between', 'verticalAlignment' => 'center'],
         'wide'

@@ -16,7 +16,7 @@ echo staark_sl_section(
             . staark_sl_p('Berätta vad som inte fungerar idag. Vi återkommer med ett tydligt nästa steg.', 'sl-intro'),
             'sl-band-copy'
         )
-        . staark_sl_buttons([['Starta ett projekt', '/kontakt']]),
+        . staark_sl_buttons([['Starta ett projekt', '/kontakt/']]),
         'sl-band',
         ['type' => 'flex', 'flexWrap' => 'wrap', 'justifyContent' => 'space-between', 'verticalAlignment' => 'center'],
         'wide'
