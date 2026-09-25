@@ -1,7 +1,7 @@
 <?php
 /**
- * Title: Business — CTA
- * Slug: staark/cta-business
+ * Title: Business — CTA (light)
+ * Slug: staark/cta-light
  * Categories: staark, staark-conversion
  * Inserter: yes
  */
@@ -11,15 +11,14 @@ echo staark_sl_section(
     'band',
     staark_sl_group(
         staark_sl_group(
-            staark_sl_p('Nästa steg', 'sl-eyebrow')
-            . staark_sl_h('Har företaget vuxit ifrån sin nuvarande webbplats?', 2, 'sl-title')
-            . staark_sl_p('Berätta vad som inte fungerar idag. Vi återkommer med ett tydligt nästa steg.', 'sl-intro'),
+            staark_sl_p('Redo att komma vidare?', 'sl-eyebrow')
+            . staark_sl_h('Berätta vad du behöver — vi återkommer med ett tydligt nästa steg.', 2, 'sl-title'),
             'sl-band-copy'
         )
-        . staark_sl_buttons([['Starta ett projekt', '/kontakt']]),
+        . staark_sl_buttons([['Kontakta oss', '/kontakt']]),
         'sl-band',
         ['type' => 'flex', 'flexWrap' => 'wrap', 'justifyContent' => 'space-between', 'verticalAlignment' => 'center'],
         'wide'
     ),
-    'accent'
+    'surface'
 );

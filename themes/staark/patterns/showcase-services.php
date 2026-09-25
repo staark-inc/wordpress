@@ -5,33 +5,17 @@
  * Categories: staark, staark-sections
  * Inserter: yes
  */
-?>
-<!-- wp:group {"align":"full","anchor":"tjanster","className":"staark-showcase-section staark-showcase-services","layout":{"type":"default"}} -->
-<div id="tjanster" class="wp-block-group alignfull staark-showcase-section staark-showcase-services">
-  <!-- wp:html -->
-  <div class="staark-showcase-wrap">
-    <div class="staark-showcase-heading-row">
-      <div>
-        <p class="staark-showcase-eyebrow">Våra tjänster</p>
-        <h2 class="staark-showcase-title">Allt du behöver för en framgångsrik webbplats.</h2>
-      </div>
-      <p class="staark-showcase-copy">Vi kombinerar modern design, WordPress och smarta verktyg för att hjälpa ditt företag att växa online.</p>
-    </div>
-    <div class="staark-showcase-card-grid">
-      <article class="staark-showcase-card">
-        <div class="staark-showcase-card-media"><img src="<?php echo esc_url( get_theme_file_uri( 'assets/images/showcase/service-design.jpg' ) ); ?>" alt="Webbdesign på laptop"/></div>
-        <div class="staark-showcase-card-body"><h3>Webbdesign &amp; utveckling</h3><p>Skräddarsydda WordPress-webbplatser som är snabba, snygga och enkla att uppdatera.</p><a class="staark-showcase-link" href="/tjanster">Läs mer →</a></div>
-      </article>
-      <article class="staark-showcase-card">
-        <div class="staark-showcase-card-media"><img src="<?php echo esc_url( get_theme_file_uri( 'assets/images/showcase/service-seo.jpg' ) ); ?>" alt="SEO och analys på mobil"/></div>
-        <div class="staark-showcase-card-body"><h3>SEO &amp; synlighet</h3><p>Vi bygger en teknisk och innehållsmässig grund som hjälper rätt kunder att hitta ditt företag.</p><a class="staark-showcase-link" href="/tjanster">Läs mer →</a></div>
-      </article>
-      <article class="staark-showcase-card">
-        <div class="staark-showcase-card-media"><img src="<?php echo esc_url( get_theme_file_uri( 'assets/images/showcase/service-support.jpg' ) ); ?>" alt="Prestanda och förvaltning i dashboard"/></div>
-        <div class="staark-showcase-card-body"><h3>Support &amp; förvaltning</h3><p>Uppdateringar, säkerhet och prestanda samlat i en enklare förvaltning efter lansering.</p><a class="staark-showcase-link" href="/tjanster">Läs mer →</a></div>
-      </article>
-    </div>
-  </div>
-  <!-- /wp:html -->
-</div>
-<!-- /wp:group -->
+
+// S-Hub Light pattern — composed with inc/pattern-kit.php.
+echo staark_sl_section(
+    'services',
+    staark_sl_head('Våra tjänster', 'Allt du behöver för en framgångsrik webbplats.', 'Vi kombinerar modern design, WordPress och smarta verktyg för att hjälpa ditt företag att växa online.')
+    . staark_sl_grid(
+        staark_sl_card(['image' => 'assets/images/showcase/service-design.webp', 'alt' => 'Webbdesign på laptop', 'title' => 'Webbdesign &amp; utveckling', 'text' => 'Skräddarsydda WordPress-webbplatser som är snabba, snygga och enkla att uppdatera.', 'foot' => '<a href="/tjanster">Läs mer →</a>'])
+        . staark_sl_card(['image' => 'assets/images/showcase/service-seo.webp', 'alt' => 'SEO och analys på mobil', 'title' => 'SEO &amp; synlighet', 'text' => 'En teknisk och innehållsmässig grund som hjälper rätt kunder att hitta ditt företag.', 'foot' => '<a href="/tjanster">Läs mer →</a>'])
+        . staark_sl_card(['image' => 'assets/images/showcase/service-support.webp', 'alt' => 'Prestanda och förvaltning i dashboard', 'title' => 'Support &amp; förvaltning', 'text' => 'Uppdateringar, säkerhet och prestanda samlat i en enklare förvaltning efter lansering.', 'foot' => '<a href="/tjanster">Läs mer →</a>']),
+        3
+    ),
+    'light',
+    'tjanster'
+);

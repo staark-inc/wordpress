@@ -5,16 +5,15 @@
  * Categories: staark, staark-social-proof
  * Inserter: yes
  */
-?>
-<!-- wp:group {"align":"full","className":"staark-local-proof","layout":{"type":"default"}} -->
-<div class="wp-block-group alignfull staark-local-proof">
-  <!-- wp:html -->
-  <div class="staark-local-shell staark-local-proof-grid">
-    <div class="staark-local-proof-item"><strong>Lokalt förankrade</strong><span>Vi finns nära våra kunder och känner området.</span></div>
-    <div class="staark-local-proof-item"><strong>Tydlig offert</strong><span>Du vet vad som ingår innan arbetet börjar.</span></div>
-    <div class="staark-local-proof-item"><strong>Personlig kontakt</strong><span>Du får en riktig kontaktväg när frågor uppstår.</span></div>
-    <div class="staark-local-proof-item"><strong>Trygg leverans</strong><span>Fokus på kvalitet, ordning och uppföljning.</span></div>
-  </div>
-  <!-- /wp:html -->
-</div>
-<!-- /wp:group -->
+
+// S-Hub Light pattern — composed with inc/pattern-kit.php.
+echo staark_sl_section(
+    'proof',
+    staark_sl_facts([
+        ['Lokalt förankrade', 'Vi finns nära våra kunder och känner området.'],
+        ['Tydlig offert', 'Du vet vad som ingår innan arbetet börjar.'],
+        ['Personlig kontakt', 'Du får en riktig kontaktväg när frågor uppstår.'],
+        ['Trygg leverans', 'Fokus på kvalitet, ordning och uppföljning.'],
+    ], 'sl-facts sl-facts--bar alignwide'),
+    'light'
+);

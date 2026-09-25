@@ -5,19 +5,20 @@
  * Categories: staark, staark-conversion
  * Inserter: yes
  */
-?>
-<!-- wp:group {"align":"full","className":"staark-local-cta","layout":{"type":"default"}} -->
-<div class="wp-block-group alignfull staark-local-cta">
-  <!-- wp:html -->
-  <div class="staark-local-shell staark-local-cta-inner">
-    <div>
-      <p class="staark-local-kicker">Redo att komma vidare?</p>
-      <h2>Få ett tydligt nästa steg — utan förpliktelser.</h2>
-    </div>
-    <div class="wp-block-buttons">
-      <div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/kontakt">Begär offert</a></div>
-    </div>
-  </div>
-  <!-- /wp:html -->
-</div>
-<!-- /wp:group -->
+
+// S-Hub Light pattern — composed with inc/pattern-kit.php.
+echo staark_sl_section(
+    'band',
+    staark_sl_group(
+        staark_sl_group(
+            staark_sl_p('Redo att komma vidare?', 'sl-eyebrow')
+            . staark_sl_h('Få ett tydligt nästa steg — utan förpliktelser.', 2, 'sl-title'),
+            'sl-band-copy'
+        )
+        . staark_sl_buttons([['Begär offert', '/kontakt']]),
+        'sl-band',
+        ['type' => 'flex', 'flexWrap' => 'wrap', 'justifyContent' => 'space-between', 'verticalAlignment' => 'center'],
+        'wide'
+    ),
+    'accent'
+);

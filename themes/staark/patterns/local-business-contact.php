@@ -5,30 +5,24 @@
  * Categories: staark, staark-conversion
  * Inserter: yes
  */
-?>
-<!-- wp:group {"align":"full","className":"staark-local-section staark-local-contact","layout":{"type":"default"}} -->
-<div class="wp-block-group alignfull staark-local-section staark-local-contact">
-  <div class="staark-local-shell staark-local-contact-grid">
-    <!-- wp:html -->
-    <div class="staark-local-contact-copy">
-      <p class="staark-local-kicker">Kontakta oss</p>
-      <h2>Beskriv jobbet. Vi återkommer med nästa steg.</h2>
-      <p>Formuläret är kopplat till Staark Forms och sparar förfrågan lokalt även om e-postleveransen tillfälligt skulle misslyckas.</p>
-      <div class="staark-local-contact-facts">
-        <div class="staark-local-contact-fact"><strong>Återkoppling</strong><span>Normalt inom en arbetsdag</span></div>
-        <div class="staark-local-contact-fact"><strong>Offert</strong><span>Tydligt upplägg innan start</span></div>
-        <div class="staark-local-contact-fact"><strong>Område</strong><span>Anpassa till företagets ort och serviceområde</span></div>
-      </div>
-    </div>
-    <!-- /wp:html -->
 
-    <!-- wp:group {"className":"staark-local-form-card","layout":{"type":"constrained"}} -->
-    <div class="wp-block-group staark-local-form-card">
-      <!-- wp:shortcode -->
-      [staark_contact_form form_id="local-business-contact" button="Skicka förfrågan"]
-      <!-- /wp:shortcode -->
-    </div>
-    <!-- /wp:group -->
-  </div>
-</div>
-<!-- /wp:group -->
+// S-Hub Light pattern — composed with inc/pattern-kit.php.
+echo staark_sl_section(
+    'contact',
+    staark_sl_split(
+        staark_sl_p('Kontakta oss', 'sl-eyebrow')
+        . staark_sl_h('Beskriv jobbet. Vi återkommer med nästa steg.', 2, 'sl-title')
+        . staark_sl_p('Formuläret sparar din förfrågan direkt hos oss, även om e-posten tillfälligt skulle krångla.', 'sl-intro')
+        . staark_sl_facts([
+            ['Återkoppling', 'Normalt inom en arbetsdag.'],
+            ['Offert', 'Tydligt upplägg innan start.'],
+            ['Område', 'Anpassa till företagets ort och serviceområde.'],
+        ], 'sl-facts sl-facts--list'),
+        staark_sl_group(staark_sl_h('Skicka en förfrågan', 3, 'sl-form-title') . staark_sl_form('local-business-contact', 'Skicka förfrågan'), 'sl-form-card'),
+        'sl-contact-grid',
+        '46%',
+        false
+    ),
+    'light',
+    'kontakt'
+);
