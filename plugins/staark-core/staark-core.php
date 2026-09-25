@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.2.0
+ * Version: 0.6.3.3
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -21,7 +21,7 @@ if (defined('STAARK_HUB_RUNTIME_LOADED')) {
 }
 define('STAARK_HUB_RUNTIME_LOADED', true);
 
-const STAARK_HUB_VERSION = '0.6.2.0';
+const STAARK_HUB_VERSION = '0.6.3.3';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
@@ -57,6 +57,7 @@ require_once STAARK_HUB_PLUGIN_DIR . 'includes/security.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/seo.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance-media.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/forms.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/lifecycle.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/managed-deployment.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/update-channel.php';
@@ -65,6 +66,7 @@ require_once STAARK_HUB_PLUGIN_DIR . 'includes/rc.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/security-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/seo-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/performance-page.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'admin/forms-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/managed-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/updates-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/support-detail.php';
@@ -501,12 +503,14 @@ function staark_hub_connection_site_payload(): array
             'security' => staark_hub_module_enabled('security', true),
             'seo' => staark_hub_module_enabled('seo', true),
             'performance' => staark_hub_module_enabled('performance', true),
+            'forms' => true,
             'managed' => true,
             'updates' => true,
         ],
         'security' => function_exists('staark_hub_security_summary') ? staark_hub_security_summary() : null,
         'seo' => function_exists('staark_hub_seo_summary') ? staark_hub_seo_summary() : null,
         'performance' => function_exists('staark_hub_performance_summary') ? staark_hub_performance_summary() : null,
+        'forms' => function_exists('staark_hub_forms_summary') ? staark_hub_forms_summary() : null,
         'managed' => function_exists('staark_hub_managed_summary') ? staark_hub_managed_summary() : null,
         'updates' => function_exists('staark_hub_update_summary') ? staark_hub_update_summary() : null,
     ];
@@ -880,6 +884,7 @@ add_action('admin_menu', static function (): void {
     add_submenu_page(STAARK_HUB_SLUG, __('Security', 'staark-core'), __('Security', 'staark-core'), 'manage_options', 'staark-hub-security', 'staark_hub_render_security');
     add_submenu_page(STAARK_HUB_SLUG, __('SEO', 'staark-core'), __('SEO', 'staark-core'), 'manage_options', 'staark-hub-seo', 'staark_hub_render_seo');
     add_submenu_page(STAARK_HUB_SLUG, __('Performance', 'staark-core'), __('Performance', 'staark-core'), 'manage_options', 'staark-hub-performance', 'staark_hub_render_performance');
+    add_submenu_page(STAARK_HUB_SLUG, __('Forms & Submissions', 'staark-core'), __('Forms', 'staark-core'), 'manage_options', 'staark-hub-forms', 'staark_hub_render_forms');
     add_submenu_page(STAARK_HUB_SLUG, __('Support', 'staark-core'), __('Support', 'staark-core'), 'manage_options', 'staark-hub-support', 'staark_hub_render_support');
     add_submenu_page(STAARK_HUB_SLUG, __('Branding', 'staark-core'), __('Branding', 'staark-core'), 'manage_options', 'staark-hub-branding', 'staark_hub_render_branding');
     add_submenu_page(STAARK_HUB_SLUG, __('Updates', 'staark-core'), __('Updates', 'staark-core'), 'manage_options', 'staark-hub-updates', 'staark_hub_render_updates');
@@ -934,6 +939,18 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
             staark_hub_runtime_url('assets/performance.css'),
             ['staark-hub-admin'],
             STAARK_HUB_VERSION
+        );
+    }
+
+
+    if (staark_hub_current_page() === 'staark-hub-forms') {
+        wp_enqueue_style(
+            'staark-hub-forms',
+            staark_hub_runtime_url('assets/forms.css'),
+            ['staark-hub-admin'],
+            is_file(STAARK_HUB_PLUGIN_DIR . 'assets/forms.css')
+                ? (string) filemtime(STAARK_HUB_PLUGIN_DIR . 'assets/forms.css')
+                : STAARK_HUB_VERSION
         );
     }
 
