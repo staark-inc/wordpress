@@ -61,3 +61,14 @@ $staark_performance_render = get_theme_file_path(
 if (is_file($staark_performance_render)) {
     require_once $staark_performance_render;
 }
+
+/*
+ * Staark Theme System v2.
+ */
+$staark_theme_system = get_theme_file_path(
+    'inc/theme-system.php'
+);
+
+if (is_file($staark_theme_system)) {
+    require_once $staark_theme_system;
+}
