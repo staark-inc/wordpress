@@ -419,8 +419,12 @@ function staark_hub_forms_should_enqueue_assets(): bool
 
     $post = get_post();
 
-    return $post instanceof WP_Post
+    $in_post = $post instanceof WP_Post
         && has_shortcode((string) $post->post_content, STAARK_HUB_FORM_SHORTCODE);
+
+    // A block theme can place the form inside a template pattern rather than
+    // the post body. Let that theme request the existing form stylesheet.
+    return (bool) apply_filters('staark_hub_forms_should_enqueue_assets', $in_post);
 }
 
 add_action('wp_enqueue_scripts', static function (): void {
@@ -536,6 +540,18 @@ function staark_hub_forms_shortcode(array $atts = []): string
 }
 
 add_shortcode(STAARK_HUB_FORM_SHORTCODE, 'staark_hub_forms_shortcode');
+
+// Shortcode blocks in patterns and template parts can render before the usual
+// post-content shortcode pass. Resolve the Hub shortcodes in either location.
+add_filter('render_block_core/shortcode', static function (string $content): string {
+    foreach ([STAARK_HUB_FORM_SHORTCODE, 'staark_brand', 'staark_brand_tagline', 'staark_brand_copyright', 'staark_theme_page_links'] as $shortcode) {
+        if (has_shortcode($content, $shortcode)) {
+            return do_shortcode(shortcode_unautop($content));
+        }
+    }
+
+    return $content;
+});
 
 /**
  * @return array<string,string>

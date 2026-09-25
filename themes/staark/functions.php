@@ -32,15 +32,112 @@ add_action('wp_enqueue_scripts', static function (): void {
     );
 });
 
-// The homepage form lives in a block pattern, outside post_content.
+// Keep the original Showcase homepage before a static front page is selected.
+// Once First Install creates Home, the front-page template renders that page's
+// own patterns so its selected preset controls the actual homepage layout.
+add_filter('render_block_core/post-content', static function (string $content): string {
+    if (! is_front_page() || get_option('show_on_front') === 'page') {
+        return $content;
+    }
+
+    return do_blocks(<<<'BLOCKS'
+<!-- wp:pattern {"slug":"staark/showcase-hero"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-services"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-projects"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-process"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-why"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-testimonial"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-cta"} /-->
+<!-- wp:pattern {"slug":"staark/showcase-contact"} /-->
+BLOCKS);
+});
+
+// A starter page can already contain its own H1 (for example, About).
+// Avoid printing the page title as a second H1 above that page's layout.
+add_filter('render_block_core/post-title', static function (string $content): string {
+    if (! is_page() || is_front_page() || ! function_exists('staark_local_business_pack_is_active')
+        || ! staark_local_business_pack_is_active()) {
+        return $content;
+    }
+
+    $page = get_queried_object();
+    if (! $page instanceof WP_Post) {
+        return $content;
+    }
+
+    $source = (string) $page->post_content;
+    $has_h1 = preg_match('/<!--\s+wp:heading\s+\{[^}]*"level"\s*:\s*1\b/s', $source)
+        || preg_match('/<h1\b/i', $source);
+
+    return $has_h1 ? '' : $content;
+});
+
+/**
+ * Keep the built-in navigation in sync with the pages actually published.
+ * Extra Projekt / Blogg links still appear on sites that already have them.
+ *
+ * @return array<string,string>
+ */
+function staark_theme_page_link_labels(): array
+{
+    return [
+        'tjanster' => 'Tjänster',
+        'projekt' => 'Projekt',
+        'om-oss' => 'Om oss',
+        'blogg' => 'Blogg',
+        'kontakt' => 'Kontakt',
+    ];
+}
+
+function staark_theme_published_page(string $slug): ?WP_Post
+{
+    $page = get_page_by_path($slug);
+
+    return $page instanceof WP_Post && $page->post_status === 'publish' ? $page : null;
+}
+
+add_filter('render_block_core/navigation-link', static function (string $content, array $block): string {
+    $url = (string) ($block['attrs']['url'] ?? '');
+    $slug = trim($url, '/');
+
+    if (! array_key_exists($slug, staark_theme_page_link_labels())) {
+        return $content;
+    }
+
+    return staark_theme_published_page($slug) ? $content : '';
+}, 10, 2);
+
+add_shortcode('staark_theme_page_links', static function (): string {
+    $links = [];
+
+    foreach (staark_theme_page_link_labels() as $slug => $label) {
+        $page = staark_theme_published_page($slug);
+        if ($page instanceof WP_Post) {
+            $links[] = '<li><a href="' . esc_url(get_permalink($page)) . '">' . esc_html($label) . '</a></li>';
+        }
+    }
+
+    return $links === [] ? '' : '<ul class="is-style-plain">' . implode('', $links) . '</ul>';
+});
+
+// Starter forms live inside referenced block patterns, outside post_content.
+function staark_theme_page_uses_contact_pattern(): bool
+{
+    $post = get_post();
+
+    return $post instanceof WP_Post
+        && str_contains((string) $post->post_content, 'staark/local-business-contact');
+}
+
 add_filter('staark_hub_forms_should_enqueue_assets', static function (bool $enqueue): bool {
-    return $enqueue || is_front_page();
+    return $enqueue || is_front_page() || staark_theme_page_uses_contact_pattern();
 });
 
 // Older installed Hub builds only detect forms in post_content. Load their
 // existing form CSS for the template pattern until the Hub update is installed.
 add_action('wp_enqueue_scripts', static function (): void {
-    if (! is_front_page() || ! shortcode_exists('staark_contact_form')
+    if ((! is_front_page() && ! staark_theme_page_uses_contact_pattern())
+        || ! shortcode_exists('staark_contact_form')
         || ! function_exists('staark_hub_runtime_url')) {
         return;
     }
@@ -92,4 +189,10 @@ $staark_theme_system = get_theme_file_path(
 
 if (is_file($staark_theme_system)) {
     require_once $staark_theme_system;
+}
+
+/* Local Business preset, used by the First Install wizard. */
+$staark_local_business_pack = get_theme_file_path('inc/theme-pack-local-business.php');
+if (is_file($staark_local_business_pack)) {
+    require_once $staark_local_business_pack;
 }

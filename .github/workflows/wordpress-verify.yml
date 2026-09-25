@@ -1,0 +1,41 @@
+name: WordPress Verify
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/staark-core/**'
+      - 'themes/staark/**'
+      - '.github/workflows/wordpress-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP syntax and package metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -v
+          while IFS= read -r -d '' file; do
+            php -l "$file" >/dev/null
+          done < <(find plugins/staark-core themes/staark -type f -name '*.php' -print0)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for file in Path('themes/staark').rglob('*.json'):
+              json.loads(file.read_text(encoding='utf-8'))
+          plugin = Path('plugins/staark-core/staark-core.php').read_text()
+          header = next(line.split('Version: ', 1)[1] for line in plugin.splitlines() if line.startswith(' * Version: '))
+          assert f"const STAARK_HUB_VERSION = '{header}';" in plugin
+          for file in ('includes/first-install.php', 'admin/first-install-page.php'):
+              assert f"require_once STAARK_HUB_PLUGIN_DIR . '{file}';" in plugin
+          theme = Path('themes/staark/functions.php').read_text()
+          assert "require_once $staark_local_business_pack;" in theme
+          assert Path('themes/staark/presets/local-business.json').exists()
+          print('PHP, JSON, versions, and feature loaders OK')
+          PY

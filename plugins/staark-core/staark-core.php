@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.4.2
+ * Version: 0.6.4.4
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -21,7 +21,7 @@ if (defined('STAARK_HUB_RUNTIME_LOADED')) {
 }
 define('STAARK_HUB_RUNTIME_LOADED', true);
 
-const STAARK_HUB_VERSION = '0.6.4.2';
+const STAARK_HUB_VERSION = '0.6.4.4';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
@@ -1214,7 +1214,11 @@ add_action('admin_post_staark_submit_support_ticket', static function (): void {
     update_post_meta($ticket_id, '_staark_ticket_channel', 'local');
     update_post_meta($ticket_id, '_staark_ticket_sync_state', 'pending');
 
+<<<<<<< HEAD
     $recipient = (string) apply_filters('staark_hub_support_email', staark_hub_contact_email());
+=======
+    $recipient = (string) apply_filters('staark_hub_support_email', 'contact@staarkinc.com');
+>>>>>>> refs/rewritten/onto
     $ticket_label = staark_hub_support_ticket_label((int) $ticket_id);
     $mail_subject = sprintf('[%s] %s · %s', $ticket_label, $priorities[$priority], $subject);
     $mail_body = implode(
@@ -2643,7 +2647,11 @@ function staark_hub_render_support(): void
                     <h2>Prefer email?</h2>
                     <p>You can still contact Staark Inc. directly. The in-Hub form is preferred because it attaches site context automatically.</p>
                     <div class="staark-hub-actions">
+<<<<<<< HEAD
                         <a class="button" href="<?php echo esc_url('mailto:' . staark_hub_contact_email(), ['mailto']); ?>"><?php echo esc_html(staark_hub_contact_email()); ?></a>
+=======
+                        <a class="button" href="mailto:contact@staarkinc.com">contact@staarkinc.com</a>
+>>>>>>> refs/rewritten/onto
                         <a class="button" href="https://staarkinc.com/kontakt" target="_blank" rel="noopener">Contact page ↗</a>
                     </div>
                 </section>
