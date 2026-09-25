@@ -62,19 +62,31 @@ function staark_gast_starter_page(string $slug): ?WP_Post
 }
 
 /**
- * @return array{switch:array<string,WP_Post>,missing:array<string,string>}
+ * @return array{
+ *   switch:array<string,WP_Post>,
+ *   missing:array<string,string>,
+ *   deactivate:array<string,WP_Post>
+ * }
  */
 function staark_gast_starter_state(): array
 {
-    $state = ['switch' => [], 'missing' => []];
-    $uses_starter = false;
-    $titles = staark_gast_page_sections();
+    $state = [
+        'switch' => [],
+        'missing' => [],
+        'deactivate' => [],
+    ];
 
-    foreach (array_keys(staark_gast_starter_page_map()) as $slug) {
+    $uses_starter = false;
+    $pages = staark_gast_page_sections();
+
+    /*
+     * Pages required by the active preset.
+     */
+    foreach ($pages as $slug => $page_def) {
         $page = staark_gast_starter_page($slug);
 
         if (! $page) {
-            $state['missing'][$slug] = $titles[$slug]['title'];
+            $state['missing'][$slug] = $page_def['title'];
             continue;
         }
 
@@ -84,22 +96,31 @@ function staark_gast_starter_state(): array
             $uses_starter = true;
         }
 
+        $expected = staark_gast_pattern_blocks($page_def['sections']);
+
         /*
-         * Important: an unpublished starter page from another Staark
-         * theme still occupies this route. Core intentionally ignores
-         * drafts, so Gästfrihet must handle it itself.
+         * A route may already exist as a draft:
+         *
+         * - because another Staark theme left it unpublished; or
+         * - because Gästfrihet itself deactivated it when switching presets.
+         *
+         * If it is still a known starter page, rebuild/reactivate it instead
+         * of treating the route as satisfied.
          */
-        if (
-            $page->post_status !== 'publish'
-            && staark_gast_is_foreign_starter_content($content)
-        ) {
-            $state['switch'][$slug] = $page;
+        if ($page->post_status !== 'publish') {
+            if (
+                trim($content) === trim($expected)
+                || staark_gast_is_foreign_starter_content($content)
+            ) {
+                $state['switch'][$slug] = $page;
+            }
+
             continue;
         }
 
         /*
-         * Published pages whose patterns no longer exist are handled by
-         * the global Staark Core repair notice, avoiding duplicate notices.
+         * Published pages whose patterns are completely unavailable are
+         * handled by the global Core repair notice.
          */
         if (
             function_exists('staark_hub_starter_missing_patterns')
@@ -114,11 +135,41 @@ function staark_gast_starter_state(): array
     }
 
     /*
-     * Only offer creation of missing starter routes when this site is
-     * actually using Staark starter content and has a front page.
+     * Pages exclusive to the other Gästfrihet preset should not remain
+     * publicly exposed after switching.
+     *
+     * Be deliberately conservative: only deactivate a page when its content
+     * still exactly matches the starter blueprint from the other preset.
+     * A page that the client has edited manually is preserved.
+     */
+    $other_mode = staark_gast_is_hotel() ? 'restaurang' : 'hotell';
+    $other_pages = staark_gast_page_sections($other_mode);
+
+    foreach ($other_pages as $slug => $page_def) {
+        if (isset($pages[$slug])) {
+            continue;
+        }
+
+        $page = staark_gast_starter_page($slug);
+
+        if (! $page || $page->post_status !== 'publish') {
+            continue;
+        }
+
+        $expected = staark_gast_pattern_blocks($page_def['sections']);
+
+        if (trim((string) $page->post_content) === trim($expected)) {
+            $state['deactivate'][$slug] = $page;
+        }
+    }
+
+    /*
+     * Do not offer starter-page creation/deactivation on a site that is not
+     * actually using the Staark starter structure.
      */
     if (! $uses_starter || staark_gast_starter_page('home') === null) {
         $state['missing'] = [];
+        $state['deactivate'] = [];
     }
 
     return $state;
@@ -166,11 +217,23 @@ add_action('admin_notices', static function (): void {
     }
 
     $state = staark_gast_starter_state();
-    if ($state['switch'] === [] && $state['missing'] === []) {
+    if (
+        $state['switch'] === []
+        && $state['missing'] === []
+        && $state['deactivate'] === []
+    ) {
         return;
     }
 
-    $titles = array_map(static fn (WP_Post $page): string => get_the_title($page), $state['switch']);
+    $titles = array_map(
+        static fn (WP_Post $page): string => get_the_title($page),
+        $state['switch']
+    );
+
+    $deactivate_titles = array_map(
+        static fn (WP_Post $page): string => get_the_title($page),
+        $state['deactivate']
+    );
     ?>
     <div class="notice notice-warning">
         <p>
@@ -182,7 +245,12 @@ add_action('admin_notices', static function (): void {
         <?php if ($state['missing'] !== []) : ?>
             <p><?php echo esc_html(sprintf(__('Linked from the menu but missing: %s', 'staark-gastfrihet'), implode(', ', $state['missing']))); ?></p>
         <?php endif; ?>
-        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('<?php echo esc_js(__('Set up these pages? Rebuilt pages keep their current content as a revision.', 'staark-gastfrihet')); ?>');">
+
+        <?php if ($deactivate_titles !== []) : ?>
+            <p><?php echo esc_html(sprintf(__('Starter pages not used by this preset will be set to draft: %s', 'staark-gastfrihet'), implode(', ', $deactivate_titles))); ?></p>
+        <?php endif; ?>
+
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('<?php echo esc_js(__('Set up these pages? Rebuilt pages keep their current content as a revision. Starter pages exclusive to the previous preset will be set to draft.', 'staark-gastfrihet')); ?>');">
             <input type="hidden" name="action" value="staark_gast_apply_starter">
             <?php wp_nonce_field('staark_gast_apply_starter'); ?>
             <p><button type="submit" class="button button-primary"><?php echo esc_html(sprintf(__('Set up pages for %s', 'staark-gastfrihet'), $label)); ?></button></p>
@@ -203,6 +271,7 @@ add_action('admin_post_staark_gast_apply_starter', static function (): void {
     $state = staark_gast_starter_state();
     $updated = 0;
     $created = 0;
+    $deactivated = 0;
 
     foreach ($state['switch'] as $slug => $page) {
         if (! isset($map[$slug])) {
@@ -275,8 +344,43 @@ add_action('admin_post_staark_gast_apply_starter', static function (): void {
         }
     }
 
+    foreach ($state['deactivate'] as $slug => $page) {
+        unset($slug);
+
+        if (! current_user_can('edit_post', $page->ID)) {
+            continue;
+        }
+
+        if (function_exists('wp_save_post_revision')) {
+            wp_save_post_revision($page->ID);
+        }
+
+        $result = wp_update_post(
+            [
+                'ID' => $page->ID,
+                'post_status' => 'draft',
+            ],
+            true
+        );
+
+        if (! is_wp_error($result)) {
+            ++$deactivated;
+        }
+    }
+
     $back = wp_get_referer() ?: admin_url('edit.php?post_type=page');
-    wp_safe_redirect(add_query_arg(['staark_gast_starter' => 'done', 'updated' => $updated, 'created' => $created], $back));
+
+    wp_safe_redirect(
+        add_query_arg(
+            [
+                'staark_gast_starter' => 'done',
+                'updated' => $updated,
+                'created' => $created,
+                'deactivated' => $deactivated,
+            ],
+            $back
+        )
+    );
     exit;
 });
 
