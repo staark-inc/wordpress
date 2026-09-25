@@ -330,6 +330,56 @@ function staark_hub_support_ticket_label(int $ticket_id): string
 
 
 /**
+ * Public Staark Inc. contact address used across the Hub (support, pairing
+ * code requests, direct contact).
+ */
+function staark_hub_contact_email(): string
+{
+    $email = sanitize_email((string) apply_filters('staark_hub_contact_email', 'contact@staarkinc.com'));
+
+    return is_email($email) ? $email : 'contact@staarkinc.com';
+}
+
+/**
+ * Pre-filled email asking Staark Inc. for a pairing code (the connector key).
+ *
+ * Only public identifiers are included: site URL, site ID and versions. The
+ * per-site secret never leaves WordPress this way.
+ *
+ * @param array<string,string> $connection
+ */
+function staark_hub_pairing_request_url(array $connection): string
+{
+    $user = wp_get_current_user();
+    $host = (string) (wp_parse_url(home_url('/'), PHP_URL_HOST) ?: home_url('/'));
+    $environment = ($connection['environment'] ?? 'production') === 'development' ? 'Development' : 'Production';
+
+    $subject = sprintf('Pairing code request · %s', $host);
+    $body = implode(
+        "\r\n",
+        [
+            'Hi Staark,',
+            '',
+            'Please send a pairing code so this website can connect to Staark Hub.',
+            '',
+            'Website: ' . home_url('/'),
+            'Site name: ' . wp_strip_all_tags((string) get_bloginfo('name')),
+            'Site ID: ' . (string) ($connection['site_id'] ?? ''),
+            'Environment: ' . $environment . ' (' . (string) ($connection['hub_url'] ?? '') . ')',
+            'WordPress: ' . (string) get_bloginfo('version'),
+            'Staark Hub: ' . STAARK_HUB_VERSION,
+            'Requested by: ' . ($user instanceof WP_User && $user->exists() ? $user->display_name . ' <' . $user->user_email . '>' : ''),
+            '',
+            'Thanks!',
+        ]
+    );
+
+    return 'mailto:' . staark_hub_contact_email()
+        . '?subject=' . rawurlencode($subject)
+        . '&body=' . rawurlencode($body);
+}
+
+/**
  * Connection state for the WordPress -> Staark Hub bridge.
  *
  * The site secret is a revocable per-site integration secret, not a WordPress
@@ -917,6 +967,41 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
             : STAARK_HUB_VERSION
     );
 
+    /*
+     * Hub UI 2 — shared shell (header, navigation, cards) and the redesigned
+     * Overview / Connect screens. Loaded after admin.css on every Hub page.
+     */
+    wp_enqueue_style(
+        'staark-hub-ui',
+        staark_hub_runtime_url('assets/hub-ui.css'),
+        ['staark-hub-admin'],
+        is_file(STAARK_HUB_PLUGIN_DIR . 'assets/hub-ui.css')
+            ? (string) filemtime(STAARK_HUB_PLUGIN_DIR . 'assets/hub-ui.css')
+            : STAARK_HUB_VERSION
+    );
+
+    wp_enqueue_script(
+        'staark-hub-ui',
+        staark_hub_runtime_url('assets/hub-ui.js'),
+        [],
+        is_file(STAARK_HUB_PLUGIN_DIR . 'assets/hub-ui.js')
+            ? (string) filemtime(STAARK_HUB_PLUGIN_DIR . 'assets/hub-ui.js')
+            : STAARK_HUB_VERSION,
+        true
+    );
+
+    // The Forms screen styles live in forms.css, which was only loaded on the frontend.
+    if (staark_hub_current_page() === 'staark-hub-forms') {
+        wp_enqueue_style(
+            'staark-hub-forms-admin',
+            staark_hub_runtime_url('assets/forms.css'),
+            ['staark-hub-admin'],
+            is_file(STAARK_HUB_PLUGIN_DIR . 'assets/forms.css')
+                ? (string) filemtime(STAARK_HUB_PLUGIN_DIR . 'assets/forms.css')
+                : STAARK_HUB_VERSION
+        );
+    }
+
     if (staark_hub_current_page() === 'staark-hub-security') {
         wp_enqueue_style(
             'staark-hub-security',
@@ -1129,7 +1214,7 @@ add_action('admin_post_staark_submit_support_ticket', static function (): void {
     update_post_meta($ticket_id, '_staark_ticket_channel', 'local');
     update_post_meta($ticket_id, '_staark_ticket_sync_state', 'pending');
 
-    $recipient = (string) apply_filters('staark_hub_support_email', 'hello@staarkinc.com');
+    $recipient = (string) apply_filters('staark_hub_support_email', staark_hub_contact_email());
     $ticket_label = staark_hub_support_ticket_label((int) $ticket_id);
     $mail_subject = sprintf('[%s] %s · %s', $ticket_label, $priorities[$priority], $subject);
     $mail_body = implode(
@@ -1454,37 +1539,84 @@ function staark_hub_brand_markup(): void
 {
     ?>
     <div class="staark-hub-brand" aria-label="Staark Inc.">
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="m18 16 4-4-4-4"></path>
-            <path d="m6 8-4 4 4 4"></path>
-            <path d="m14.5 4-5 16"></path>
-        </svg>
-        <strong>Staark Inc</strong><span aria-hidden="true"></span>
+        <span class="staark-hub-brand-mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m18 16 4-4-4-4"></path>
+                <path d="m6 8-4 4 4 4"></path>
+                <path d="m14.5 4-5 16"></path>
+            </svg>
+        </span>
+        <strong>Staark Hub</strong>
     </div>
     <?php
+}
+
+/**
+ * Hub sections shown in the in-page navigation.
+ *
+ * @return array<string,string>
+ */
+function staark_hub_nav_items(): array
+{
+    $items = [
+        STAARK_HUB_SLUG => __('Overview', 'staark-core'),
+        'staark-hub-website' => __('Website', 'staark-core'),
+        'staark-hub-forms' => __('Forms', 'staark-core'),
+        'staark-hub-security' => __('Security', 'staark-core'),
+        'staark-hub-seo' => __('SEO', 'staark-core'),
+        'staark-hub-performance' => __('Performance', 'staark-core'),
+        'staark-hub-support' => __('Support', 'staark-core'),
+        'staark-hub-branding' => __('Branding', 'staark-core'),
+        'staark-hub-updates' => __('Updates', 'staark-core'),
+        'staark-hub-managed' => __('Managed', 'staark-core'),
+        'staark-hub-first-install' => __('First Install', 'staark-core'),
+        'staark-hub-connect' => __('Connect', 'staark-core'),
+    ];
+
+    if (! function_exists('staark_hub_render_forms')) {
+        unset($items['staark-hub-forms']);
+    }
+
+    if (! function_exists('staark_hub_render_first_install')) {
+        unset($items['staark-hub-first-install']);
+    }
+
+    if (function_exists('staark_hub_managed_client_restrictions_apply') && staark_hub_managed_client_restrictions_apply()) {
+        unset($items['staark-hub-managed']);
+    }
+
+    return (array) apply_filters('staark_hub_nav_items', $items);
+}
+
+/**
+ * One-line description under each section title.
+ */
+function staark_hub_section_intro(string $section): string
+{
+    $intros = [
+        'Overview' => __('Setup status, shortcuts and everything Staark manages for this website.', 'staark-core'),
+        'Website' => __('Starter pages, homepage and the building blocks of the site.', 'staark-core'),
+        'Forms' => __('Contact and booking requests stored safely in WordPress.', 'staark-core'),
+        'Security' => __('Health checks and reversible hardening for this installation.', 'staark-core'),
+        'SEO' => __('Metadata, schema, sitemap and local business details.', 'staark-core'),
+        'Performance' => __('Cache, assets, images and Core Web Vitals readiness.', 'staark-core'),
+        'Support' => __('Send a request to Staark with the technical context attached.', 'staark-core'),
+        'Branding' => __('Name, logo, icon and colors used on the website.', 'staark-core'),
+        'Updates' => __('Staark releases and WordPress updates in one place.', 'staark-core'),
+        'Managed Mode' => __('Operator controls, restrictions and managed releases.', 'staark-core'),
+        'First Install' => __('Turn a fresh WordPress install into a ready starter site.', 'staark-core'),
+        'Connect' => __('Link this website to Staark Hub with a one-time pairing code.', 'staark-core'),
+    ];
+
+    return $intros[$section] ?? __('Managed by Staark Inc.', 'staark-core');
 }
 
 function staark_hub_nav(): void
 {
     $current = staark_hub_current_page();
-    $items = [
-        STAARK_HUB_SLUG => 'Overview',
-        'staark-hub-website' => 'Website',
-        'staark-hub-security' => 'Security',
-        'staark-hub-seo' => 'SEO',
-        'staark-hub-performance' => 'Performance',
-        'staark-hub-support' => 'Support',
-        'staark-hub-branding' => 'Branding',
-        'staark-hub-updates' => 'Updates',
-        'staark-hub-managed' => 'Managed',
-        'staark-hub-connect' => 'Connect',
-    ];
-
-    if (function_exists('staark_hub_managed_client_restrictions_apply') && staark_hub_managed_client_restrictions_apply()) {
-        unset($items['staark-hub-managed']);
-    }
+    $items = staark_hub_nav_items();
     ?>
-    <nav class="staark-hub-nav" aria-label="Staark Hub sections">
+    <nav class="staark-hub-nav" aria-label="<?php echo esc_attr__('Staark Hub sections', 'staark-core'); ?>">
         <?php foreach ($items as $slug => $label) : ?>
             <a class="staark-hub-nav-link<?php echo $current === $slug ? ' is-active' : ''; ?>" href="<?php echo esc_url(admin_url('admin.php?page=' . $slug)); ?>"<?php echo $current === $slug ? ' aria-current="page"' : ''; ?>>
                 <?php echo esc_html($label); ?>
@@ -1494,23 +1626,36 @@ function staark_hub_nav(): void
     <?php
 }
 
-function staark_hub_header(string $section): void
+function staark_hub_header(string $section, string $title = ''): void
 {
+    $host = (string) (wp_parse_url(home_url('/'), PHP_URL_HOST) ?: home_url('/'));
+    $site_name = trim(wp_strip_all_tags((string) get_bloginfo('name')));
+    $paired = function_exists('staark_hub_connection_is_connected') && staark_hub_connection_is_connected();
     ?>
     <header class="staark-hub-header">
-        <?php staark_hub_brand_markup(); ?>
+        <div class="staark-hub-topbar">
+            <div class="staark-hub-topbar-start">
+                <?php staark_hub_brand_markup(); ?>
+                <span class="staark-hub-topbar-divider" aria-hidden="true"></span>
+                <a class="staark-hub-site-chip" href="<?php echo esc_url(home_url('/')); ?>" target="_blank" rel="noopener">
+                    <i aria-hidden="true"></i>
+                    <span><?php echo esc_html($site_name !== '' ? $site_name : $host); ?></span>
+                    <small><?php echo esc_html($host); ?></small>
+                </a>
+            </div>
+            <div class="staark-hub-header-actions">
+                <a class="staark-hub-connection-chip<?php echo $paired ? ' is-linked' : ''; ?>" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-connect')); ?>">
+                    <i aria-hidden="true"></i><?php echo $paired ? esc_html__('Linked to Staark', 'staark-core') : esc_html__('Not linked', 'staark-core'); ?>
+                </a>
+                <a class="button" href="<?php echo esc_url(home_url('/')); ?>" target="_blank" rel="noopener"><?php echo esc_html__('View site', 'staark-core'); ?> ↗</a>
+                <a class="button button-primary" href="<?php echo esc_url(admin_url('site-editor.php')); ?>"><?php echo esc_html__('Site Editor', 'staark-core'); ?></a>
+            </div>
+        </div>
         <div class="staark-hub-title-row">
             <div>
-                <p class="staark-hub-kicker"><?php echo esc_html($section); ?></p>
-                <h1>Staark Website Hub</h1>
-                <p class="staark-hub-subtitle">Managed by Staark Inc.</p>
-            </div>
-            <div class="staark-hub-header-meta">
-                <span class="staark-hub-status"><i></i> Website online</span>
-                <div class="staark-hub-header-actions">
-                    <a class="button" href="<?php echo esc_url(home_url('/')); ?>" target="_blank" rel="noopener">Open website ↗</a>
-                    <a class="button button-primary" href="<?php echo esc_url(admin_url('site-editor.php')); ?>">Site Editor</a>
-                </div>
+                <p class="staark-hub-kicker"><?php echo esc_html__('Staark Hub', 'staark-core'); ?> · <?php echo esc_html($section); ?></p>
+                <h1><?php echo esc_html($title !== '' ? $title : $section); ?></h1>
+                <p class="staark-hub-subtitle"><?php echo esc_html(staark_hub_section_intro($section)); ?></p>
             </div>
         </div>
         <?php staark_hub_nav(); ?>
@@ -1518,203 +1663,276 @@ function staark_hub_header(string $section): void
     <?php
 }
 
+/**
+ * Setup checklist shown on the Overview.
+ *
+ * @return list<array{label:string,ok:bool,detail:string,url:string,action:string}>
+ */
+function staark_hub_overview_checklist(): array
+{
+    $using_https = function_exists('wp_is_using_https') ? wp_is_using_https() : str_starts_with(home_url('/'), 'https://');
+    $pretty_permalinks = (string) get_option('permalink_structure') !== '';
+    $front_page_id = (int) get_option('page_on_front');
+    $static_front = get_option('show_on_front') === 'page' && $front_page_id > 0;
+    $theme_front = is_file(get_stylesheet_directory() . '/templates/front-page.html')
+        || is_file(get_template_directory() . '/templates/front-page.html');
+    $forms_email = function_exists('staark_hub_forms_settings') ? (string) (staark_hub_forms_settings()['recipient_email'] ?? '') : '';
+    $seo = function_exists('staark_hub_seo_settings') ? staark_hub_seo_settings() : [];
+    $seo_ready = trim((string) ($seo['organization_name'] ?? '')) !== ''
+        && (trim((string) ($seo['phone'] ?? '')) !== '' || trim((string) ($seo['street_address'] ?? '')) !== '');
+    $paired = staark_hub_connection_is_connected();
+
+    return [
+        [
+            'label' => __('HTTPS', 'staark-core'),
+            'ok' => $using_https,
+            'detail' => $using_https ? __('Secure connection active', 'staark-core') : __('Site is served over HTTP', 'staark-core'),
+            'url' => admin_url('options-general.php'),
+            'action' => __('Settings', 'staark-core'),
+        ],
+        [
+            'label' => __('Homepage', 'staark-core'),
+            'ok' => $static_front || $theme_front,
+            'detail' => $static_front
+                ? sprintf(__('Static page: %s', 'staark-core'), get_the_title($front_page_id))
+                : ($theme_front ? __('Theme front-page template', 'staark-core') : __('Latest posts', 'staark-core')),
+            'url' => staark_hub_homepage_edit_url(),
+            'action' => __('Edit', 'staark-core'),
+        ],
+        [
+            'label' => __('Permalinks', 'staark-core'),
+            'ok' => $pretty_permalinks,
+            'detail' => $pretty_permalinks ? (string) get_option('permalink_structure') : __('Plain URLs (?p=123)', 'staark-core'),
+            'url' => admin_url('options-permalink.php'),
+            'action' => __('Fix', 'staark-core'),
+        ],
+        [
+            'label' => __('Form notifications', 'staark-core'),
+            'ok' => is_email($forms_email) !== false,
+            'detail' => $forms_email !== '' ? $forms_email : __('No recipient set', 'staark-core'),
+            'url' => admin_url('admin.php?page=staark-hub-forms'),
+            'action' => __('Set up', 'staark-core'),
+        ],
+        [
+            'label' => __('Local business SEO', 'staark-core'),
+            'ok' => $seo_ready,
+            'detail' => $seo_ready ? (string) $seo['organization_name'] : __('Add name, phone and address', 'staark-core'),
+            'url' => admin_url('admin.php?page=staark-hub-seo'),
+            'action' => __('Complete', 'staark-core'),
+        ],
+        [
+            'label' => __('Staark connection', 'staark-core'),
+            'ok' => $paired,
+            'detail' => $paired ? __('Linked with a signed connection', 'staark-core') : __('Needs a pairing code', 'staark-core'),
+            'url' => admin_url('admin.php?page=staark-hub-connect'),
+            'action' => __('Connect', 'staark-core'),
+        ],
+    ];
+}
+
+/**
+ * Module cards for the Overview, derived from the Hub navigation.
+ *
+ * @return array<string,string>
+ */
+function staark_hub_module_descriptions(): array
+{
+    return [
+        'staark-hub-website' => __('Starter pages and homepage', 'staark-core'),
+        'staark-hub-forms' => __('Contact and booking requests', 'staark-core'),
+        'staark-hub-security' => __('Scanner and safe hardening', 'staark-core'),
+        'staark-hub-seo' => __('Metadata, schema and sitemap', 'staark-core'),
+        'staark-hub-performance' => __('Cache, images and fonts', 'staark-core'),
+        'staark-hub-support' => __('Requests to the Staark team', 'staark-core'),
+        'staark-hub-branding' => __('Logo, icon and colors', 'staark-core'),
+        'staark-hub-updates' => __('Staark and WordPress updates', 'staark-core'),
+        'staark-hub-managed' => __('Operator controls and releases', 'staark-core'),
+        'staark-hub-first-install' => __('Bootstrap a starter site', 'staark-core'),
+        'staark-hub-connect' => __('Link to Staark Hub', 'staark-core'),
+    ];
+}
+
 function staark_hub_render_overview(): void
 {
     $theme = wp_get_theme();
-    $starter_pages = staark_hub_starter_pages();
-    $starter_installed = staark_hub_installed_page_count();
     $published_pages = staark_hub_published_page_count();
     $updates = staark_hub_pending_updates();
     $connection = staark_hub_connection_ensure_identity();
     $sync_queue = staark_hub_sync_queue();
-    $connection_paired = staark_hub_connection_is_connected();
-    $connection_ok = $connection_paired && $connection['status'] === 'connected';
-    $using_https = function_exists('wp_is_using_https') ? wp_is_using_https() : str_starts_with(home_url('/'), 'https://');
-    $pretty_permalinks = (string) get_option('permalink_structure') !== '';
+    $paired = staark_hub_connection_is_connected();
+    $connection_ok = $paired && $connection['status'] === 'connected';
+    $checklist = staark_hub_overview_checklist();
+    $done = count(array_filter($checklist, static fn (array $item): bool => $item['ok']));
+    $total = count($checklist);
+    $progress = $total > 0 ? (int) round($done / $total * 100) : 0;
+    $forms = function_exists('staark_hub_forms_summary') ? staark_hub_forms_summary() : null;
+    $user = wp_get_current_user();
+    $first_name = $user instanceof WP_User && $user->exists()
+        ? ($user->first_name !== '' ? $user->first_name : $user->display_name)
+        : '';
+    $nav = staark_hub_nav_items();
+    $descriptions = staark_hub_module_descriptions();
     ?>
-    <div class="wrap staark-hub-wrap">
-        <?php staark_hub_header('Overview'); ?>
+    <div class="wrap staark-hub-wrap staark-hub-overview">
+        <?php staark_hub_header('Overview', $first_name !== '' ? sprintf(__('Welcome back, %s', 'staark-core'), $first_name) : __('Overview', 'staark-core')); ?>
 
-        <div class="staark-hub-grid staark-hub-grid--four">
-            <section class="staark-hub-card staark-hub-stat-card">
-                <div class="staark-hub-metric-top"><span class="staark-hub-card-label">Website</span><span class="staark-hub-mini-status staark-hub-mini-status--ok">Active</span></div>
+        <div class="staark-hub-overview-hero">
+            <section class="staark-hub-card staark-hub-setup">
+                <div class="staark-hub-setup-head">
+                    <div>
+                        <span class="staark-hub-card-label"><?php echo esc_html__('Website setup', 'staark-core'); ?></span>
+                        <h2>
+                            <?php
+                            echo $done === $total
+                                ? esc_html__('Everything essential is in place', 'staark-core')
+                                : esc_html(sprintf(__('%1$d of %2$d essentials ready', 'staark-core'), $done, $total));
+                            ?>
+                        </h2>
+                    </div>
+                    <span class="staark-hub-setup-percent"><?php echo esc_html($progress . '%'); ?></span>
+                </div>
+                <div class="staark-hub-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?php echo esc_attr((string) $progress); ?>" aria-label="<?php echo esc_attr__('Setup progress', 'staark-core'); ?>">
+                    <span style="width:<?php echo esc_attr((string) $progress); ?>%"></span>
+                </div>
+                <ul class="staark-hub-checklist">
+                    <?php foreach ($checklist as $item) : ?>
+                        <li class="<?php echo $item['ok'] ? 'is-ok' : 'is-todo'; ?>">
+                            <span class="staark-hub-check-icon" aria-hidden="true"><?php echo $item['ok'] ? '✓' : '!'; ?></span>
+                            <span class="staark-hub-check-copy">
+                                <strong><?php echo esc_html($item['label']); ?></strong>
+                                <small><?php echo esc_html($item['detail']); ?></small>
+                            </span>
+                            <?php if (! $item['ok']) : ?>
+                                <a href="<?php echo esc_url($item['url']); ?>"><?php echo esc_html($item['action']); ?> →</a>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+
+            <section class="staark-hub-card staark-hub-card--dark staark-hub-cloud-card">
+                <span class="staark-hub-card-label"><?php echo esc_html__('Staark connection', 'staark-core'); ?></span>
+                <?php if ($paired) : ?>
+                    <h2><?php echo $connection_ok ? esc_html__('Linked to Staark Hub', 'staark-core') : esc_html__('Connection needs attention', 'staark-core'); ?></h2>
+                    <p><?php echo esc_html__('Support requests and website health sync over a signed connection. No WordPress passwords are shared.', 'staark-core'); ?></p>
+                    <dl class="staark-hub-cloud-meta">
+                        <div><dt><?php echo esc_html__('Waiting to sync', 'staark-core'); ?></dt><dd><?php echo esc_html((string) $sync_queue['total']); ?></dd></div>
+                        <div><dt><?php echo esc_html__('Last check', 'staark-core'); ?></dt><dd><?php echo esc_html($connection['last_checked'] !== '' ? $connection['last_checked'] : '—'); ?></dd></div>
+                    </dl>
+                    <div class="staark-hub-actions">
+                        <a class="button staark-hub-dark-button" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-connect')); ?>"><?php echo esc_html__('Manage connection', 'staark-core'); ?></a>
+                    </div>
+                <?php else : ?>
+                    <h2><?php echo esc_html__('Connect this website', 'staark-core'); ?></h2>
+                    <p><?php echo esc_html__('Pair once with a single-use code from Staark to enable managed support sync and health checks.', 'staark-core'); ?></p>
+                    <div class="staark-hub-actions">
+                        <a class="button staark-hub-dark-button" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-connect')); ?>"><?php echo esc_html__('Enter pairing code', 'staark-core'); ?></a>
+                    </div>
+                    <div class="staark-hub-cloud-request">
+                        <strong><?php echo esc_html__('No pairing code yet?', 'staark-core'); ?></strong>
+                        <a href="<?php echo esc_url(staark_hub_pairing_request_url($connection), ['mailto']); ?>"><?php echo esc_html(sprintf(__('Request one from %s', 'staark-core'), staark_hub_contact_email())); ?> →</a>
+                    </div>
+                <?php endif; ?>
+            </section>
+        </div>
+
+        <div class="staark-hub-grid staark-hub-grid--four staark-hub-stats">
+            <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-website')); ?>">
+                <span class="staark-hub-card-label"><?php echo esc_html__('Theme', 'staark-core'); ?></span>
                 <strong class="staark-hub-metric"><?php echo esc_html($theme->get('Name') ?: 'WordPress'); ?></strong>
-                <p>Theme <?php echo esc_html($theme->get('Version') ?: '—'); ?> · WP <?php echo esc_html(get_bloginfo('version')); ?></p>
-            </section>
-
-            <section class="staark-hub-card staark-hub-stat-card">
-                <div class="staark-hub-metric-top"><span class="staark-hub-card-label">Pages</span><span class="staark-hub-mini-status <?php echo $starter_installed === count($starter_pages) ? 'staark-hub-mini-status--ok' : 'staark-hub-mini-status--warn'; ?>"><?php echo $starter_installed === count($starter_pages) ? 'Starter ready' : 'Needs setup'; ?></span></div>
+                <p><?php echo esc_html(sprintf(__('Version %1$s · WordPress %2$s', 'staark-core'), $theme->get('Version') ?: '—', get_bloginfo('version'))); ?></p>
+            </a>
+            <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(admin_url('edit.php?post_type=page')); ?>">
+                <span class="staark-hub-card-label"><?php echo esc_html__('Pages', 'staark-core'); ?></span>
                 <strong class="staark-hub-metric"><?php echo esc_html((string) $published_pages); ?></strong>
-                <p><?php echo esc_html($starter_installed . '/' . count($starter_pages)); ?> Staark starter pages installed.</p>
-            </section>
-
-            <section class="staark-hub-card staark-hub-stat-card">
-                <div class="staark-hub-metric-top"><span class="staark-hub-card-label">Updates</span><span class="staark-hub-mini-status <?php echo $updates['total'] === 0 ? 'staark-hub-mini-status--ok' : 'staark-hub-mini-status--warn'; ?>"><?php echo $updates['total'] === 0 ? 'Up to date' : 'Review'; ?></span></div>
-                <strong class="staark-hub-metric"><?php echo esc_html((string) $updates['total']); ?> pending</strong>
-                <p><?php echo esc_html(sprintf('Core %d · Plugins %d · Themes %d', $updates['core'], $updates['plugins'], $updates['themes'])); ?></p>
-            </section>
-
-            <section class="staark-hub-card staark-hub-stat-card">
-                <div class="staark-hub-metric-top"><span class="staark-hub-card-label">Staark connection</span><span class="staark-hub-mini-status <?php echo $connection_ok ? 'staark-hub-mini-status--ok' : ($connection['status'] === 'error' ? 'staark-hub-mini-status--warn' : 'staark-hub-mini-status--muted'); ?>"><?php echo $connection_ok ? 'Connected' : ($connection['status'] === 'error' ? 'Needs attention' : 'Local only'); ?></span></div>
-                <strong class="staark-hub-metric"><?php echo $connection_paired ? 'Cloud linked' : 'Local'; ?></strong>
-                <p><?php echo $connection_paired ? esc_html($sync_queue['total'] . ' item(s) waiting to sync.') : 'Pair this site when the Staark WordPress connector is enabled.'; ?></p>
-            </section>
+                <p><?php echo esc_html__('Published pages', 'staark-core'); ?></p>
+            </a>
+            <?php if (is_array($forms)) : ?>
+                <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-forms')); ?>">
+                    <span class="staark-hub-card-label"><?php echo esc_html__('Form requests', 'staark-core'); ?></span>
+                    <strong class="staark-hub-metric"><?php echo esc_html((string) $forms['new']); ?> <small><?php echo esc_html__('new', 'staark-core'); ?></small></strong>
+                    <p><?php echo esc_html(sprintf(_n('%d request in total', '%d requests in total', $forms['total'], 'staark-core'), $forms['total'])); ?></p>
+                </a>
+            <?php endif; ?>
+            <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(admin_url('update-core.php')); ?>">
+                <span class="staark-hub-card-label"><?php echo esc_html__('Updates', 'staark-core'); ?></span>
+                <strong class="staark-hub-metric"><?php echo esc_html((string) $updates['total']); ?> <small><?php echo esc_html__('pending', 'staark-core'); ?></small></strong>
+                <p><?php echo esc_html(sprintf(__('Core %1$d · Plugins %2$d · Themes %3$d', 'staark-core'), $updates['core'], $updates['plugins'], $updates['themes'])); ?></p>
+            </a>
         </div>
 
         <section class="staark-hub-section">
             <div class="staark-hub-section-heading">
                 <div>
-                    <span class="staark-hub-card-label">Quick actions</span>
-                    <h2>Get to the useful stuff fast</h2>
-                    <p>Common client tasks without hunting through the WordPress sidebar.</p>
+                    <span class="staark-hub-card-label"><?php echo esc_html__('Quick actions', 'staark-core'); ?></span>
+                    <h2><?php echo esc_html__('Common tasks', 'staark-core'); ?></h2>
                 </div>
-                <a class="button" href="<?php echo esc_url(home_url('/')); ?>" target="_blank" rel="noopener">View website ↗</a>
             </div>
 
             <div class="staark-hub-quick-grid">
-                <a class="staark-hub-quick-action" href="<?php echo esc_url(staark_hub_homepage_edit_url()); ?>">
-                    <span class="staark-hub-quick-icon" aria-hidden="true">⌂</span>
-                    <span><strong>Edit homepage</strong><small>Open the homepage content or template</small></span>
-                </a>
-                <a class="staark-hub-quick-action" href="<?php echo esc_url(admin_url('site-editor.php')); ?>">
-                    <span class="staark-hub-quick-icon" aria-hidden="true">✦</span>
-                    <span><strong>Site Editor</strong><small>Header, footer, templates and styles</small></span>
-                </a>
-                <a class="staark-hub-quick-action" href="<?php echo esc_url(admin_url('post-new.php?post_type=page')); ?>">
-                    <span class="staark-hub-quick-icon" aria-hidden="true">＋</span>
-                    <span><strong>New page</strong><small>Create another client page</small></span>
-                </a>
-                <a class="staark-hub-quick-action" href="<?php echo esc_url(admin_url('edit.php?post_type=page')); ?>">
-                    <span class="staark-hub-quick-icon" aria-hidden="true">▤</span>
-                    <span><strong>All pages</strong><small>Edit, publish or review page content</small></span>
-                </a>
-                <a class="staark-hub-quick-action" href="<?php echo esc_url(admin_url('upload.php')); ?>">
-                    <span class="staark-hub-quick-icon" aria-hidden="true">▧</span>
-                    <span><strong>Media</strong><small>Images, files and uploads</small></span>
-                </a>
-                <a class="staark-hub-quick-action" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-website')); ?>">
-                    <span class="staark-hub-quick-icon" aria-hidden="true">S</span>
-                    <span><strong>Website setup</strong><small>Starter pages and Staark website tools</small></span>
-                </a>
+                <?php
+                $quick = [
+                    [staark_hub_homepage_edit_url(), '⌂', __('Edit homepage', 'staark-core'), __('Content or template', 'staark-core')],
+                    [admin_url('post-new.php?post_type=page'), '＋', __('New page', 'staark-core'), __('Add another page', 'staark-core')],
+                    [admin_url('edit.php?post_type=page'), '▤', __('All pages', 'staark-core'), __('Edit and publish', 'staark-core')],
+                    [admin_url('upload.php'), '▧', __('Media', 'staark-core'), __('Images and files', 'staark-core')],
+                    [admin_url('site-editor.php'), '✦', __('Site Editor', 'staark-core'), __('Header, footer, styles', 'staark-core')],
+                    [admin_url('admin.php?page=staark-hub-support'), '?', __('Ask Staark', 'staark-core'), __('Create a support request', 'staark-core')],
+                ];
+                foreach ($quick as $action) :
+                    ?>
+                    <a class="staark-hub-quick-action" href="<?php echo esc_url($action[0]); ?>">
+                        <span class="staark-hub-quick-icon" aria-hidden="true"><?php echo esc_html($action[1]); ?></span>
+                        <span><strong><?php echo esc_html($action[2]); ?></strong><small><?php echo esc_html($action[3]); ?></small></span>
+                    </a>
+                <?php endforeach; ?>
             </div>
         </section>
-
-        <div class="staark-hub-grid staark-hub-grid--split">
-            <section class="staark-hub-card">
-                <div class="staark-hub-card-heading staark-hub-card-heading--compact">
-                    <div>
-                        <span class="staark-hub-card-label">Website status</span>
-                        <h2>Core setup</h2>
-                    </div>
-                    <a class="button" href="<?php echo esc_url(admin_url('site-health.php')); ?>">Site Health</a>
-                </div>
-
-                <div class="staark-hub-health-list">
-                    <div class="staark-hub-health-row">
-                        <span><i class="staark-hub-health-dot <?php echo $using_https ? 'is-ok' : 'is-warn'; ?>"></i><strong>HTTPS</strong></span>
-                        <span class="staark-hub-health-value"><?php echo $using_https ? 'Active' : 'Needs attention'; ?></span>
-                    </div>
-                    <div class="staark-hub-health-row">
-                        <span><i class="staark-hub-health-dot <?php echo $pretty_permalinks ? 'is-ok' : 'is-warn'; ?>"></i><strong>Permalinks</strong></span>
-                        <span class="staark-hub-health-value"><?php echo $pretty_permalinks ? 'Configured' : 'Plain URLs'; ?></span>
-                    </div>
-                    <div class="staark-hub-health-row">
-                        <span><i class="staark-hub-health-dot <?php echo $starter_installed === count($starter_pages) ? 'is-ok' : 'is-warn'; ?>"></i><strong>Starter pages</strong></span>
-                        <span class="staark-hub-health-value"><?php echo esc_html($starter_installed . '/' . count($starter_pages)); ?> installed</span>
-                    </div>
-                    <div class="staark-hub-health-row">
-                        <span><i class="staark-hub-health-dot <?php echo $updates['total'] === 0 ? 'is-ok' : 'is-warn'; ?>"></i><strong>Updates</strong></span>
-                        <span class="staark-hub-health-value"><?php echo esc_html($updates['total'] === 0 ? 'Up to date' : $updates['total'] . ' pending'); ?></span>
-                    </div>
-                </div>
-            </section>
-
-            <section class="staark-hub-card">
-                <span class="staark-hub-card-label">Maintenance</span>
-                <h2>Keep WordPress tidy</h2>
-                <p>Review updates and health checks here. Security, SEO and Performance now have dedicated Staark controls while hosting-level tuning stays explicit.</p>
-                <div class="staark-hub-maintenance-stats">
-                    <span><strong><?php echo esc_html((string) $updates['plugins']); ?></strong><small>Plugin updates</small></span>
-                    <span><strong><?php echo esc_html((string) $updates['themes']); ?></strong><small>Theme updates</small></span>
-                    <span><strong><?php echo esc_html((string) $updates['core']); ?></strong><small>Core updates</small></span>
-                </div>
-                <div class="staark-hub-actions">
-                    <a class="button button-primary" href="<?php echo esc_url(admin_url('update-core.php')); ?>">Review updates</a>
-                    <a class="button" href="<?php echo esc_url(admin_url('site-health.php')); ?>">Open Site Health</a>
-                </div>
-            </section>
-        </div>
 
         <section class="staark-hub-section">
             <div class="staark-hub-section-heading">
                 <div>
-                    <span class="staark-hub-card-label">Staark workspace</span>
-                    <h2>Website modules</h2>
-                    <p>The client-facing WordPress stays simple while Staark Hub grows around the workflow.</p>
+                    <span class="staark-hub-card-label"><?php echo esc_html__('Modules', 'staark-core'); ?></span>
+                    <h2><?php echo esc_html__('Everything Staark manages', 'staark-core'); ?></h2>
                 </div>
             </div>
 
             <div class="staark-hub-tool-grid">
-                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-website')); ?>">
-                    <span class="staark-hub-tool-icon" aria-hidden="true">01</span>
-                    <span><strong>Website</strong><small>Starter pages and website setup</small></span>
-                    <b aria-hidden="true">→</b>
-                </a>
-                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-security')); ?>">
-                    <span class="staark-hub-tool-icon" aria-hidden="true">02</span>
-                    <span><strong>Security</strong><small>Scanner, integrity checks and safe hardening</small></span>
-                    <b aria-hidden="true">→</b>
-                </a>
-                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-seo')); ?>">
-                    <span class="staark-hub-tool-icon" aria-hidden="true">03</span>
-                    <span><strong>SEO</strong><small>Metadata, schema, sitemap and local SEO</small></span>
-                    <b aria-hidden="true">→</b>
-                </a>
-                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-performance')); ?>">
-                    <span class="staark-hub-tool-icon" aria-hidden="true">04</span>
-                    <span><strong>Performance</strong><small>Cache, assets, images, fonts and CWV readiness</small></span>
-                    <b aria-hidden="true">→</b>
-                </a>
-                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-support')); ?>">
-                    <span class="staark-hub-tool-icon" aria-hidden="true">05</span>
-                    <span><strong>Support</strong><small><?php echo esc_html($sync_queue['tickets'] > 0 ? $sync_queue['tickets'] . ' ticket(s) waiting to sync' : 'Tickets and managed Staark support'); ?></small></span>
-                    <b aria-hidden="true">→</b>
-                </a>
-                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-branding')); ?>">
-                    <span class="staark-hub-tool-icon" aria-hidden="true">06</span>
-                    <span><strong>Branding</strong><small>Client-facing website settings</small></span>
-                    <b aria-hidden="true">→</b>
-                </a>
-                <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-connect')); ?>">
-                    <span class="staark-hub-tool-icon" aria-hidden="true">07</span>
-                    <span><strong>Connect</strong><small><?php echo $connection_paired ? 'Linked to Staark Hub' : 'Pair this website with Staark'; ?></small></span>
-                    <b aria-hidden="true">→</b>
-                </a>
+                <?php foreach ($nav as $slug => $label) :
+                    if ($slug === STAARK_HUB_SLUG) {
+                        continue;
+                    }
+                    ?>
+                    <a class="staark-hub-tool-card" href="<?php echo esc_url(admin_url('admin.php?page=' . $slug)); ?>">
+                        <span><strong><?php echo esc_html($label); ?></strong><small><?php echo esc_html($descriptions[$slug] ?? ''); ?></small></span>
+                        <b aria-hidden="true">→</b>
+                    </a>
+                <?php endforeach; ?>
             </div>
         </section>
 
-        <div class="staark-hub-grid staark-hub-grid--split">
-            <section class="staark-hub-card">
-                <span class="staark-hub-card-label">Current setup</span>
-                <h2>Business Starter</h2>
-                <p>The reusable theme, pattern library and starter pages are installed locally. Client content stays editable in WordPress while Staark owns the underlying system.</p>
-                <div class="staark-hub-actions">
-                    <a class="button button-primary" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-website')); ?>">Website setup</a>
-                    <a class="button" href="<?php echo esc_url(staark_hub_homepage_edit_url()); ?>">Edit homepage</a>
-                </div>
-            </section>
-
-            <section class="staark-hub-card staark-hub-card--dark">
-                <span class="staark-hub-card-label">Staark Cloud</span>
-                <h2><?php echo $connection_paired ? 'Connected to Staark' : 'Connect to Staark'; ?></h2>
-                <p><?php echo $connection_paired ? 'Signed support sync is enabled for this WordPress installation. Support requests and site health data can be shared with the main Staark Hub.' : 'This site now has its own signed integration identity and is ready for pairing with the main Staark Hub.'; ?></p>
-                <div class="staark-hub-actions">
-                    <a class="button staark-hub-dark-button" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-connect')); ?>"><?php echo $connection_paired ? 'Manage connection' : 'Connection settings'; ?></a>
-                </div>
-                <span class="staark-hub-pill"><?php echo $connection_paired ? ($connection_ok ? 'HMAC signed · active' : 'HMAC signed · attention') : 'Connector client · ready'; ?></span>
-            </section>
-        </div>
+        <?php staark_hub_help_strip(); ?>
     </div>
+    <?php
+}
+
+/**
+ * "Need a hand?" footer shared by Hub pages.
+ */
+function staark_hub_help_strip(): void
+{
+    $email = staark_hub_contact_email();
+    ?>
+    <aside class="staark-hub-help-strip">
+        <div>
+            <strong><?php echo esc_html__('Need a hand?', 'staark-core'); ?></strong>
+            <span><?php echo esc_html__('The Staark team maintains this website. Send a request from the Hub, or email us directly.', 'staark-core'); ?></span>
+        </div>
+        <div class="staark-hub-actions">
+            <a class="button button-primary" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-support')); ?>"><?php echo esc_html__('Create support request', 'staark-core'); ?></a>
+            <a class="button" href="<?php echo esc_url('mailto:' . $email, ['mailto']); ?>"><?php echo esc_html($email); ?></a>
+        </div>
+    </aside>
     <?php
 }
 
@@ -2095,11 +2313,13 @@ function staark_hub_render_connect(): void
     $runtime_environment = staark_hub_runtime_environment();
     $development_http_allowed = in_array($runtime_environment, ['local', 'development'], true);
     $connector_environment_label = $connection['environment'] === 'development' ? 'Development' : 'Production';
-    $status_label = $healthy ? 'Connected' : ($paired ? 'Needs attention' : 'Not connected');
+    $status_label = $healthy ? __('Connected', 'staark-core') : ($paired ? __('Needs attention', 'staark-core') : __('Not connected', 'staark-core'));
     $status_class = $healthy ? 'staark-hub-mini-status--ok' : ($paired ? 'staark-hub-mini-status--warn' : 'staark-hub-mini-status--muted');
+    $request_url = staark_hub_pairing_request_url($connection);
+    $contact_email = staark_hub_contact_email();
     ?>
-    <div class="wrap staark-hub-wrap">
-        <?php staark_hub_header('Connect'); ?>
+    <div class="wrap staark-hub-wrap staark-hub-connect">
+        <?php staark_hub_header('Connect', $paired ? __('Staark connection', 'staark-core') : __('Connect to Staark', 'staark-core')); ?>
 
         <?php if ($state === 'connected') : ?>
             <div class="notice notice-success is-dismissible"><p>This website is connected to Staark Hub. Signed API requests are now enabled.</p></div>
@@ -2120,149 +2340,177 @@ function staark_hub_render_connect(): void
         <?php elseif ($state === 'insecure_url') : ?>
             <div class="notice notice-error"><p>Plain HTTP is only allowed when WordPress itself runs with WP_ENVIRONMENT_TYPE set to local or development.</p></div>
         <?php elseif ($state === 'invalid') : ?>
-            <div class="notice notice-error"><p>Add a valid pairing code from the main Staark Hub.</p></div>
+            <div class="notice notice-error">
+                <p>
+                    <?php echo esc_html__('Add a valid pairing code from Staark.', 'staark-core'); ?>
+                    <a href="<?php echo esc_url($request_url, ['mailto']); ?>"><?php echo esc_html__('Don’t have one? Request a pairing code.', 'staark-core'); ?></a>
+                </p>
+            </div>
         <?php elseif (in_array($state, ['error', 'sync_error'], true)) : ?>
             <div class="notice notice-error"><p><?php echo esc_html($connection['last_error'] !== '' ? $connection['last_error'] : 'Staark Hub could not complete the request.'); ?></p></div>
         <?php endif; ?>
 
-        <div class="staark-hub-connect-hero">
-            <div>
-                <span class="staark-hub-card-label">Staark Cloud</span>
-                <h2>One website, one signed connection</h2>
-                <p>Pair this WordPress installation once. After that, support requests and website health can move through Staark Hub without storing a WordPress administrator password anywhere.</p>
-            </div>
-            <div class="staark-hub-connect-hero-status">
-                <span class="staark-hub-mini-status <?php echo esc_attr($status_class); ?>"><?php echo esc_html($status_label); ?></span>
-                <small><?php echo $connection['last_checked'] !== '' ? 'Last check ' . esc_html($connection['last_checked']) : 'No remote check yet'; ?></small>
-            </div>
-        </div>
-
         <div class="staark-hub-grid staark-hub-grid--split staark-hub-connect-layout">
-            <section class="staark-hub-card">
-                <div class="staark-hub-card-heading staark-hub-card-heading--compact">
-                    <div>
-                        <span class="staark-hub-card-label">Connection</span>
-                        <h2><?php echo $paired ? 'Staark Hub is linked' : 'Pair this website'; ?></h2>
-                        <p><?php echo $paired ? 'The connector uses a per-site secret and HMAC signatures for requests to the Staark Hub API.' : 'Create a one-time pairing code in the main Staark Hub, paste it below, and WordPress will exchange it for this site identity.'; ?></p>
-                    </div>
-                </div>
-
+            <div class="staark-hub-connect-main">
                 <?php if (! $paired) : ?>
-                    <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-connect-environment">
-                        <input type="hidden" name="action" value="staark_save_connection_settings">
-                        <?php wp_nonce_field('staark_save_connection_settings'); ?>
-                        <div class="staark-hub-connect-environment-head">
-                            <div>
-                                <span class="staark-hub-card-label">Environment</span>
-                                <h3>Choose which Staark Hub this site talks to</h3>
-                                <p>Production is locked to staarkinc.com. Development can point to a separate HTTPS endpoint or, on local/development WordPress installs only, a plain HTTP URL.</p>
+                    <section class="staark-hub-card staark-hub-key-request" aria-labelledby="staark-hub-key-request-title">
+                        <span class="staark-hub-key-icon" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3L22 7l-3-3"></path></svg>
+                        </span>
+                        <div class="staark-hub-key-request-copy">
+                            <h2 id="staark-hub-key-request-title"><?php echo esc_html__('Don’t have a pairing code yet?', 'staark-core'); ?></h2>
+                            <p>
+                                <?php
+                                echo esc_html__('Pairing codes are issued by Staark Inc. for each website. Request one by email and we will reply with a single-use code for this site. The email already includes your website address and Site ID, never passwords or the connection secret.', 'staark-core');
+                                ?>
+                            </p>
+                            <div class="staark-hub-actions">
+                                <a class="button button-primary" href="<?php echo esc_url($request_url, ['mailto']); ?>"><?php echo esc_html__('Request a pairing code', 'staark-core'); ?></a>
+                                <button type="button" class="button staark-hub-copy" data-staark-copy="<?php echo esc_attr($connection['site_id']); ?>" data-staark-copied="<?php echo esc_attr__('Copied', 'staark-core'); ?>"><?php echo esc_html__('Copy Site ID', 'staark-core'); ?></button>
                             </div>
-                            <span class="staark-hub-pill">WP: <?php echo esc_html($runtime_environment); ?></span>
+                            <small>
+                                <?php
+                                printf(
+                                    /* translators: %s: Staark contact email address. */
+                                    esc_html__('No email app on this computer? Write to %s and include the Site ID below.', 'staark-core'),
+                                    '<a href="' . esc_url('mailto:' . $contact_email, ['mailto']) . '">' . esc_html($contact_email) . '</a>'
+                                );
+                                ?>
+                            </small>
                         </div>
-                        <div class="staark-hub-connect-environment-options">
-                            <label>
-                                <input type="radio" name="connector_environment" value="production" <?php checked($connection['environment'], 'production'); ?>>
-                                <span><strong>Production</strong><small>https://staarkinc.com</small></span>
-                            </label>
-                            <label>
-                                <input type="radio" name="connector_environment" value="development" <?php checked($connection['environment'], 'development'); ?>>
-                                <span><strong>Development</strong><small>Separate Hub / local testing</small></span>
-                            </label>
-                        </div>
-                        <label class="staark-hub-field">
-                            <span>Development Hub URL</span>
-                            <input type="url" name="hub_url" value="<?php echo esc_attr($connection['hub_url']); ?>" placeholder="https://dev.example.com or http://192.168.0.10:3002">
-                            <small><?php echo $development_http_allowed ? 'This WordPress runtime may use HTTP while the connector is set to Development.' : 'This WordPress runtime requires HTTPS. Set WP_ENVIRONMENT_TYPE to local/development before using a plain HTTP endpoint.'; ?></small>
-                        </label>
-                        <button type="submit" class="button">Save environment</button>
-                    </form>
-
-                    <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-connect-form">
-                        <input type="hidden" name="action" value="staark_connect_site">
-                        <?php wp_nonce_field('staark_connect_site'); ?>
-                        <label class="staark-hub-field">
-                            <span>Pairing code</span>
-                            <input type="text" name="pairing_code" maxlength="80" placeholder="e.g. STAARK-7F4K-92QX" autocomplete="off" spellcheck="false" required>
-                            <small>Pairing codes are created in the main Staark Hub and should be short-lived and single-use.</small>
-                        </label>
-                        <button type="submit" class="button button-primary">Connect to Staark</button>
-                    </form>
-                <?php else : ?>
-                    <div class="staark-hub-connect-actions">
-                        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
-                            <input type="hidden" name="action" value="staark_test_connection">
-                            <?php wp_nonce_field('staark_test_connection'); ?>
-                            <button type="submit" class="button button-primary">Test connection</button>
-                        </form>
-                        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
-                            <input type="hidden" name="action" value="staark_sync_now">
-                            <?php wp_nonce_field('staark_sync_now'); ?>
-                            <button type="submit" class="button">Sync now<?php echo $queue['total'] > 0 ? ' · ' . esc_html((string) $queue['total']) . ' pending' : ''; ?></button>
-                        </form>
-                        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" onsubmit="return confirm('Disconnect this website from Staark Hub? Local data will remain in WordPress.');">
-                            <input type="hidden" name="action" value="staark_disconnect_site">
-                            <?php wp_nonce_field('staark_disconnect_site'); ?>
-                            <button type="submit" class="button staark-hub-button-danger">Disconnect</button>
-                        </form>
-                    </div>
+                    </section>
                 <?php endif; ?>
 
-                <dl class="staark-hub-details staark-hub-connect-details">
-                    <div><dt>Environment</dt><dd><?php echo esc_html($connector_environment_label); ?></dd></div>
-                    <div><dt>Hub</dt><dd><?php echo esc_html($connection['hub_url']); ?></dd></div>
-                    <div><dt>Site ID</dt><dd><code><?php echo esc_html($connection['site_id']); ?></code></dd></div>
-                    <div><dt>Remote site</dt><dd><?php echo esc_html($connection['remote_site_id'] !== '' ? $connection['remote_site_id'] : '—'); ?></dd></div>
-                    <div><dt>Authentication</dt><dd>HMAC-SHA256</dd></div>
-                </dl>
+                <section class="staark-hub-card">
+                    <div class="staark-hub-card-heading staark-hub-card-heading--compact">
+                        <div>
+                            <span class="staark-hub-card-label"><?php echo esc_html__('Connection', 'staark-core'); ?></span>
+                            <h2><?php echo $paired ? esc_html__('Staark Hub is linked', 'staark-core') : esc_html__('Pair this website', 'staark-core'); ?></h2>
+                            <p><?php echo $paired ? esc_html__('The connector uses a per-site secret and HMAC signatures for every request to the Staark Hub API.', 'staark-core') : esc_html__('Paste the pairing code from Staark. WordPress exchanges it once for this site identity.', 'staark-core'); ?></p>
+                        </div>
+                        <span class="staark-hub-mini-status <?php echo esc_attr($status_class); ?>"><?php echo esc_html($status_label); ?></span>
+                    </div>
+
+                    <?php if (! $paired) : ?>
+                        <ol class="staark-hub-steps">
+                            <li class="is-current"><strong><?php echo esc_html__('Get a code', 'staark-core'); ?></strong><span><?php echo esc_html__('Requested from Staark', 'staark-core'); ?></span></li>
+                            <li><strong><?php echo esc_html__('Paste it', 'staark-core'); ?></strong><span><?php echo esc_html__('Single use, short-lived', 'staark-core'); ?></span></li>
+                            <li><strong><?php echo esc_html__('Connected', 'staark-core'); ?></strong><span><?php echo esc_html__('Signed sync enabled', 'staark-core'); ?></span></li>
+                        </ol>
+
+                        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-connect-form">
+                            <input type="hidden" name="action" value="staark_connect_site">
+                            <?php wp_nonce_field('staark_connect_site'); ?>
+                            <label class="staark-hub-field">
+                                <span><?php echo esc_html__('Pairing code', 'staark-core'); ?></span>
+                                <input type="text" name="pairing_code" maxlength="80" placeholder="STAARK-7F4K-92QX" autocomplete="off" spellcheck="false" required>
+                            </label>
+                            <button type="submit" class="button button-primary"><?php echo esc_html__('Connect to Staark', 'staark-core'); ?></button>
+                        </form>
+                    <?php else : ?>
+                        <div class="staark-hub-connect-actions">
+                            <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
+                                <input type="hidden" name="action" value="staark_test_connection">
+                                <?php wp_nonce_field('staark_test_connection'); ?>
+                                <button type="submit" class="button button-primary"><?php echo esc_html__('Test connection', 'staark-core'); ?></button>
+                            </form>
+                            <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
+                                <input type="hidden" name="action" value="staark_sync_now">
+                                <?php wp_nonce_field('staark_sync_now'); ?>
+                                <button type="submit" class="button"><?php echo esc_html__('Sync now', 'staark-core'); ?><?php echo $queue['total'] > 0 ? ' · ' . esc_html((string) $queue['total']) . ' ' . esc_html__('pending', 'staark-core') : ''; ?></button>
+                            </form>
+                            <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" onsubmit="return confirm('Disconnect this website from Staark Hub? Local data will remain in WordPress.');">
+                                <input type="hidden" name="action" value="staark_disconnect_site">
+                                <?php wp_nonce_field('staark_disconnect_site'); ?>
+                                <button type="submit" class="button staark-hub-button-danger"><?php echo esc_html__('Disconnect', 'staark-core'); ?></button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+
+                    <dl class="staark-hub-details staark-hub-connect-details">
+                        <div><dt><?php echo esc_html__('Site ID', 'staark-core'); ?></dt><dd><code><?php echo esc_html($connection['site_id']); ?></code></dd></div>
+                        <div><dt><?php echo esc_html__('Environment', 'staark-core'); ?></dt><dd><?php echo esc_html($connector_environment_label); ?></dd></div>
+                        <div><dt><?php echo esc_html__('Hub', 'staark-core'); ?></dt><dd><?php echo esc_html($connection['hub_url']); ?></dd></div>
+                        <div><dt><?php echo esc_html__('Remote site', 'staark-core'); ?></dt><dd><?php echo esc_html($connection['remote_site_id'] !== '' ? $connection['remote_site_id'] : '—'); ?></dd></div>
+                        <div><dt><?php echo esc_html__('Last check', 'staark-core'); ?></dt><dd><?php echo esc_html($connection['last_checked'] !== '' ? $connection['last_checked'] : '—'); ?></dd></div>
+                        <div><dt><?php echo esc_html__('Authentication', 'staark-core'); ?></dt><dd>HMAC-SHA256</dd></div>
+                    </dl>
+                </section>
 
                 <?php if (! $paired) : ?>
-                    <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-connect-secondary" onsubmit="return confirm('Generate a new site identity? Any old pairing details for this site will stop working.');">
-                        <input type="hidden" name="action" value="staark_regenerate_site_identity">
-                        <?php wp_nonce_field('staark_regenerate_site_identity'); ?>
-                        <button type="submit" class="button button-link-delete">Regenerate site identity</button>
-                    </form>
+                    <details class="staark-hub-card staark-hub-disclosure"<?php echo in_array($state, ['settings_saved', 'invalid_url', 'insecure_url'], true) ? ' open' : ''; ?>>
+                        <summary>
+                            <span>
+                                <strong><?php echo esc_html__('Advanced: connector environment', 'staark-core'); ?></strong>
+                                <small><?php echo esc_html(sprintf(__('Currently %1$s · %2$s', 'staark-core'), $connector_environment_label, $connection['hub_url'])); ?></small>
+                            </span>
+                        </summary>
+                        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-connect-environment">
+                            <input type="hidden" name="action" value="staark_save_connection_settings">
+                            <?php wp_nonce_field('staark_save_connection_settings'); ?>
+                            <p><?php echo esc_html__('Production is locked to staarkinc.com. Development can point to a separate HTTPS endpoint or, on local/development WordPress installs only, a plain HTTP URL.', 'staark-core'); ?> <span class="staark-hub-pill">WP: <?php echo esc_html($runtime_environment); ?></span></p>
+                            <div class="staark-hub-connect-environment-options">
+                                <label>
+                                    <input type="radio" name="connector_environment" value="production" <?php checked($connection['environment'], 'production'); ?>>
+                                    <span><strong>Production</strong><small>https://staarkinc.com</small></span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="connector_environment" value="development" <?php checked($connection['environment'], 'development'); ?>>
+                                    <span><strong>Development</strong><small><?php echo esc_html__('Separate Hub / local testing', 'staark-core'); ?></small></span>
+                                </label>
+                            </div>
+                            <label class="staark-hub-field">
+                                <span><?php echo esc_html__('Development Hub URL', 'staark-core'); ?></span>
+                                <input type="url" name="hub_url" value="<?php echo esc_attr($connection['hub_url']); ?>" placeholder="https://dev.example.com or http://192.168.0.10:3002">
+                                <small><?php echo $development_http_allowed ? esc_html__('This WordPress runtime may use HTTP while the connector is set to Development.', 'staark-core') : esc_html__('This WordPress runtime requires HTTPS. Set WP_ENVIRONMENT_TYPE to local/development before using a plain HTTP endpoint.', 'staark-core'); ?></small>
+                            </label>
+                            <div class="staark-hub-actions">
+                                <button type="submit" class="button"><?php echo esc_html__('Save environment', 'staark-core'); ?></button>
+                            </div>
+                        </form>
+                        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-connect-secondary" onsubmit="return confirm('Generate a new site identity? Any old pairing details for this site will stop working.');">
+                            <input type="hidden" name="action" value="staark_regenerate_site_identity">
+                            <?php wp_nonce_field('staark_regenerate_site_identity'); ?>
+                            <button type="submit" class="button button-link-delete"><?php echo esc_html__('Regenerate site identity', 'staark-core'); ?></button>
+                        </form>
+                    </details>
                 <?php endif; ?>
-            </section>
+            </div>
 
             <aside class="staark-hub-connect-sidebar">
                 <section class="staark-hub-card staark-hub-card--dark">
-                    <span class="staark-hub-card-label">Local sync queue</span>
-                    <h2><?php echo esc_html((string) $queue['total']); ?> waiting</h2>
+                    <span class="staark-hub-card-label"><?php echo esc_html__('Local sync queue', 'staark-core'); ?></span>
+                    <h2><?php echo esc_html(sprintf(__('%d waiting', 'staark-core'), $queue['total'])); ?></h2>
                     <div class="staark-hub-connect-queue">
-                        <div><span>Support tickets</span><strong><?php echo esc_html((string) $queue['tickets']); ?></strong></div>
+                        <div><span><?php echo esc_html__('Support tickets', 'staark-core'); ?></span><strong><?php echo esc_html((string) $queue['tickets']); ?></strong></div>
                     </div>
-                    <p>Support tickets stay stored in WordPress after sync. Staark Hub receives a managed-support copy and WordPress records the acknowledgement locally.</p>
-                    <span class="staark-hub-pill"><?php echo $paired ? ($healthy ? 'Cloud sync enabled' : 'Connection needs attention') : 'Stored locally'; ?></span>
+                    <p><?php echo esc_html__('Support tickets stay stored in WordPress. After pairing, Staark Hub receives a managed-support copy and WordPress records the acknowledgement.', 'staark-core'); ?></p>
+                    <span class="staark-hub-pill"><?php echo $paired ? ($healthy ? esc_html__('Cloud sync enabled', 'staark-core') : esc_html__('Connection needs attention', 'staark-core')) : esc_html__('Stored locally', 'staark-core'); ?></span>
                 </section>
 
                 <section class="staark-hub-card">
-                    <span class="staark-hub-card-label">Security model</span>
-                    <h2>No admin password sharing</h2>
-                    <div class="staark-hub-feature-list staark-hub-feature-list--stacked">
-                        <span><i aria-hidden="true">✓</i>Unique site ID and 256-bit integration secret</span>
-                        <span><i aria-hidden="true">✓</i>Timestamped HMAC-SHA256 request signatures</span>
-                        <span><i aria-hidden="true">✓</i><?php echo $development_http_allowed ? 'HTTPS by default; HTTP only for explicit local/development testing' : 'HTTPS-only Staark Hub API'; ?></span>
-                        <span><i aria-hidden="true">✓</i>Revocable connection without deleting local data</span>
-                    </div>
+                    <span class="staark-hub-card-label"><?php echo esc_html__('Security model', 'staark-core'); ?></span>
+                    <h2><?php echo esc_html__('No admin password sharing', 'staark-core'); ?></h2>
+                    <ul class="staark-hub-feature-list staark-hub-feature-list--stacked">
+                        <li><?php echo esc_html__('Unique site ID and 256-bit integration secret', 'staark-core'); ?></li>
+                        <li><?php echo esc_html__('Timestamped HMAC-SHA256 request signatures', 'staark-core'); ?></li>
+                        <li><?php echo $development_http_allowed ? esc_html__('HTTPS by default; HTTP only for explicit local/development testing', 'staark-core') : esc_html__('HTTPS-only Staark Hub API', 'staark-core'); ?></li>
+                        <li><?php echo esc_html__('Revocable connection without deleting local data', 'staark-core'); ?></li>
+                    </ul>
                 </section>
+
+                <details class="staark-hub-card staark-hub-disclosure staark-hub-connect-contract">
+                    <summary><span><strong><?php echo esc_html__('Connector endpoints', 'staark-core'); ?></strong><small><?php echo esc_html__('For Staark developers', 'staark-core'); ?></small></span></summary>
+                    <div class="staark-hub-connect-endpoints">
+                        <code>POST /api/hub/wordpress/connect</code>
+                        <code>GET /api/hub/wordpress/ping</code>
+                        <code>POST /api/hub/wordpress/sync</code>
+                    </div>
+                </details>
             </aside>
         </div>
 
-        <section class="staark-hub-section staark-hub-connect-contract">
-            <div class="staark-hub-section-heading">
-                <div>
-                    <span class="staark-hub-card-label">Connector contract</span>
-                    <h2>WordPress client is ready for the Hub endpoint</h2>
-                    <p>The connector keeps this managed website linked to Staark Hub for health checks and support-ticket sync.</p>
-                </div>
-                <span class="staark-hub-mini-status staark-hub-mini-status--muted">API namespace prepared</span>
-            </div>
-            <div class="staark-hub-connect-endpoints">
-                <code>POST /api/hub/wordpress/connect</code>
-                <code>GET /api/hub/wordpress/ping</code>
-                <code>POST /api/hub/wordpress/sync</code>
-            </div>
-        </section>
+        <?php staark_hub_help_strip(); ?>
     </div>
     <?php
 }
@@ -2395,7 +2643,7 @@ function staark_hub_render_support(): void
                     <h2>Prefer email?</h2>
                     <p>You can still contact Staark Inc. directly. The in-Hub form is preferred because it attaches site context automatically.</p>
                     <div class="staark-hub-actions">
-                        <a class="button" href="mailto:hello@staarkinc.com">hello@staarkinc.com</a>
+                        <a class="button" href="<?php echo esc_url('mailto:' . staark_hub_contact_email(), ['mailto']); ?>"><?php echo esc_html(staark_hub_contact_email()); ?></a>
                         <a class="button" href="https://staarkinc.com/kontakt" target="_blank" rel="noopener">Contact page ↗</a>
                     </div>
                 </section>

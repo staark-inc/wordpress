@@ -116,17 +116,12 @@ function staark_hub_render_first_install(): void
 
     $notice = isset($_GET['staark_bootstrap']) ? sanitize_key(wp_unslash($_GET['staark_bootstrap'])) : '';
     ?>
-    <div class="wrap staark-first-install">
-        <div class="staark-first-install__hero">
-            <div>
-                <p class="staark-first-install__eyebrow"><?php echo esc_html__('WP-6.4.2 · Safe bootstrap', 'staark-core'); ?></p>
-                <h1><?php echo esc_html__('First Site Install', 'staark-core'); ?></h1>
-                <p><?php echo esc_html__('Turn a fresh WordPress install into a usable Staark starter site without repeating the same setup by hand.', 'staark-core'); ?></p>
-            </div>
-            <?php if (! empty($state['completed'])) : ?>
-                <span class="staark-first-install__badge"><?php echo esc_html__('Previously completed', 'staark-core'); ?></span>
-            <?php endif; ?>
-        </div>
+    <div class="wrap staark-hub-wrap staark-first-install">
+        <?php staark_hub_header('First Install', __('First Site Install', 'staark-core')); ?>
+
+        <?php if (! empty($state['completed'])) : ?>
+            <p class="staark-hub-backlink"><span class="staark-hub-mini-status staark-hub-mini-status--ok"><?php echo esc_html__('Previously completed', 'staark-core'); ?></span></p>
+        <?php endif; ?>
 
         <?php if ($notice === 'success') : ?>
             <div class="notice notice-success is-dismissible">
