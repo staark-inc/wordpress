@@ -25,6 +25,51 @@ function staark_hub_update_channel(): string
     return in_array($channel, ['stable', 'beta'], true) ? $channel : 'stable';
 }
 
+/** @return array<string,array{slug:string,label:string}> */
+function staark_hub_update_theme_releases(): array
+{
+    return [
+        'theme' => [
+            'slug' => 'staark',
+            'label' => 'S-Hub Light',
+        ],
+        'salong' => [
+            'slug' => 'staark-salong',
+            'label' => 'S-Hub Salong',
+        ],
+        'bygg' => [
+            'slug' => 'staark-bygg',
+            'label' => 'S-Hub Bygg',
+        ],
+    ];
+}
+
+function staark_hub_update_release_slug(string $type): string
+{
+    if ($type === 'core') {
+        return 'staark-core';
+    }
+
+    $definitions = staark_hub_update_theme_releases();
+
+    return isset($definitions[$type])
+        ? (string) $definitions[$type]['slug']
+        : 'staark';
+}
+
+function staark_hub_update_release_label(string $type): string
+{
+    if ($type === 'core') {
+        return 'Staark Core';
+    }
+
+    $definitions = staark_hub_update_theme_releases();
+
+    return isset($definitions[$type])
+        ? (string) $definitions[$type]['label']
+        : 'Staark Theme';
+}
+
 /** @return array<string,mixed> */
 function staark_hub_update_state(): array
 {
@@ -39,6 +84,8 @@ function staark_hub_update_state(): array
             'manifest_generated_at' => '',
             'core_latest' => '',
             'theme_latest' => '',
+            'salong_latest' => '',
+            'bygg_latest' => '',
             'last_action' => '',
             'last_action_at' => '',
             'pending_core' => [],
@@ -107,7 +154,9 @@ function staark_hub_update_normalize_release(array $release, string $type): arra
 
     return [
         'type' => $type,
-        'slug' => isset($release['slug']) ? sanitize_key((string) $release['slug']) : ($type === 'theme' ? 'staark' : 'staark-core'),
+        'slug' => isset($release['slug'])
+            ? sanitize_key((string) $release['slug'])
+            : staark_hub_update_release_slug($type),
         'version' => $version,
         'package' => $package,
         'sha256' => preg_match('/^[a-f0-9]{64}$/', $sha256) ? $sha256 : '',
@@ -143,7 +192,12 @@ function staark_hub_update_normalize_manifest(array $manifest)
         'releases' => [],
     ];
 
-    foreach (['core', 'theme'] as $type) {
+    $release_types = array_merge(
+        ['core'],
+        array_keys(staark_hub_update_theme_releases())
+    );
+
+    foreach ($release_types as $type) {
         if (! isset($releases[$type]) || ! is_array($releases[$type])) {
             continue;
         }
@@ -242,8 +296,18 @@ function staark_hub_update_fetch_manifest(bool $force = false)
 
     $state['last_error'] = '';
     $state['manifest_generated_at'] = (string) ($manifest['generatedAt'] ?? '');
-    $state['core_latest'] = isset($manifest['releases']['core']['version']) ? (string) $manifest['releases']['core']['version'] : '';
-    $state['theme_latest'] = isset($manifest['releases']['theme']['version']) ? (string) $manifest['releases']['theme']['version'] : '';
+    $state['core_latest'] = isset($manifest['releases']['core']['version'])
+        ? (string) $manifest['releases']['core']['version']
+        : '';
+
+    foreach (staark_hub_update_theme_releases() as $type => $definition) {
+        unset($definition);
+
+        $state[$type . '_latest'] = isset($manifest['releases'][$type]['version'])
+            ? (string) $manifest['releases'][$type]['version']
+            : '';
+    }
+
     staark_hub_update_save_state($state);
     set_transient(STAARK_HUB_UPDATE_MANIFEST_TRANSIENT, $manifest, 6 * HOUR_IN_SECONDS);
 
@@ -481,7 +545,15 @@ function staark_hub_update_validate_theme_source(string $source, array $release)
         return new WP_Error('staark_updates_theme_style', 'Theme package is missing style.css.');
     }
 
-    $data = get_file_data($style, ['Name' => 'Theme Name', 'Version' => 'Version'], 'theme');
+    $data = get_file_data(
+        $style,
+        [
+            'Name' => 'Theme Name',
+            'Version' => 'Version',
+            'Template' => 'Template',
+        ],
+        'theme'
+    );
     $version = isset($data['Version']) ? trim((string) $data['Version']) : '';
     if ($version !== (string) $release['version']) {
         return new WP_Error('staark_updates_theme_version', 'Theme package version does not match the update manifest.');
@@ -490,6 +562,19 @@ function staark_hub_update_validate_theme_source(string $source, array $release)
     $slug = sanitize_key((string) ($release['slug'] ?? 'staark'));
     if ($slug === 'staark' && (! is_readable(trailingslashit($source) . 'theme.json') || ! is_dir(trailingslashit($source) . 'templates'))) {
         return new WP_Error('staark_updates_theme_structure', 'Staark Theme package must contain theme.json and templates/.');
+    }
+
+    if ($slug !== 'staark') {
+        $template = isset($data['Template'])
+            ? sanitize_key(trim((string) $data['Template']))
+            : '';
+
+        if ($template !== 'staark') {
+            return new WP_Error(
+                'staark_updates_child_theme_parent',
+                'Staark child theme package must declare Template: staark.'
+            );
+        }
     }
 
     return true;
@@ -688,16 +773,25 @@ function staark_hub_update_finalize_pending_core(): void
 }
 
 /** @return array<string,string>|WP_Error */
-function staark_hub_update_install_theme(array $release)
+function staark_hub_update_install_theme(array $release, string $type = 'theme')
 {
     if (! staark_hub_update_can_install()) {
         return new WP_Error('staark_updates_authority', 'Only a Staark operator can install managed updates.');
     }
-    if (! staark_hub_update_available('theme', $release)) {
-        return new WP_Error('staark_updates_not_newer', 'The selected Staark Theme release is not newer than the installed version.');
+
+    $definitions = staark_hub_update_theme_releases();
+    if (! isset($definitions[$type])) {
+        return new WP_Error('staark_updates_theme_type', 'Unsupported Staark theme release type.');
     }
 
-    $prepared = staark_hub_update_prepare_package($release, 'theme');
+    if (! staark_hub_update_available($type, $release)) {
+        return new WP_Error(
+            'staark_updates_not_newer',
+            'The selected ' . staark_hub_update_release_label($type) . ' release is not newer than the installed version.'
+        );
+    }
+
+    $prepared = staark_hub_update_prepare_package($release, $type);
     if (is_wp_error($prepared)) {
         return $prepared;
     }
@@ -760,7 +854,7 @@ function staark_hub_update_install_theme(array $release)
         }
 
         $state = staark_hub_update_state();
-        $state['last_action'] = 'Installed Staark Theme ' . (string) $release['version'] . '.';
+        $state['last_action'] = 'Installed ' . staark_hub_update_release_label($type) . ' ' . (string) $release['version'] . '.';
         $state['last_action_at'] = current_time('mysql');
         staark_hub_update_save_state($state);
         delete_transient(STAARK_HUB_UPDATE_MANIFEST_TRANSIENT);
@@ -775,12 +869,42 @@ function staark_hub_update_install_theme(array $release)
 function staark_hub_update_summary(): array
 {
     $state = staark_hub_update_state();
+
     $core = staark_hub_update_release('core');
-    $theme = staark_hub_update_release('theme');
-    $theme_slug = is_array($theme) ? (string) ($theme['slug'] ?? 'staark') : 'staark';
-    $theme_installed = staark_hub_update_theme_installed_version($theme_slug);
-    $core_latest = is_array($core) ? (string) $core['version'] : (string) $state['core_latest'];
-    $theme_latest = is_array($theme) ? (string) $theme['version'] : (string) $state['theme_latest'];
+    $core_latest = is_array($core)
+        ? (string) $core['version']
+        : (string) $state['core_latest'];
+
+    $themes = [];
+
+    foreach (staark_hub_update_theme_releases() as $type => $definition) {
+        $release = staark_hub_update_release($type);
+
+        $slug = is_array($release)
+            ? (string) ($release['slug'] ?? $definition['slug'])
+            : (string) $definition['slug'];
+
+        $installed = staark_hub_update_theme_installed_version($slug);
+
+        $latest = is_array($release)
+            ? (string) ($release['version'] ?? '')
+            : (string) ($state[$type . '_latest'] ?? '');
+
+        $themes[$type] = [
+            'key' => $type,
+            'label' => (string) $definition['label'],
+            'slug' => $slug,
+            'installed' => $installed,
+            'latest' => $latest,
+            'updateAvailable' => $latest !== ''
+                && ($installed === '' || version_compare($latest, $installed, '>')),
+            'notes' => is_array($release)
+                ? (string) ($release['notes'] ?? '')
+                : '',
+        ];
+    }
+
+    $primary = $themes['theme'];
 
     return [
         'channel' => staark_hub_update_channel(),
@@ -789,13 +913,20 @@ function staark_hub_update_summary(): array
         'lastAction' => (string) $state['last_action'],
         'lastActionAt' => (string) $state['last_action_at'],
         'pendingCoreHealth' => ! empty($state['pending_core']),
+
         'coreInstalled' => STAARK_HUB_VERSION,
         'coreLatest' => $core_latest,
-        'coreUpdateAvailable' => $core_latest !== '' && version_compare($core_latest, STAARK_HUB_VERSION, '>'),
-        'themeSlug' => $theme_slug,
-        'themeInstalled' => $theme_installed,
-        'themeLatest' => $theme_latest,
-        'themeUpdateAvailable' => $theme_latest !== '' && ($theme_installed === '' || version_compare($theme_latest, $theme_installed, '>')),
+        'coreUpdateAvailable' => $core_latest !== ''
+            && version_compare($core_latest, STAARK_HUB_VERSION, '>'),
+
+        // Backwards-compatible primary theme fields.
+        'themeSlug' => (string) $primary['slug'],
+        'themeInstalled' => (string) $primary['installed'],
+        'themeLatest' => (string) $primary['latest'],
+        'themeUpdateAvailable' => (bool) $primary['updateAvailable'],
+
+        'themes' => $themes,
+
         'scheduled' => (int) (wp_next_scheduled(STAARK_HUB_UPDATE_CRON) ?: 0),
     ];
 }
@@ -845,13 +976,37 @@ add_action('admin_post_staark_updates_install_theme', static function (): void {
     if (! staark_hub_update_can_install()) {
         wp_die(esc_html__('Only a Staark operator can install this managed update.', 'staark-core'));
     }
-    check_admin_referer('staark_updates_install_theme');
+
+    $type = isset($_POST['release'])
+        ? sanitize_key(wp_unslash($_POST['release']))
+        : 'theme';
+
+    $definitions = staark_hub_update_theme_releases();
+
+    if (! isset($definitions[$type])) {
+        wp_die(esc_html__('Unsupported Staark theme release.', 'staark-core'));
+    }
+
+    check_admin_referer('staark_updates_install_theme_' . $type);
+
     $manifest = staark_hub_update_fetch_manifest(true);
-    if (is_wp_error($manifest) || ! isset($manifest['releases']['theme']) || ! is_array($manifest['releases']['theme'])) {
+
+    if (
+        is_wp_error($manifest)
+        || ! isset($manifest['releases'][$type])
+        || ! is_array($manifest['releases'][$type])
+    ) {
         staark_hub_update_admin_redirect('install_error');
     }
-    $result = staark_hub_update_install_theme($manifest['releases']['theme']);
-    staark_hub_update_admin_redirect(is_wp_error($result) ? 'install_error' : 'theme_installed');
+
+    $result = staark_hub_update_install_theme(
+        $manifest['releases'][$type],
+        $type
+    );
+
+    staark_hub_update_admin_redirect(
+        is_wp_error($result) ? 'install_error' : 'theme_installed'
+    );
 });
 
 if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
@@ -893,8 +1048,15 @@ if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
         public function install(array $args, array $assoc_args): void
         {
             $type = isset($args[0]) ? sanitize_key((string) $args[0]) : '';
-            if (! in_array($type, ['core', 'theme'], true)) {
-                \WP_CLI::error('Usage: wp staark updates install <core|theme> [--yes]');
+            $allowed = array_merge(
+                ['core'],
+                array_keys(staark_hub_update_theme_releases())
+            );
+
+            if (! in_array($type, $allowed, true)) {
+                \WP_CLI::error(
+                    'Usage: wp staark updates install <core|theme|salong|bygg> [--yes]'
+                );
             }
             if (empty($assoc_args['yes'])) {
                 \WP_CLI::confirm('Install the available Staark ' . $type . ' update now?');
@@ -911,7 +1073,7 @@ if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
 
             $result = $type === 'core'
                 ? staark_hub_update_install_core($release)
-                : staark_hub_update_install_theme($release);
+                : staark_hub_update_install_theme($release, $type);
             if (is_wp_error($result)) {
                 \WP_CLI::error($result->get_error_message());
             }
