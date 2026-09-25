@@ -63,6 +63,13 @@ function staark_salong_foreign_starter_pages(): array
             continue;
         }
 
+        // Pages with patterns the active theme does not register at all are
+        // handled by Staark Hub's starter page repair (one notice, not two).
+        if (function_exists('staark_hub_starter_missing_patterns')
+            && staark_hub_starter_missing_patterns((string) $page->post_content) !== []) {
+            continue;
+        }
+
         if (staark_salong_is_foreign_starter_content((string) $page->post_content)) {
             $pages[$slug] = $page;
         }
@@ -172,3 +179,24 @@ add_action('admin_post_staark_salong_apply_starter', static function (): void {
     wp_safe_redirect(add_query_arg(['staark_salong_starter' => 'done', 'updated' => $updated], $back));
     exit;
 });
+
+/*
+ * Let Staark Hub's starter page repair rebuild every page this theme knows,
+ * not only the First Install ones (for example "tjanster" or "kontakt").
+ */
+add_filter('staark_hub_starter_repair_blueprints', static function ($blueprints, $preset) {
+    if ($preset !== 'salong' || ! is_array($blueprints)) {
+        return $blueprints;
+    }
+
+    foreach (staark_salong_starter_page_map() as $slug => $sections) {
+        if (! isset($blueprints[$slug])) {
+            $blueprints[$slug] = [
+                'title' => ucfirst(str_replace('-', ' ', $slug)),
+                'content' => staark_salong_pattern_blocks($sections),
+            ];
+        }
+    }
+
+    return $blueprints;
+}, 10, 2);
