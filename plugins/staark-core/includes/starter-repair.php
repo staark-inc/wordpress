@@ -100,7 +100,7 @@ function staark_hub_starter_broken_pages(): array
     $pages = get_posts(
         [
             'post_type' => 'page',
-            'post_status' => ['publish', 'draft', 'private'],
+            'post_status' => 'publish',
             'posts_per_page' => 100,
             's' => 'wp:pattern',
             'suppress_filters' => true,
