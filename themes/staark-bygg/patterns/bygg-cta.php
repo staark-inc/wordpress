@@ -21,7 +21,7 @@
 
 <!-- wp:buttons {"className":"bygg-actions"} -->
 <div class="wp-block-buttons bygg-actions"><!-- wp:button -->
-<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/#offert">Begär offert</a></div>
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/offert/">Begär offert</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons --></div>
 <!-- /wp:group --></div>

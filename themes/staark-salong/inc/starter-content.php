@@ -25,11 +25,11 @@ function staark_salong_starter_page_map(): array
 {
     return [
         'home' => staark_salong_home_sections(),
-        'tjanster' => ['services', 'prices', 'booking'],
-        'priser' => ['prices', 'booking'],
-        'galleri' => ['gallery', 'reviews', 'booking'],
-        'om-oss' => ['about', 'services', 'reviews'],
-        'kontakt' => ['booking'],
+        'tjanster' => ['services'],
+        'priser' => ['prices'],
+        'galleri' => ['gallery', 'reviews'],
+        'om-oss' => ['about', 'reviews'],
+        'kontakt' => ['contact'],
         'boka' => ['booking'],
     ];
 }

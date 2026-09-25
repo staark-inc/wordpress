@@ -32,7 +32,7 @@ $staark_bygg_towns = ['Värnamo', 'Gislaved', 'Gnosjö', 'Vaggeryd', 'Skillingar
 <!-- /wp:list -->
 
 <!-- wp:paragraph {"className":"bygg-area-note"} -->
-<p class="bygg-area-note">Bor du utanför området? <a href="#offert">Hör av dig ändå</a> — för större projekt reser vi längre.</p>
+<p class="bygg-area-note">Bor du utanför området? <a href="/offert/">Hör av dig ändå</a> — för större projekt reser vi längre.</p>
 <!-- /wp:paragraph --></div>
 <!-- /wp:column -->
 

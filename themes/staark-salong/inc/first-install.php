@@ -49,17 +49,25 @@ add_filter('staark_hub_first_install_page_blueprints', static function ($bluepri
             'title' => 'Hem',
             'content' => staark_salong_pattern_blocks(staark_salong_home_sections()),
         ],
+        'tjanster' => [
+            'title' => 'Tjänster',
+            'content' => staark_salong_pattern_blocks(['services']),
+        ],
         'priser' => [
             'title' => 'Priser',
-            'content' => staark_salong_pattern_blocks(['prices', 'booking']),
+            'content' => staark_salong_pattern_blocks(['prices']),
         ],
         'galleri' => [
             'title' => 'Galleri',
-            'content' => staark_salong_pattern_blocks(['gallery', 'reviews', 'booking']),
+            'content' => staark_salong_pattern_blocks(['gallery', 'reviews']),
         ],
         'om-oss' => [
             'title' => 'Om oss',
-            'content' => staark_salong_pattern_blocks(['about', 'services', 'reviews']),
+            'content' => staark_salong_pattern_blocks(['about', 'reviews']),
+        ],
+        'kontakt' => [
+            'title' => 'Kontakt',
+            'content' => staark_salong_pattern_blocks(['contact']),
         ],
         'boka' => [
             'title' => 'Boka tid',

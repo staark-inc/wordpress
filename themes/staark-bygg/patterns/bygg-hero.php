@@ -31,11 +31,11 @@ $staark_bygg_proof = [
 
 <!-- wp:buttons {"className":"bygg-actions"} -->
 <div class="wp-block-buttons bygg-actions"><!-- wp:button {"className":"is-style-fill"} -->
-<div class="wp-block-button is-style-fill"><a class="wp-block-button__link wp-element-button" href="#offert">Begär kostnadsfri offert</a></div>
+<div class="wp-block-button is-style-fill"><a class="wp-block-button__link wp-element-button" href="/offert/">Begär kostnadsfri offert</a></div>
 <!-- /wp:button -->
 
 <!-- wp:button {"className":"is-style-outline"} -->
-<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#projekt">Se våra projekt</a></div>
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="/projekt/">Se våra projekt</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons -->
 

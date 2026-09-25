@@ -24,7 +24,7 @@ if (! defined('ABSPATH')) {
 function staark_bygg_starter_page_map(): array
 {
     $map = array_map(static fn (array $page): array => $page['sections'], staark_bygg_page_sections());
-    $map['kontakt'] = ['quote', 'area'];
+    $map['kontakt'] = ['contact', 'area'];
 
     return $map;
 }
