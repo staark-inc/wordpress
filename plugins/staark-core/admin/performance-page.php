@@ -59,6 +59,8 @@ function staark_hub_render_performance(): void
     $probe = isset($snapshot['probe']) && is_array($snapshot['probe']) ? $snapshot['probe'] : [];
     $images = isset($snapshot['images']) && is_array($snapshot['images']) ? $snapshot['images'] : [];
     $fonts = isset($snapshot['fonts']) && is_array($snapshot['fonts']) ? $snapshot['fonts'] : [];
+    $media = isset($snapshot['media']) && is_array($snapshot['media']) ? $snapshot['media'] : [];
+    $asset_cache = isset($snapshot['assetCache']) && is_array($snapshot['assetCache']) ? $snapshot['assetCache'] : [];
     $page_cache = isset($snapshot['pageCache']) && is_array($snapshot['pageCache']) ? $snapshot['pageCache'] : [];
     $object_cache = isset($snapshot['objectCache']) && is_array($snapshot['objectCache']) ? $snapshot['objectCache'] : [];
     $state = isset($_GET['staark_performance']) ? sanitize_key(wp_unslash($_GET['staark_performance'])) : '';
@@ -70,6 +72,13 @@ function staark_hub_render_performance(): void
             <div class="notice notice-success is-dismissible"><p>Performance audit completed and the local snapshot was updated.</p></div>
         <?php elseif ($state === 'saved') : ?>
             <div class="notice notice-success is-dismissible"><p>Performance settings saved. Conservative runtime optimizations are active on the next request.</p></div>
+        <?php elseif ($state === 'images_optimized') : ?>
+            <div class="notice notice-success is-dismissible"><p>
+                Image optimization finished:
+                <strong><?php echo esc_html((string) absint($_GET['optimized'] ?? 0)); ?></strong> optimized,
+                <?php echo esc_html((string) absint($_GET['processed'] ?? 0)); ?> processed,
+                <?php echo esc_html((string) absint($_GET['failed'] ?? 0)); ?> failed.
+            </p></div>
         <?php endif; ?>
 
         <section class="staark-performance-hero">
@@ -189,6 +198,30 @@ function staark_hub_render_performance(): void
                             <input type="checkbox" name="disable_embeds" value="1" <?php checked($settings['disable_embeds']); ?>>
                         </label>
 
+                        <label class="staark-performance-toggle">
+                            <span>
+                                <strong>Generate WebP derivatives</strong>
+                                <small>JPEG/PNG originals stay untouched. WordPress-generated image sizes use WebP when supported.</small>
+                            </span>
+                            <input type="checkbox" name="generate_webp" value="1" <?php checked($settings['generate_webp']); ?>>
+                        </label>
+
+                        <label class="staark-performance-field">
+                            <span>
+                                <strong>WebP quality</strong>
+                                <small>Recommended range: 78–85. Default is 82.</small>
+                            </span>
+                            <input type="number" name="webp_quality" min="60" max="95" value="<?php echo esc_attr((string) $settings['webp_quality']); ?>">
+                        </label>
+
+                        <label class="staark-performance-toggle">
+                            <span>
+                                <strong>Smart lazy loading</strong>
+                                <small>Keeps the first two eligible images eager and lets WordPress lazy-load later images.</small>
+                            </span>
+                            <input type="checkbox" name="smart_lazy_images" value="1" <?php checked($settings['smart_lazy_images']); ?>>
+                        </label>
+
                         <label class="staark-performance-field">
                             <span>
                                 <strong>Heartbeat</strong>
@@ -211,8 +244,31 @@ function staark_hub_render_performance(): void
                         <div><dt>Recent images</dt><dd><?php echo esc_html((string) ((int) ($images['sample'] ?? 0))); ?></dd></div>
                         <div><dt>&gt; 1 MB</dt><dd><?php echo esc_html((string) ((int) ($images['large'] ?? 0))); ?></dd></div>
                         <div><dt>WebP / AVIF originals</dt><dd><?php echo esc_html((string) ((int) ($images['modern'] ?? 0))); ?></dd></div>
+                        <div><dt>Legacy JPEG / PNG</dt><dd><?php echo esc_html((string) ((int) ($media['legacyOriginals'] ?? 0))); ?></dd></div>
+                        <div><dt>WebP derivative sets</dt><dd><?php echo esc_html((string) ((int) ($media['webpDerivativeSets'] ?? 0))); ?></dd></div>
+                        <div><dt>WebP support</dt><dd><?php echo ! empty($media['webpSupported']) ? 'Available' : 'Unavailable'; ?></dd></div>
+                        <div><dt>Lazy homepage images</dt><dd><?php echo esc_html((string) ((int) ($probe['lazyImages'] ?? 0))); ?> / <?php echo esc_html((string) ((int) ($probe['images'] ?? 0))); ?></dd></div>
                         <div><dt>Remote fonts</dt><dd><?php echo ! empty($fonts['remote']) ? 'Detected' : 'Not detected'; ?></dd></div>
                         <div><dt>Local WOFF2</dt><dd><?php echo ! empty($fonts['localWoff2']) ? 'Detected' : 'Not detected'; ?></dd></div>
+                    </dl>
+
+                    <?php if (! empty($media['webpSupported'])) : ?>
+                        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" style="margin-top:16px">
+                            <input type="hidden" name="action" value="staark_performance_optimize_images">
+                            <?php wp_nonce_field('staark_performance_optimize_images'); ?>
+                            <button type="submit" class="button">Optimize next 10 legacy images</button>
+                        </form>
+                    <?php endif; ?>
+                </section>
+
+                <section class="staark-hub-card">
+                    <span class="staark-hub-card-label">Browser cache</span>
+                    <h2>Static asset lifetime</h2>
+                    <p>Theme/media files are served directly by the web server or CDN. Staark audits them without rewriting server configuration.</p>
+                    <dl class="staark-hub-details">
+                        <div><dt>Healthy assets</dt><dd><?php echo esc_html((string) ((int) ($asset_cache['healthy'] ?? 0))); ?> / <?php echo esc_html((string) ((int) ($asset_cache['total'] ?? 0))); ?></dd></div>
+                        <div><dt>Recommended TTL</dt><dd>1 year</dd></div>
+                        <div><dt>Recommended header</dt><dd><code>public, max-age=31536000, immutable</code></dd></div>
                     </dl>
                 </section>
 
@@ -237,7 +293,8 @@ function staark_hub_render_performance(): void
                 <span>Generic JS defer/delay</span>
                 <span>CSS concatenation</span>
                 <span>Database cleanup</span>
-                <span>Image deletion/conversion</span>
+                <span>Original image deletion</span>
+                <span>Blind full-library rewrites</span>
                 <span>CDN/cache server rules</span>
                 <span>Font licensing/files</span>
             </div>

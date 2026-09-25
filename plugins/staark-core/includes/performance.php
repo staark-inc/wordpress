@@ -14,7 +14,7 @@ if (! defined('ABSPATH')) {
 const STAARK_HUB_PERFORMANCE_AUDIT_HOOK = 'staark_hub_performance_daily_audit';
 
 /**
- * @return array{disable_emojis:bool,disable_embeds:bool,heartbeat_mode:string}
+ * @return array{disable_emojis:bool,disable_embeds:bool,heartbeat_mode:string,generate_webp:bool,webp_quality:int,smart_lazy_images:bool}
  */
 function staark_hub_performance_settings(): array
 {
@@ -28,6 +28,9 @@ function staark_hub_performance_settings(): array
             'disable_emojis' => true,
             'disable_embeds' => false,
             'heartbeat_mode' => 'standard',
+            'generate_webp' => true,
+            'webp_quality' => 82,
+            'smart_lazy_images' => true,
         ],
         $saved
     );
@@ -37,6 +40,9 @@ function staark_hub_performance_settings(): array
     $settings['heartbeat_mode'] = in_array((string) $settings['heartbeat_mode'], ['standard', 'reduced'], true)
         ? (string) $settings['heartbeat_mode']
         : 'standard';
+    $settings['generate_webp'] = (bool) $settings['generate_webp'];
+    $settings['webp_quality'] = max(60, min(95, (int) $settings['webp_quality']));
+    $settings['smart_lazy_images'] = (bool) $settings['smart_lazy_images'];
 
     return $settings;
 }
@@ -56,6 +62,9 @@ function staark_hub_performance_save_settings(array $settings): void
             'disable_emojis' => ! empty($settings['disable_emojis']),
             'disable_embeds' => ! empty($settings['disable_embeds']),
             'heartbeat_mode' => $heartbeat_mode,
+            'generate_webp' => ! empty($settings['generate_webp']),
+            'webp_quality' => max(60, min(95, (int) ($settings['webp_quality'] ?? 82))),
+            'smart_lazy_images' => ! empty($settings['smart_lazy_images']),
         ],
         false
     );
@@ -357,6 +366,12 @@ function staark_hub_performance_snapshot(): array
         'pageCache' => staark_hub_performance_page_cache(),
         'objectCache' => staark_hub_performance_object_cache(),
         'images' => staark_hub_performance_image_audit(),
+        'media' => function_exists('staark_hub_performance_media_audit')
+            ? staark_hub_performance_media_audit()
+            : [],
+        'assetCache' => function_exists('staark_hub_performance_static_asset_probe')
+            ? staark_hub_performance_static_asset_probe()
+            : [],
         'fonts' => staark_hub_performance_font_audit(),
         'probe' => staark_hub_performance_homepage_probe(),
     ];
@@ -377,7 +392,9 @@ function staark_hub_performance_checks(array $snapshot = []): array
     $object_cache = isset($snapshot['objectCache']) && is_array($snapshot['objectCache']) ? $snapshot['objectCache'] : ['active' => false, 'label' => 'Unknown'];
     $images = isset($snapshot['images']) && is_array($snapshot['images']) ? $snapshot['images'] : ['sample' => 0, 'large' => 0, 'bytes' => 0, 'modern' => 0];
     $fonts = isset($snapshot['fonts']) && is_array($snapshot['fonts']) ? $snapshot['fonts'] : ['remote' => false, 'remoteProviders' => [], 'localWoff2' => false, 'filesScanned' => 0];
-    $probe = isset($snapshot['probe']) && is_array($snapshot['probe']) ? $snapshot['probe'] : ['ok' => false, 'responseMs' => 0, 'htmlBytes' => 0, 'images' => 0, 'missingDimensions' => 0, 'compression' => '', 'cacheControl' => '', 'error' => 'No probe data'];
+    $media = isset($snapshot['media']) && is_array($snapshot['media']) ? $snapshot['media'] : ['sample' => 0, 'legacyOriginals' => 0, 'modernOriginals' => 0, 'webpDerivativeSets' => 0, 'webpSupported' => false];
+    $asset_cache = isset($snapshot['assetCache']) && is_array($snapshot['assetCache']) ? $snapshot['assetCache'] : ['total' => 0, 'healthy' => 0, 'items' => []];
+    $probe = isset($snapshot['probe']) && is_array($snapshot['probe']) ? $snapshot['probe'] : ['ok' => false, 'responseMs' => 0, 'htmlBytes' => 0, 'images' => 0, 'missingDimensions' => 0, 'lazyImages' => 0, 'compression' => '', 'cacheControl' => '', 'error' => 'No probe data'];
     $environment = staark_hub_environment_type();
 
     $cache_control = strtolower((string) $probe['cacheControl']);
@@ -393,6 +410,19 @@ function staark_hub_performance_checks(array $snapshot = []): array
     $dimensions_ok = ! $probe['ok'] || $probe['images'] === 0 || $probe['missingDimensions'] === 0;
     $response_ok = ! $probe['ok'] || $probe['responseMs'] <= 1200;
     $html_ok = ! $probe['ok'] || $probe['htmlBytes'] <= 300 * 1024;
+
+    $webp_delivery_ok = ! $settings['generate_webp']
+        || ! $media['webpSupported']
+        || $media['legacyOriginals'] === 0
+        || $media['webpDerivativeSets'] >= $media['legacyOriginals'];
+
+    $lazy_ok = ! $settings['smart_lazy_images']
+        || ! $probe['ok']
+        || $probe['images'] <= 2
+        || $probe['lazyImages'] > 0;
+
+    $static_cache_ok = $asset_cache['total'] > 0
+        && $asset_cache['healthy'] === $asset_cache['total'];
 
     return [
         [
@@ -450,6 +480,45 @@ function staark_hub_performance_checks(array $snapshot = []): array
             'recommendation' => 'Resize/compress oversized originals and consider WebP/AVIF delivery through WordPress or the CDN.',
         ],
         [
+            'id' => 'modern_image_delivery',
+            'label' => 'Modern image delivery',
+            'ok' => $webp_delivery_ok,
+            'points' => 8,
+            'severity' => 'medium',
+            'detail' => sprintf(
+                '%d legacy source image(s), %d WebP derivative set(s).',
+                $media['legacyOriginals'],
+                $media['webpDerivativeSets']
+            ),
+            'recommendation' => $media['webpSupported']
+                ? 'Generate WebP derivatives for legacy JPEG/PNG media while keeping originals as fallbacks.'
+                : 'The current PHP image editor does not report WebP support.',
+        ],
+        [
+            'id' => 'smart_lazy_images',
+            'label' => 'Smart image lazy loading',
+            'ok' => $lazy_ok,
+            'points' => 5,
+            'severity' => 'medium',
+            'detail' => $probe['ok']
+                ? sprintf('%d of %d homepage image(s) currently use loading="lazy".', $probe['lazyImages'], $probe['images'])
+                : 'Homepage image loading attributes could not be inspected.',
+            'recommendation' => 'Keep likely LCP images eager and lazy-load images further down the page.',
+        ],
+        [
+            'id' => 'static_asset_cache',
+            'label' => 'Static asset cache lifetime',
+            'ok' => $static_cache_ok,
+            'points' => 8,
+            'severity' => 'high',
+            'detail' => sprintf(
+                '%d of %d sampled static asset(s) have a cache lifetime of at least 30 days.',
+                $asset_cache['healthy'],
+                $asset_cache['total']
+            ),
+            'recommendation' => 'For versioned static assets use Cache-Control: public, max-age=31536000, immutable at the server/CDN layer.',
+        ],
+        [
             'id' => 'remote_fonts',
             'label' => 'Font delivery',
             'ok' => ! $fonts['remote'],
@@ -470,7 +539,7 @@ function staark_hub_performance_checks(array $snapshot = []): array
         [
             'id' => 'cache_headers',
             'label' => 'Public cache headers',
-            'ok' => $cache_header_ok || $environment !== 'production',
+            'ok' => $cache_header_ok,
             'points' => 7,
             'severity' => 'medium',
             'detail' => $probe['cacheControl'] !== '' ? 'Cache-Control: ' . $probe['cacheControl'] . '.' : 'No Cache-Control header observed.',
@@ -684,6 +753,9 @@ add_action('admin_post_staark_performance_save', static function (): void {
             'disable_emojis' => staark_hub_checkbox_value('disable_emojis'),
             'disable_embeds' => staark_hub_checkbox_value('disable_embeds'),
             'heartbeat_mode' => isset($_POST['heartbeat_mode']) ? sanitize_key(wp_unslash($_POST['heartbeat_mode'])) : 'standard',
+            'generate_webp' => staark_hub_checkbox_value('generate_webp'),
+            'webp_quality' => isset($_POST['webp_quality']) ? absint($_POST['webp_quality']) : 82,
+            'smart_lazy_images' => staark_hub_checkbox_value('smart_lazy_images'),
         ]
     );
 

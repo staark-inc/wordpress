@@ -50,3 +50,14 @@ add_action('init', static function (): void {
         );
     }
 });
+
+/*
+ * Frontend critical rendering path.
+ */
+$staark_performance_render = get_theme_file_path(
+    'inc/performance-render.php'
+);
+
+if (is_file($staark_performance_render)) {
+    require_once $staark_performance_render;
+}
