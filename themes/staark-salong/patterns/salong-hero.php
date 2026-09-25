@@ -24,11 +24,11 @@
 
 <!-- wp:buttons {"className":"salong-actions"} -->
 <div class="wp-block-buttons salong-actions"><!-- wp:button -->
-<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="#boka">Boka tid</a></div>
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/boka/">Boka tid</a></div>
 <!-- /wp:button -->
 
 <!-- wp:button {"className":"is-style-outline"} -->
-<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#priser">Se prislistan</a></div>
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="/priser/">Se prislistan</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons -->
 

@@ -44,7 +44,7 @@
 
 <!-- wp:buttons {"className":"salong-actions"} -->
 <div class="wp-block-buttons salong-actions"><!-- wp:button -->
-<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="#boka">Boka en konsultation</a></div>
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/boka/">Boka en konsultation</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons --></div>
 <!-- /wp:column --></div>

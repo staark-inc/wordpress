@@ -78,6 +78,6 @@ $staark_salong_prices = [
 <!-- /wp:group -->
 
 <!-- wp:paragraph {"align":"center","className":"salong-price-foot"} -->
-<p class="has-text-align-center salong-price-foot">Osäker på vad du behöver? <a href="#boka">Boka en kostnadsfri konsultation →</a></p>
+<p class="has-text-align-center salong-price-foot">Osäker på vad du behöver? <a href="/boka/">Boka en kostnadsfri konsultation →</a></p>
 <!-- /wp:paragraph --></div>
 <!-- /wp:group -->
