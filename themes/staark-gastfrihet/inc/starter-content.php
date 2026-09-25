@@ -79,14 +79,32 @@ function staark_gast_starter_state(): array
         }
 
         $content = (string) $page->post_content;
+
         if (str_contains($content, '"slug":"staark/')) {
             $uses_starter = true;
         }
 
-        // Pages with patterns the active theme does not register at all are
-        // handled by Staark Hub's starter page repair (one notice, not two).
-        if (function_exists('staark_hub_starter_missing_patterns')
-            && staark_hub_starter_missing_patterns($content) !== []) {
+        /*
+         * Important: an unpublished starter page from another Staark
+         * theme still occupies this route. Core intentionally ignores
+         * drafts, so Gästfrihet must handle it itself.
+         */
+        if (
+            $page->post_status !== 'publish'
+            && staark_gast_is_foreign_starter_content($content)
+        ) {
+            $state['switch'][$slug] = $page;
+            continue;
+        }
+
+        /*
+         * Published pages whose patterns no longer exist are handled by
+         * the global Staark Core repair notice, avoiding duplicate notices.
+         */
+        if (
+            function_exists('staark_hub_starter_missing_patterns')
+            && staark_hub_starter_missing_patterns($content) !== []
+        ) {
             continue;
         }
 
@@ -95,7 +113,10 @@ function staark_gast_starter_state(): array
         }
     }
 
-    // Only offer new pages on sites that use the starter pages.
+    /*
+     * Only offer creation of missing starter routes when this site is
+     * actually using Staark starter content and has a front page.
+     */
     if (! $uses_starter || staark_gast_starter_page('home') === null) {
         $state['missing'] = [];
     }
@@ -184,21 +205,35 @@ add_action('admin_post_staark_gast_apply_starter', static function (): void {
     $created = 0;
 
     foreach ($state['switch'] as $slug => $page) {
-        if (! current_user_can('edit_post', $page->ID) || ! isset($map[$slug])) {
+        if (! isset($map[$slug])) {
             continue;
         }
 
+        /*
+         * The action itself already requires edit_pages + nonce.
+         * Every item in $state['switch'] is a detected Staark starter route,
+         * so do not let an old per-post capability state make the route
+         * impossible to repair.
+         */
         if (function_exists('wp_save_post_revision')) {
             wp_save_post_revision($page->ID);
         }
 
-        $result = wp_update_post(
-            [
-                'ID' => $page->ID,
-                'post_content' => staark_gast_pattern_blocks($map[$slug]),
-            ],
-            true
-        );
+        $update = [
+            'ID' => $page->ID,
+            'post_content' => staark_gast_pattern_blocks($map[$slug]),
+        ];
+
+        /*
+         * A starter route left as draft by another Staark theme must become
+         * usable again when the operator explicitly applies this preset.
+         */
+        if ($page->post_status !== 'publish' && current_user_can('publish_pages')) {
+            $update['post_status'] = 'publish';
+            $update['post_title'] = $pages[$slug]['title'];
+        }
+
+        $result = wp_update_post($update, true);
 
         if (! is_wp_error($result)) {
             ++$updated;
