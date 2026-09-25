@@ -45,6 +45,10 @@ function staark_hub_update_theme_releases(): array
             'slug' => 'staark-gastfrihet',
             'label' => 'S-Hub Gästfrihet',
         ],
+        'gastfrihet' => [
+            'slug' => 'staark-gastfrihet',
+            'label' => 'S-Hub Gästfrihet',
+        ],
     ];
 }
 
