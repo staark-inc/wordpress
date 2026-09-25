@@ -34,7 +34,7 @@ function staark_bygg_pattern_blocks(array $patterns): string
  */
 function staark_bygg_home_sections(): array
 {
-    return ['hero', 'services', 'projects', 'process', 'area', 'reviews', 'faq', 'quote'];
+    return ['hero', 'services', 'projects', 'process', 'reviews', 'cta'];
 }
 
 /**

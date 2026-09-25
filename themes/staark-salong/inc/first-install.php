@@ -34,7 +34,7 @@ function staark_salong_pattern_blocks(array $patterns): string
  */
 function staark_salong_home_sections(): array
 {
-    return ['hero', 'services', 'prices', 'gallery', 'about', 'reviews', 'booking'];
+    return ['hero', 'services', 'gallery', 'about', 'reviews'];
 }
 
 add_filter('staark_hub_first_install_page_blueprints', static function ($blueprints, $preset_id) {
