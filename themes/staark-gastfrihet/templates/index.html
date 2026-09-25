@@ -1,0 +1,25 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","className":"gast-main gast-page","layout":{"type":"constrained"}} -->
+<main class="wp-block-group gast-main gast-page"><!-- wp:group {"className":"gast-page-head","layout":{"type":"constrained"}} -->
+<div class="wp-block-group gast-page-head"><!-- wp:query-title {"type":"archive","showPrefix":false,"className":"gast-page-title"} /--></div>
+<!-- /wp:group -->
+
+<!-- wp:query {"queryId":0,"query":{"perPage":10,"pages":0,"offset":0,"postType":"post","order":"desc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":true},"className":"gast-posts"} -->
+<div class="wp-block-query gast-posts"><!-- wp:post-template -->
+<!-- wp:post-date {"className":"gast-eyebrow"} /-->
+
+<!-- wp:post-title {"isLink":true} /-->
+
+<!-- wp:post-excerpt /-->
+<!-- /wp:post-template -->
+
+<!-- wp:query-pagination {"layout":{"type":"flex","justifyContent":"space-between"}} -->
+<!-- wp:query-pagination-previous /-->
+
+<!-- wp:query-pagination-next /-->
+<!-- /wp:query-pagination --></div>
+<!-- /wp:query --></main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

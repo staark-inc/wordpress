@@ -41,6 +41,10 @@ function staark_hub_update_theme_releases(): array
             'slug' => 'staark-bygg',
             'label' => 'S-Hub Bygg',
         ],
+        'gastfrihet' => [
+            'slug' => 'staark-gastfrihet',
+            'label' => 'S-Hub Gästfrihet',
+        ],
     ];
 }
 
@@ -86,6 +90,7 @@ function staark_hub_update_state(): array
             'theme_latest' => '',
             'salong_latest' => '',
             'bygg_latest' => '',
+            'gastfrihet_latest' => '',
             'last_action' => '',
             'last_action_at' => '',
             'pending_core' => [],
@@ -1055,7 +1060,7 @@ if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
 
             if (! in_array($type, $allowed, true)) {
                 \WP_CLI::error(
-                    'Usage: wp staark updates install <core|theme|salong|bygg> [--yes]'
+                    'Usage: wp staark updates install <core|theme|salong|bygg|gastfrihet> [--yes]'
                 );
             }
             if (empty($assoc_args['yes'])) {

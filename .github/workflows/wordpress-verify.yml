@@ -9,6 +9,7 @@ on:
       - 'themes/staark/**'
       - 'themes/staark-salong/**'
       - 'themes/staark-bygg/**'
+      - 'themes/staark-gastfrihet/**'
       - '.github/workflows/wordpress-verify.yml'
       - '.github/workflows/wordpress-release.yml'
 
@@ -18,6 +19,7 @@ on:
       - 'themes/staark/**'
       - 'themes/staark-salong/**'
       - 'themes/staark-bygg/**'
+      - 'themes/staark-gastfrihet/**'
       - '.github/workflows/wordpress-verify.yml'
       - '.github/workflows/wordpress-release.yml'
 
@@ -65,6 +67,7 @@ jobs:
               themes/staark \
               themes/staark-salong \
               themes/staark-bygg \
+              themes/staark-gastfrihet \
               -type f -name '*.php' -print0
           )
 
@@ -84,6 +87,7 @@ jobs:
               Path("themes/staark"),
               Path("themes/staark-salong"),
               Path("themes/staark-bygg"),
+              Path("themes/staark-gastfrihet"),
           ]
 
           # Validate every theme JSON file.
@@ -136,9 +140,13 @@ jobs:
           bygg, bygg_version = theme_header(
               "themes/staark-bygg/style.css"
           )
+          gast, gast_version = theme_header(
+              "themes/staark-gastfrihet/style.css"
+          )
 
           assert "Template: staark" in salong
           assert "Template: staark" in bygg
+          assert "Template: staark" in gast
 
           assert Path("themes/staark/theme.json").exists()
           assert Path("themes/staark/templates").is_dir()
@@ -151,10 +159,16 @@ jobs:
               "themes/staark-bygg/presets/bygg.json"
           ).exists()
 
+          for preset in ("restaurang", "hotell"):
+              assert Path(
+                  f"themes/staark-gastfrihet/presets/{preset}.json"
+              ).exists()
+
           print("Core:", core_version)
           print("Light:", light_version)
           print("Salong:", salong_version)
           print("Bygg:", bygg_version)
+          print("Gästfrihet:", gast_version)
           print("JSON, versions and package metadata OK")
           PY
 
@@ -169,11 +183,13 @@ jobs:
           mkdir -p dist/package/staark
           mkdir -p dist/package/staark-salong
           mkdir -p dist/package/staark-bygg
+          mkdir -p dist/package/staark-gastfrihet
 
           cp -a plugins/staark-core/. dist/package/staark-core/
           cp -a themes/staark/. dist/package/staark/
           cp -a themes/staark-salong/. dist/package/staark-salong/
           cp -a themes/staark-bygg/. dist/package/staark-bygg/
+          cp -a themes/staark-gastfrihet/. dist/package/staark-gastfrihet/
 
           (
             cd dist/package
@@ -182,12 +198,14 @@ jobs:
             zip -qr9 ../staark-theme.zip staark
             zip -qr9 ../staark-salong-theme.zip staark-salong
             zip -qr9 ../staark-bygg-theme.zip staark-bygg
+            zip -qr9 ../staark-gastfrihet-theme.zip staark-gastfrihet
           )
 
           unzip -tq dist/staark-core.zip
           unzip -tq dist/staark-theme.zip
           unzip -tq dist/staark-salong-theme.zip
           unzip -tq dist/staark-bygg-theme.zip
+          unzip -tq dist/staark-gastfrihet-theme.zip
 
           unzip -l dist/staark-core.zip \
             | grep -q 'staark-core/staark-core.php'
@@ -200,5 +218,8 @@ jobs:
 
           unzip -l dist/staark-bygg-theme.zip \
             | grep -q 'staark-bygg/style.css'
+
+          unzip -l dist/staark-gastfrihet-theme.zip \
+            | grep -q 'staark-gastfrihet/style.css'
 
           echo "All WordPress release packages build successfully."
