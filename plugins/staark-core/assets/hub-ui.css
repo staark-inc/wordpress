@@ -47,7 +47,8 @@ body.staark-hub-admin-page #wpcontent {
 }
 
 .staark-hub-wrap {
-  max-width: 1360px;
+  width: auto;
+  max-width: none;
   margin: 0 20px 0 0;
   padding: 0 0 48px;
   color: var(--hub-text);
@@ -1222,7 +1223,8 @@ body.staark-hub-admin-page #wpcontent {
 /* ------------------------------------------------------------------ */
 
 .staark-hub-wrap.staark-first-install {
-  max-width: 1360px;
+  width: auto;
+  max-width: none;
 }
 
 .staark-hub-wrap .staark-first-install__readiness {
