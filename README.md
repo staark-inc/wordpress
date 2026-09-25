@@ -17,6 +17,7 @@ It is intentionally small: one first-party block theme plus one first-party mana
 - **Staark Theme** — native WordPress block theme, reusable patterns, `theme.json` design tokens and a small frontend surface.
 - **Staark Hub** — website management, support, security, SEO, performance, branding, managed runtime and update channel.
 - **S-Hub Salong** — child theme of the Staark Theme for hair salons and barbers: services, price list, gallery and booking requests. See `themes/staark-salong/README.md`.
+- **S-Hub Bygg** — child theme of the Staark Theme for builders and craftsmen: services, projects, service area, process, FAQ and quote requests. See `themes/staark-bygg/README.md`.
 - **Staark Hub connector** — HMAC-signed link between a managed WordPress installation and the main Staark Hub.
 
 ## Repository structure

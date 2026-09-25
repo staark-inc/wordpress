@@ -5,7 +5,8 @@
 
   "themes": [
     "./themes/staark",
-    "./themes/staark-salong"
+    "./themes/staark-salong",
+    "./themes/staark-bygg"
   ],
 
   "plugins": [
