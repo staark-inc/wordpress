@@ -1,0 +1,1646 @@
+/*
+ * S-Hub Bygg — layered on top of S-Hub Light (staark/assets/css/theme.css).
+ * Visual direction: the Local Business pack (deep forest, brick accent,
+ * bold serif display) tuned for builders and craftsmen.
+ * Colors come from the "bygg" preset through --wp--preset--color--* tokens.
+ */
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../fonts/inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --bygg-ink: var(--wp--preset--color--ink, #17212b);
+  --bygg-muted: var(--wp--preset--color--muted, #56626e);
+  --bygg-line: var(--wp--preset--color--line, #d9ded9);
+  --bygg-paper: var(--wp--preset--color--paper, #f8f7f2);
+  --bygg-surface: var(--wp--preset--color--surface, #eaefe9);
+  --bygg-white: var(--wp--preset--color--white, #fff);
+  --bygg-accent: var(--wp--preset--color--primary, #c64e2c);
+  --bygg-accent-dark: var(--wp--preset--color--primary-dark, #92361f);
+  --bygg-accent-soft: var(--wp--preset--color--primary-soft, #fff0ea);
+  --bygg-ok: var(--wp--preset--color--success, #187a58);
+  --bygg-forest: var(--showcase-forest, #17362f);
+  --bygg-deep: var(--showcase-forest-deep, #102722);
+  --bygg-gold: var(--showcase-gold, #d3a23a);
+  --bygg-serif: Georgia, "Times New Roman", serif;
+  --bygg-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --bygg-radius: var(--staark-system-radius-md, 14px);
+  --bygg-radius-lg: var(--staark-system-radius-lg, 22px);
+  --bygg-gutter: clamp(20px, 4vw, 48px);
+  --bygg-section: clamp(72px, 9.5vw, 128px);
+  --bygg-ease: cubic-bezier(.2, .8, .2, 1);
+  --bygg-shadow: 0 28px 70px -30px rgba(16, 39, 34, .35);
+}
+
+body {
+  background: var(--bygg-paper);
+  color: var(--bygg-ink);
+  font-family: var(--bygg-sans);
+}
+
+::selection {
+  background: var(--bygg-accent);
+  color: #fff;
+}
+
+:where(a, button, input, textarea, select, summary, .wp-element-button):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--bygg-accent) 45%, transparent);
+  outline-offset: 3px;
+}
+
+:where(h1, h2, h3, h4, .wp-block-heading) {
+  font-family: var(--bygg-serif);
+  font-weight: 700;
+  letter-spacing: -.03em;
+}
+
+.bygg-main {
+  margin-block: 0 !important;
+}
+
+.bygg-main > .wp-block-post-content > *,
+.bygg-main > * {
+  margin-block-start: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Buttons                                                             */
+/* ------------------------------------------------------------------ */
+
+.bygg-main .wp-block-button__link,
+.bygg-header .wp-block-button__link,
+.bygg-footer .wp-block-button__link,
+.bygg-mobilebar .wp-block-button__link,
+.bygg-quote .staark-contact-form .wp-element-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5em;
+  min-height: 50px;
+  padding: 14px 26px !important;
+  border: 1px solid var(--bygg-accent);
+  border-radius: 999px !important;
+  background: var(--bygg-accent);
+  color: #fff;
+  font-family: var(--bygg-sans);
+  font-size: .95rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-decoration: none;
+  box-shadow: none !important;
+  transition: background-color .2s var(--bygg-ease), border-color .2s var(--bygg-ease), color .2s var(--bygg-ease), transform .2s var(--bygg-ease);
+}
+
+.bygg-main .wp-block-button__link:hover,
+.bygg-header .wp-block-button__link:hover,
+.bygg-footer .wp-block-button__link:hover,
+.bygg-mobilebar .wp-block-button__link:hover,
+.bygg-quote .staark-contact-form .wp-element-button:hover {
+  border-color: var(--bygg-accent-dark);
+  background: var(--bygg-accent-dark);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.bygg-main .is-style-outline .wp-block-button__link {
+  border-color: color-mix(in srgb, var(--bygg-ink) 20%, transparent);
+  background: var(--bygg-white);
+  color: var(--bygg-ink);
+}
+
+.bygg-main .is-style-outline .wp-block-button__link:hover {
+  border-color: var(--bygg-ink);
+  background: var(--bygg-ink);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared section typography                                           */
+/* ------------------------------------------------------------------ */
+
+.bygg-section {
+  padding-block: var(--bygg-section);
+}
+
+.bygg-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 16px;
+  color: var(--bygg-accent);
+  font-family: var(--bygg-sans);
+  font-size: .76rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.bygg-eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.bygg-title {
+  max-width: 18ch;
+  margin: 0;
+  font-size: clamp(2.1rem, 4.2vw, 3.6rem);
+  line-height: 1.02;
+}
+
+.bygg-intro,
+.bygg-lead {
+  max-width: 58ch;
+  margin: 20px 0 0;
+  color: var(--bygg-muted);
+  font-size: clamp(1rem, 1.25vw, 1.1rem);
+  line-height: 1.7;
+}
+
+.bygg-section-head {
+  display: grid;
+  justify-items: start;
+  margin-bottom: clamp(36px, 5vw, 60px);
+}
+
+.bygg-section-head > * {
+  margin-block: 0;
+}
+
+.bygg-section-head--split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, .85fr);
+  column-gap: clamp(32px, 6vw, 96px);
+  align-items: end;
+}
+
+.bygg-section-head--split > .bygg-eyebrow {
+  grid-column: 1 / -1;
+}
+
+.bygg-section-head--split > .bygg-intro {
+  margin-top: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Top bar + header                                                    */
+/* ------------------------------------------------------------------ */
+
+.bygg-topbar {
+  padding-block: 8px;
+  background: var(--bygg-deep);
+  color: rgba(255, 255, 255, .78);
+  font-size: .8rem;
+}
+
+.bygg-topbar-inner {
+  gap: 6px 24px;
+}
+
+.bygg-topbar p {
+  margin: 0;
+}
+
+.bygg-topbar-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.bygg-topbar a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bygg-topbar a:hover {
+  color: var(--bygg-gold);
+}
+
+.bygg-header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  padding-block: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--bygg-ink) 9%, transparent);
+  background: color-mix(in srgb, var(--bygg-paper) 96%, transparent);
+  box-shadow: 0 8px 30px rgba(23, 33, 43, .04);
+}
+
+.admin-bar .bygg-header {
+  top: 32px;
+}
+
+.bygg-header-inner {
+  min-height: 56px;
+  gap: 24px;
+}
+
+.bygg-header-actions {
+  gap: clamp(18px, 2.4vw, 34px);
+}
+
+.bygg-header .staark-brand,
+.bygg-footer .staark-brand {
+  gap: 10px;
+  color: inherit;
+  font-family: var(--bygg-serif);
+  font-size: clamp(1.3rem, 1.7vw, 1.55rem);
+  font-weight: 700;
+  letter-spacing: -.03em;
+  text-decoration: none;
+}
+
+.bygg-header .staark-brand strong,
+.bygg-footer .staark-brand strong {
+  font-weight: inherit;
+  white-space: nowrap;
+}
+
+/* The Hub fallback mark is a code icon; show a small roof mark instead. */
+.bygg-header .staark-brand > svg,
+.bygg-footer .staark-brand > svg {
+  display: none;
+}
+
+.bygg-header .staark-brand::before,
+.bygg-footer .staark-brand::before {
+  content: "";
+  width: 26px;
+  height: 22px;
+  background: var(--bygg-accent);
+  clip-path: polygon(50% 0, 100% 45%, 86% 45%, 86% 100%, 14% 100%, 14% 45%, 0 45%);
+}
+
+.bygg-header .staark-brand:has(.staark-brand__logo)::before,
+.bygg-footer .staark-brand:has(.staark-brand__logo)::before {
+  display: none;
+}
+
+.bygg-header .staark-brand__logo,
+.bygg-footer .staark-brand__logo {
+  width: auto;
+  max-height: 44px;
+}
+
+.bygg-nav .wp-block-navigation-item__content {
+  color: var(--bygg-ink);
+  font-size: .92rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bygg-nav .wp-block-navigation-item__content:hover {
+  color: var(--bygg-accent);
+}
+
+.bygg-header-cta .wp-block-button__link {
+  min-height: 44px;
+  padding: 11px 22px !important;
+}
+
+/* Mobile overlay menu */
+.bygg-nav .wp-block-navigation__responsive-container-open {
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  border: 1px solid var(--bygg-line);
+  border-radius: 999px;
+  background: var(--bygg-white);
+  color: var(--bygg-ink);
+}
+
+.bygg-nav .wp-block-navigation__responsive-container.is-menu-open {
+  padding: 28px var(--bygg-gutter) 40px;
+  background: var(--bygg-paper) !important;
+  color: var(--bygg-ink) !important;
+}
+
+.bygg-nav .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__responsive-container-content {
+  padding-top: 72px;
+}
+
+.bygg-nav .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__responsive-container-content,
+.bygg-nav .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.bygg-nav .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation-item__content {
+  font-family: var(--bygg-serif);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.has-modal-open .bygg-mobilebar {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero                                                                */
+/* ------------------------------------------------------------------ */
+
+.bygg-hero {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(40px, 6vw, 84px) clamp(48px, 6vw, 72px);
+  background:
+    linear-gradient(color-mix(in srgb, var(--bygg-ink) 5%, transparent) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, color-mix(in srgb, var(--bygg-ink) 5%, transparent) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--bygg-paper);
+}
+
+.bygg-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 40%;
+  background: linear-gradient(transparent, var(--bygg-paper));
+  pointer-events: none;
+}
+
+.bygg-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.bygg-hero-grid {
+  gap: clamp(36px, 6vw, 88px) !important;
+}
+
+.bygg-hero-copy > * {
+  margin-block: 0;
+}
+
+.bygg-display {
+  max-width: 14ch;
+  margin-top: 2px !important;
+  font-size: clamp(2.7rem, 6vw, 5.2rem);
+  line-height: .98;
+  letter-spacing: -.045em;
+}
+
+.bygg-hero .bygg-lead {
+  margin-top: 24px !important;
+}
+
+.bygg-actions {
+  gap: 12px;
+  margin-top: 32px !important;
+}
+
+.bygg-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin: 30px 0 0 !important;
+  padding: 0;
+  list-style: none;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.bygg-checks li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bygg-checks li::before {
+  content: "✓";
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bygg-ok) 14%, transparent);
+  color: var(--bygg-ok);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.bygg-hero-media {
+  position: relative;
+}
+
+.bygg-hero-image {
+  margin: 0;
+}
+
+.bygg-hero-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 11 / 12;
+  object-fit: cover;
+  border-radius: var(--bygg-radius-lg);
+  box-shadow: var(--bygg-shadow);
+}
+
+.bygg-hero-card {
+  position: absolute;
+  right: clamp(-24px, -1.5vw, -8px);
+  bottom: -28px;
+  width: min(330px, 86%);
+  margin: 0 !important;
+  padding: 22px 24px;
+  border-radius: 16px;
+  background: var(--bygg-white);
+  box-shadow: 0 24px 60px -24px rgba(16, 39, 34, .45);
+}
+
+.bygg-hero-card > * {
+  margin: 0;
+}
+
+.bygg-hero-card-label {
+  color: var(--bygg-accent);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.bygg-hero-steps {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px !important;
+  padding: 0;
+  counter-reset: bygg-step;
+  list-style: none;
+  color: var(--bygg-muted);
+  font-size: .88rem;
+  line-height: 1.45;
+}
+
+.bygg-hero-steps li {
+  position: relative;
+  padding-left: 34px;
+  counter-increment: bygg-step;
+}
+
+.bygg-hero-steps li::before {
+  content: counter(bygg-step);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bygg-forest);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.bygg-hero-steps strong {
+  color: var(--bygg-ink);
+}
+
+.bygg-proof {
+  gap: 0 !important;
+  margin-top: clamp(56px, 7vw, 88px) !important;
+  overflow: hidden;
+  border: 1px solid var(--bygg-line);
+  border-radius: var(--bygg-radius);
+  background: var(--bygg-white);
+}
+
+.bygg-proof-item {
+  padding: 22px 24px;
+  border-right: 1px solid var(--bygg-line);
+}
+
+.bygg-proof-item:last-child {
+  border-right: 0;
+}
+
+.bygg-proof-item > * {
+  margin: 0;
+}
+
+.bygg-proof-title {
+  font-weight: 700;
+}
+
+.bygg-proof-text {
+  margin-top: 4px !important;
+  color: var(--bygg-muted);
+  font-size: .86rem;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------------ */
+/* Services                                                            */
+/* ------------------------------------------------------------------ */
+
+.bygg-service-grid,
+.bygg-project-grid,
+.bygg-review-grid,
+.bygg-step-grid {
+  gap: 18px !important;
+}
+
+.bygg-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: clamp(26px, 2.6vw, 34px);
+  overflow: hidden;
+  border: 1px solid var(--bygg-line);
+  border-radius: var(--bygg-radius);
+  background: var(--bygg-white);
+  transition: transform .3s var(--bygg-ease), box-shadow .3s var(--bygg-ease);
+}
+
+.bygg-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--bygg-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .35s var(--bygg-ease);
+}
+
+.bygg-card:hover {
+  box-shadow: var(--bygg-shadow);
+  transform: translateY(-3px);
+}
+
+.bygg-card:hover::before {
+  transform: scaleX(1);
+}
+
+.bygg-card > * {
+  margin-block: 0;
+}
+
+.bygg-card-num {
+  color: var(--bygg-accent);
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.bygg-card-title {
+  margin-top: 26px !important;
+  font-size: clamp(1.35rem, 1.8vw, 1.6rem);
+  line-height: 1.1;
+}
+
+.bygg-card-text {
+  margin-top: 10px !important;
+  color: var(--bygg-muted);
+  font-size: .95rem;
+  line-height: 1.6;
+}
+
+.bygg-card-list {
+  display: grid;
+  gap: 8px;
+  margin: auto 0 0 !important;
+  padding: 22px 0 0;
+  border-top: 0;
+  list-style: none;
+  font-size: .9rem;
+}
+
+.bygg-card-text + .bygg-card-list {
+  margin-top: 20px !important;
+  border-top: 1px dashed var(--bygg-line);
+}
+
+.bygg-card-list li {
+  position: relative;
+  padding-left: 22px;
+}
+
+.bygg-card-list li::before {
+  content: "";
+  position: absolute;
+  top: .55em;
+  left: 2px;
+  width: 9px;
+  height: 5px;
+  border-bottom: 2px solid var(--bygg-ok);
+  border-left: 2px solid var(--bygg-ok);
+  transform: rotate(-45deg);
+}
+
+/* ------------------------------------------------------------------ */
+/* Projects                                                            */
+/* ------------------------------------------------------------------ */
+
+.bygg-projects {
+  background: var(--bygg-white);
+}
+
+.bygg-project {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--bygg-line);
+  border-radius: var(--bygg-radius);
+  background: var(--bygg-paper);
+}
+
+.bygg-project > * {
+  margin: 0;
+}
+
+.bygg-project-image {
+  margin: 0;
+  overflow: hidden;
+}
+
+.bygg-project-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  transition: transform .7s var(--bygg-ease);
+}
+
+.bygg-project:hover .bygg-project-image img {
+  transform: scale(1.04);
+}
+
+.bygg-project-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 22px 24px 24px;
+}
+
+.bygg-project-body > * {
+  margin: 0;
+}
+
+.bygg-project-tag {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bygg-accent-soft);
+  color: var(--bygg-accent-dark);
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+.bygg-project-title {
+  margin-top: 14px !important;
+  font-size: 1.35rem;
+  line-height: 1.15;
+}
+
+.bygg-project-text {
+  margin-top: 8px !important;
+  color: var(--bygg-muted);
+  font-size: .93rem;
+  line-height: 1.55;
+}
+
+.bygg-project-meta {
+  margin-top: auto !important;
+  padding-top: 16px;
+  color: var(--bygg-ink);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------ */
+/* Process                                                             */
+/* ------------------------------------------------------------------ */
+
+.bygg-process {
+  background:
+    radial-gradient(80% 60% at 100% 0%, rgba(211, 162, 58, .12), transparent 60%),
+    var(--bygg-deep);
+  color: rgba(236, 242, 239, .8);
+}
+
+.bygg-process .bygg-title {
+  color: #fff;
+}
+
+.bygg-process .bygg-eyebrow {
+  color: var(--bygg-gold);
+}
+
+.bygg-process .bygg-intro {
+  color: rgba(236, 242, 239, .72);
+}
+
+.bygg-step {
+  position: relative;
+  min-height: 100%;
+  padding: 28px 26px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: var(--bygg-radius);
+  background: rgba(255, 255, 255, .04);
+}
+
+.bygg-step > * {
+  margin: 0;
+}
+
+.bygg-step-num {
+  color: var(--bygg-gold);
+  font-family: var(--bygg-serif);
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bygg-step-title {
+  margin-top: 26px !important;
+  color: #fff;
+  font-size: 1.3rem;
+  line-height: 1.15;
+}
+
+.bygg-step-text {
+  margin-top: 10px !important;
+  font-size: .93rem;
+  line-height: 1.6;
+}
+
+/* ------------------------------------------------------------------ */
+/* Area                                                                */
+/* ------------------------------------------------------------------ */
+
+.bygg-area {
+  background: var(--bygg-surface);
+}
+
+.bygg-area-grid {
+  gap: clamp(36px, 6vw, 96px) !important;
+}
+
+.bygg-area-copy > * {
+  margin-block: 0;
+}
+
+.bygg-area-copy > .bygg-intro {
+  margin-top: 20px;
+}
+
+.bygg-towns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 28px 0 0 !important;
+  padding: 0;
+  list-style: none;
+}
+
+.bygg-towns li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--bygg-forest) 16%, transparent);
+  border-radius: 999px;
+  background: var(--bygg-white);
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.bygg-towns li::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bygg-accent);
+}
+
+.bygg-area-note {
+  margin-top: 22px !important;
+  color: var(--bygg-muted);
+  font-size: .95rem;
+}
+
+.bygg-area-note a,
+.bygg-intro a {
+  color: var(--bygg-accent);
+  font-weight: 700;
+}
+
+.bygg-area-image {
+  margin: 0;
+}
+
+.bygg-area-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 6 / 5;
+  object-fit: cover;
+  border-radius: var(--bygg-radius-lg);
+}
+
+/* ------------------------------------------------------------------ */
+/* Reviews                                                             */
+/* ------------------------------------------------------------------ */
+
+.bygg-reviews {
+  background: var(--bygg-forest);
+  color: rgba(236, 242, 239, .78);
+}
+
+.bygg-reviews .bygg-title {
+  color: #fff;
+}
+
+.bygg-reviews .bygg-eyebrow {
+  color: var(--bygg-gold);
+}
+
+.bygg-reviews .bygg-intro {
+  color: rgba(236, 242, 239, .7);
+}
+
+.wp-block-quote.bygg-review {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  margin: 0;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: var(--bygg-radius);
+  background: rgba(255, 255, 255, .05);
+}
+
+.wp-block-quote.bygg-review::before {
+  content: "★★★★★";
+  margin-bottom: 16px;
+  color: var(--bygg-gold);
+  font-size: .95rem;
+  letter-spacing: .12em;
+}
+
+.wp-block-quote.bygg-review p {
+  margin: 0;
+  color: #fff;
+  font-family: var(--bygg-serif);
+  font-size: 1.12rem;
+  line-height: 1.55;
+}
+
+.wp-block-quote.bygg-review cite {
+  margin-top: auto;
+  padding-top: 20px;
+  color: rgba(236, 242, 239, .6);
+  font-size: .78rem;
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ */
+/* FAQ                                                                 */
+/* ------------------------------------------------------------------ */
+
+.bygg-faq-grid {
+  gap: clamp(32px, 6vw, 88px) !important;
+}
+
+.bygg-faq-head > * {
+  margin-block: 0;
+}
+
+.bygg-faq-head > .bygg-intro {
+  margin-top: 20px;
+}
+
+.bygg-faq-list > * {
+  margin-block: 0 !important;
+}
+
+.wp-block-details.bygg-faq-item {
+  border-bottom: 1px solid var(--bygg-line);
+}
+
+.wp-block-details.bygg-faq-item:first-child {
+  border-top: 1px solid var(--bygg-line);
+}
+
+.bygg-faq-item summary {
+  position: relative;
+  padding: 22px 48px 22px 0;
+  cursor: pointer;
+  font-family: var(--bygg-serif);
+  font-size: clamp(1.1rem, 1.5vw, 1.25rem);
+  font-weight: 700;
+  list-style: none;
+}
+
+.bygg-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.bygg-faq-item summary::after {
+  content: "+";
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--bygg-line);
+  border-radius: 50%;
+  color: var(--bygg-accent);
+  font-family: var(--bygg-sans);
+  font-size: 1.2rem;
+  font-weight: 500;
+  transform: translateY(-50%);
+  transition: transform .25s var(--bygg-ease), background-color .25s ease;
+}
+
+.bygg-faq-item[open] summary::after {
+  background: var(--bygg-accent-soft);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.bygg-faq-item p {
+  max-width: 62ch;
+  margin: 0 0 22px;
+  color: var(--bygg-muted);
+  line-height: 1.7;
+}
+
+/* ------------------------------------------------------------------ */
+/* Quote request                                                       */
+/* ------------------------------------------------------------------ */
+
+.bygg-quote {
+  background: var(--bygg-surface);
+}
+
+.bygg-quote-grid {
+  gap: clamp(36px, 6vw, 88px) !important;
+}
+
+.bygg-quote-info > * {
+  margin-block: 0;
+}
+
+.bygg-quote-info > .bygg-intro {
+  margin-top: 20px;
+}
+
+.bygg-next-steps {
+  display: grid;
+  gap: 14px;
+  margin: 30px 0 0 !important;
+  padding: 0;
+  counter-reset: bygg-next;
+  list-style: none;
+  color: var(--bygg-muted);
+}
+
+.bygg-next-steps li {
+  position: relative;
+  padding-left: 44px;
+  counter-increment: bygg-next;
+  line-height: 1.5;
+}
+
+.bygg-next-steps li::before {
+  content: counter(bygg-next);
+  position: absolute;
+  top: -2px;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bygg-accent);
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 800;
+}
+
+.bygg-next-steps strong {
+  color: var(--bygg-ink);
+}
+
+.bygg-contact-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 30px !important;
+  padding: 22px 24px;
+  border-radius: var(--bygg-radius);
+  background: var(--bygg-paper);
+}
+
+.bygg-contact-card > * {
+  margin: 0;
+}
+
+.bygg-contact-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 12px;
+  font-size: .94rem;
+  line-height: 1.5;
+}
+
+.bygg-contact-row > span:first-child {
+  color: var(--bygg-muted);
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  line-height: 1.9;
+  text-transform: uppercase;
+}
+
+.bygg-contact-row--data:not(:has(.bygg-contact)) {
+  display: none;
+}
+
+.bygg-contact {
+  color: var(--bygg-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+a.bygg-contact:hover {
+  color: var(--bygg-accent);
+  text-decoration: underline;
+}
+
+.bygg-contact--missing {
+  color: var(--bygg-accent);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.bygg-quote-form {
+  align-self: start;
+  padding: clamp(26px, 3.4vw, 44px);
+  border-top: 4px solid var(--bygg-accent);
+  border-radius: var(--bygg-radius-lg);
+  background: var(--bygg-white);
+  box-shadow: var(--bygg-shadow);
+}
+
+.bygg-quote-form > * {
+  margin-block: 0;
+}
+
+.bygg-quote-form-title {
+  font-size: clamp(1.5rem, 2.2vw, 1.9rem);
+}
+
+.bygg-quote-fallback {
+  margin-top: 16px !important;
+  color: var(--bygg-muted);
+}
+
+/* Job type list feeds the JS picker; hidden on the frontend only. */
+.bygg-quote-types {
+  display: none;
+}
+
+.editor-styles-wrapper .bygg-quote-types {
+  display: block;
+  margin: 16px 0 !important;
+  padding: 14px 18px 14px 36px;
+  border: 1px dashed var(--bygg-line);
+  border-radius: 10px;
+  color: var(--bygg-muted);
+  font-size: .85rem;
+}
+
+.editor-styles-wrapper .bygg-quote-types::before {
+  content: "Jobbtyper i offertformuläret (visas inte på sidan)";
+  display: block;
+  margin: 0 0 6px -18px;
+  color: var(--bygg-accent);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* Staark Hub form, restyled for the quote card. */
+.bygg-quote .staark-form-shell {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.bygg-quote .staark-contact-form {
+  display: grid;
+  gap: 16px;
+}
+
+.bygg-quote .staark-contact-form > * {
+  margin: 0;
+}
+
+.bygg-quote .staark-form-grid,
+.bygg-quote .bygg-quote-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.bygg-quote .staark-form-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+}
+
+.bygg-quote .staark-form-field[hidden] {
+  display: none;
+}
+
+.bygg-quote .bygg-field-wide,
+.bygg-quote .bygg-check {
+  grid-column: 1 / -1;
+}
+
+.bygg-quote .staark-form-field label {
+  margin: 0;
+  color: var(--bygg-ink);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.bygg-quote .staark-contact-form input:not([type="checkbox"]):not([type="radio"]),
+.bygg-quote .staark-contact-form select,
+.bygg-quote .staark-contact-form textarea {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 16px;
+  border: 1px solid var(--bygg-line);
+  border-radius: 10px;
+  background: var(--bygg-paper);
+  color: var(--bygg-ink);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.bygg-quote .staark-contact-form select {
+  appearance: none;
+  padding-right: 42px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%2356626e' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-position: right 16px center;
+  background-repeat: no-repeat;
+}
+
+.bygg-quote .staark-contact-form textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+
+.bygg-quote .staark-contact-form input:focus,
+.bygg-quote .staark-contact-form select:focus,
+.bygg-quote .staark-contact-form textarea:focus {
+  border-color: var(--bygg-accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px var(--bygg-accent-soft);
+  outline: none;
+}
+
+.bygg-quote .staark-form-field.bygg-check label {
+  align-items: center;
+}
+
+.bygg-quote .bygg-check label,
+.bygg-quote .staark-form-consent label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--bygg-muted);
+  font-size: .88rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.bygg-quote input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--bygg-accent);
+}
+
+.bygg-quote .staark-form-consent a {
+  color: var(--bygg-accent);
+}
+
+.bygg-quote .staark-form-actions .wp-element-button {
+  width: 100%;
+  min-height: 54px;
+  cursor: pointer;
+}
+
+.bygg-quote .staark-form-notice {
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  border-radius: 10px;
+}
+
+.bygg-quote .staark-form-notice--success {
+  background: color-mix(in srgb, var(--bygg-ok) 12%, #fff);
+  color: #125c42;
+}
+
+.bygg-quote .staark-form-notice--error {
+  background: var(--bygg-accent-soft);
+  color: var(--bygg-accent-dark);
+}
+
+/* ------------------------------------------------------------------ */
+/* CTA, about                                                          */
+/* ------------------------------------------------------------------ */
+
+.bygg-cta {
+  padding-block: clamp(56px, 7vw, 88px);
+  background: var(--bygg-accent-soft);
+}
+
+.bygg-cta-inner {
+  gap: 24px 48px;
+}
+
+.bygg-cta-copy > * {
+  margin-block: 0;
+}
+
+.bygg-cta .bygg-actions {
+  margin-top: 0 !important;
+}
+
+.bygg-about-grid {
+  gap: clamp(36px, 6vw, 96px) !important;
+}
+
+.bygg-about-copy > * {
+  margin-block: 0;
+}
+
+.bygg-about-copy > .bygg-intro {
+  margin-top: 20px;
+}
+
+.bygg-about-image {
+  margin: 0;
+}
+
+.bygg-about-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 6 / 5;
+  object-fit: cover;
+  border-radius: var(--bygg-radius-lg);
+}
+
+.bygg-values {
+  display: grid;
+  gap: 16px;
+  margin: 30px 0 0 !important;
+  padding: 0;
+  list-style: none;
+  color: var(--bygg-muted);
+}
+
+.bygg-values li {
+  padding: 0 0 16px 30px;
+  border-bottom: 1px solid var(--bygg-line);
+  background: radial-gradient(circle at 7px 11px, var(--bygg-accent) 4px, transparent 4.5px) no-repeat;
+}
+
+.bygg-values strong {
+  display: block;
+  color: var(--bygg-ink);
+}
+
+/* ------------------------------------------------------------------ */
+/* Footer + mobile bar                                                 */
+/* ------------------------------------------------------------------ */
+
+.bygg-footer {
+  margin-top: 0 !important;
+  padding-block: clamp(64px, 8vw, 100px) 28px;
+  background: var(--bygg-deep);
+  color: rgba(236, 242, 239, .72);
+  font-size: .95rem;
+}
+
+.bygg-footer a,
+.bygg-footer .bygg-contact {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+.bygg-footer a:hover {
+  color: #fff;
+}
+
+.bygg-footer .staark-brand {
+  color: #fff;
+  font-size: 1.7rem;
+}
+
+.bygg-footer-grid {
+  gap: clamp(32px, 5vw, 72px) !important;
+}
+
+.bygg-footer-grid .wp-block-column > * {
+  margin-block: 0;
+}
+
+.bygg-footer-lead {
+  max-width: 36ch;
+  margin-top: 18px !important;
+  line-height: 1.65;
+}
+
+.bygg-footer-cta {
+  margin-top: 26px !important;
+}
+
+.bygg-footer-title {
+  margin-bottom: 16px !important;
+  color: #fff;
+  font-family: var(--bygg-sans);
+  font-size: .76rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.bygg-footer-col p {
+  margin: 0 0 10px !important;
+  line-height: 1.7;
+}
+
+.bygg-footer-col p:empty {
+  display: none;
+}
+
+.bygg-footer-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 !important;
+  padding: 0;
+  list-style: none;
+}
+
+.bygg-footer-bottom {
+  margin-top: clamp(48px, 6vw, 80px) !important;
+  padding-top: 22px;
+  border-top: 1px solid rgba(236, 242, 239, .14);
+  font-size: .85rem;
+}
+
+.bygg-footer-bottom p {
+  margin: 0;
+}
+
+.bygg-mobilebar {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Inner pages                                                         */
+/* ------------------------------------------------------------------ */
+
+.bygg-page {
+  padding-block: clamp(48px, 7vw, 96px) var(--bygg-section);
+}
+
+.bygg-page-head {
+  margin-bottom: clamp(28px, 4vw, 48px);
+}
+
+.bygg-page-title {
+  font-size: clamp(2.3rem, 5vw, 4rem);
+}
+
+.bygg-page .wp-block-post-content a {
+  color: var(--bygg-accent);
+}
+
+.bygg-posts .wp-block-post {
+  padding-block: 28px;
+  border-bottom: 1px solid var(--bygg-line);
+}
+
+.bygg-posts .wp-block-post-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Grid columns (explicit: core grid output differs between WP 6.x/7.x) */
+/* ------------------------------------------------------------------ */
+
+.bygg-service-grid.is-layout-grid,
+.bygg-project-grid.is-layout-grid,
+.bygg-review-grid.is-layout-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.bygg-step-grid.is-layout-grid,
+.bygg-proof.is-layout-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 1080px) {
+  .bygg-header .bygg-header-cta {
+    display: none !important;
+  }
+
+  .bygg-service-grid.is-layout-grid,
+  .bygg-project-grid.is-layout-grid,
+  .bygg-step-grid.is-layout-grid,
+  .bygg-proof.is-layout-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .bygg-proof-item:nth-child(2) {
+    border-right: 0;
+  }
+
+  .bygg-proof-item:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--bygg-line);
+  }
+}
+
+@media (max-width: 900px) {
+  .bygg-section-head--split {
+    grid-template-columns: 1fr;
+  }
+
+  .bygg-section-head--split > .bygg-intro {
+    margin-top: 18px;
+  }
+
+  .bygg-review-grid.is-layout-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 781px) {
+  .admin-bar .bygg-header {
+    top: 46px;
+  }
+
+  .bygg-topbar-note {
+    display: none;
+  }
+
+  .bygg-header {
+    padding-block: 8px;
+  }
+
+  .bygg-hero-media {
+    width: 100%;
+    margin-bottom: 28px;
+  }
+
+  .bygg-hero-image img {
+    aspect-ratio: 4 / 3;
+  }
+
+  .bygg-hero-card {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    margin: -48px 14px 0 !important;
+  }
+
+  .bygg-actions .wp-block-button {
+    flex: 1 1 auto;
+  }
+
+  .bygg-actions .wp-block-button__link {
+    width: 100%;
+  }
+
+  .bygg-quote .staark-form-grid,
+  .bygg-quote .bygg-quote-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .bygg-quote-form {
+    margin-inline: calc(var(--bygg-gutter) * -.4);
+  }
+
+  .bygg-mobilebar {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    z-index: 95;
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    margin: 0 !important;
+    padding: 8px 8px 8px 20px;
+    border: 1px solid color-mix(in srgb, var(--bygg-ink) 10%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bygg-white) 94%, transparent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 16px 40px -16px rgba(16, 39, 34, .5);
+  }
+
+  .bygg-mobilebar > * {
+    margin: 0 !important;
+  }
+
+  .bygg-mobilebar-call {
+    font-size: .92rem;
+    font-weight: 700;
+  }
+
+  .bygg-mobilebar-call:empty {
+    display: none;
+  }
+
+  .bygg-mobilebar-call a {
+    color: var(--bygg-ink);
+    text-decoration: none;
+  }
+
+  .bygg-mobilebar .wp-block-buttons {
+    margin-left: auto;
+  }
+
+  .bygg-mobilebar-call:empty + .wp-block-buttons {
+    flex: 1;
+  }
+
+  .bygg-mobilebar .wp-block-button,
+  .bygg-mobilebar .wp-block-button__link {
+    width: 100%;
+  }
+
+  .bygg-mobilebar .wp-block-button__link {
+    min-height: 46px;
+  }
+
+  .bygg-footer {
+    padding-bottom: 104px;
+  }
+}
+
+@media (max-width: 680px) {
+  .bygg-service-grid.is-layout-grid,
+  .bygg-project-grid.is-layout-grid,
+  .bygg-step-grid.is-layout-grid,
+  .bygg-review-grid.is-layout-grid,
+  .bygg-proof.is-layout-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .bygg-proof-item {
+    border-right: 0;
+    border-bottom: 1px solid var(--bygg-line);
+  }
+
+  .bygg-proof-item:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .bygg-contact-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
