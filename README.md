@@ -35,6 +35,7 @@ The version of each package is the header of its main file; this table is a snap
 │   ├── wordpress-verify.yml     # lint + package checks on PRs, main and releases
 │   └── wordpress-release.yml    # v* tags: verify → build → sign → publish
 ├── .wp-env.json
+├── LICENSE                      # GNU GPL v2 or later
 ├── docs/                        # RC checklist, update channel, signing, managed mode, audits
 ├── plugins/
 │   └── staark-core/
@@ -337,4 +338,12 @@ For Staark Hub, keep the plugin header and `STAARK_HUB_VERSION` synchronized.
 
 ## License
 
-Copyright © Staark Inc. Internal product code and branding remain the property of Staark Inc. unless a separate license is provided for a specific distribution.
+Staark WordPress is free software licensed under the **GNU General Public License v2.0 or later (`GPL-2.0-or-later`)**.
+
+This applies to the Staark Hub/Core plugin and the Staark WordPress theme family contained in this repository. You may use, study, modify and redistribute the software under the terms of the GPL. See [`LICENSE`](LICENSE) for the full license text.
+
+Third-party components bundled with the themes, including fonts, remain subject to their respective license files.
+
+Copyright © Staark Inc.
+
+The Staark Inc. name, product names, logos and other branding identifiers remain trademarks or branding of Staark Inc. The GPL software license does not itself grant trademark rights.

@@ -6,6 +6,8 @@
  * Version: 0.6.8.1
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
+ * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: staark-core
  * Domain Path: /languages
  * Requires at least: 6.6
