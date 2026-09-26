@@ -15,6 +15,11 @@ if (! defined('ABSPATH')) {
 
 const STAARK_SALONG_PATTERN_PREFIX = 'staark/salong-';
 
+/*
+ * Salong provides appointment requests, so expose the Booking module in Hub.
+ */
+add_filter('staark_hub_booking_enabled', '__return_true');
+
 function staark_salong_version(): string
 {
     $version = wp_get_theme(get_stylesheet())->get('Version');

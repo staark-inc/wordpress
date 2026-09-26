@@ -23,16 +23,30 @@ add_action('admin_menu', static function (): void {
         $cap,
         'staark-hub-inbox',
         'staark_hub_render_inbox',
-        'dashicons-calendar-alt',
+        'dashicons-email-alt',
         4
     );
 
     add_submenu_page('staark-hub-inbox', __('Inbox', 'staark-core'), __('Inbox', 'staark-core') . $badge, $cap, 'staark-hub-inbox', 'staark_hub_render_inbox');
-    add_submenu_page('staark-hub-inbox', __('Bookings', 'staark-core'), __('Bookings', 'staark-core'), $cap, 'staark-hub-bookings', 'staark_hub_render_bookings');
+    if (staark_hub_fb_booking_enabled()) {
+        add_submenu_page('staark-hub-inbox', __('Bookings', 'staark-core'), __('Bookings', 'staark-core'), $cap, 'staark-hub-bookings', 'staark_hub_render_bookings');
+    }
     add_submenu_page('staark-hub-inbox', __('Forms', 'staark-core'), __('Forms', 'staark-core'), 'manage_options', 'staark-hub-form-list', 'staark_hub_render_form_list');
     add_submenu_page('staark-hub-inbox', __('Notifications', 'staark-core'), __('Notifications', 'staark-core'), 'manage_options', 'staark-hub-notifications', 'staark_hub_render_notifications');
     add_submenu_page('staark-hub-inbox', __('Form settings', 'staark-core'), __('Settings', 'staark-core'), 'manage_options', 'staark-hub-form-settings', 'staark_hub_render_form_settings');
 }, 20);
+
+add_action('admin_init', static function (): void {
+    if (staark_hub_fb_booking_enabled()) {
+        return;
+    }
+
+    $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+    if ($page === 'staark-hub-bookings') {
+        wp_safe_redirect(staark_hub_fb_url('staark-hub-inbox'));
+        exit;
+    }
+});
 
 /* ------------------------------------------------------------------ */
 /* Shared pieces                                                       */
@@ -42,18 +56,26 @@ function staark_hub_fb_header(string $title): void
 {
     $pages = staark_hub_fb_pages();
     if (! current_user_can('manage_options')) {
-        $pages = array_intersect_key($pages, array_flip(['staark-hub-inbox', 'staark-hub-bookings']));
+        $allowed = ['staark-hub-inbox'];
+        if (staark_hub_fb_booking_enabled()) {
+            $allowed[] = 'staark-hub-bookings';
+        }
+        $pages = array_intersect_key($pages, array_flip($allowed));
     }
 
     $counts = staark_hub_fb_counts();
+    $badges = [
+        'staark-hub-inbox' => $counts['attention'],
+    ];
+    if (staark_hub_fb_booking_enabled()) {
+        $badges['staark-hub-bookings'] = $counts['pending'];
+    }
+
     staark_hub_header(
         staark_hub_fb_label(),
         $title,
         $pages,
-        [
-            'staark-hub-inbox' => $counts['attention'],
-            'staark-hub-bookings' => $counts['pending'],
-        ]
+        $badges
     );
 }
 
@@ -204,6 +226,7 @@ function staark_hub_render_inbox(): void
     }
 
     $counts = staark_hub_fb_counts();
+    $booking_enabled = staark_hub_fb_booking_enabled();
     $registry = staark_hub_fb_registry();
     $view = isset($_GET['view']) ? sanitize_key(wp_unslash($_GET['view'])) : 'all';
     $form = isset($_GET['form']) ? sanitize_key(wp_unslash($_GET['form'])) : '';
@@ -214,9 +237,12 @@ function staark_hub_render_inbox(): void
         'all' => [__('All', 'staark-core'), $counts['total'] - $counts['spam']],
         'attention' => [__('Needs attention', 'staark-core'), $counts['attention']],
         'messages' => [__('Messages', 'staark-core'), null],
-        'bookings' => [__('Bookings', 'staark-core'), $counts['bookings']],
-        'spam' => [__('Spam', 'staark-core'), $counts['spam']],
     ];
+    if ($booking_enabled) {
+        $views['bookings'] = [__('Bookings', 'staark-core'), $counts['bookings']];
+    }
+    $views['spam'] = [__('Spam', 'staark-core'), $counts['spam']];
+
     if (! isset($views[$view])) {
         $view = 'all';
     }
@@ -244,6 +270,9 @@ function staark_hub_render_inbox(): void
         default:
             $meta_query[] = ['key' => '_staark_submission_status', 'value' => 'spam', 'compare' => '!='];
     }
+    if (! $booking_enabled) {
+        $meta_query[] = staark_hub_fb_message_meta_query();
+    }
     if ($form !== '') {
         $meta_query[] = ['key' => '_staark_submission_form_id', 'value' => $form];
     }
@@ -266,22 +295,24 @@ function staark_hub_render_inbox(): void
         <?php staark_hub_fb_header(__('Inbox', 'staark-core')); ?>
         <?php staark_hub_fb_notices(); ?>
 
-        <div class="staark-hub-grid staark-hub-grid--four staark-hub-stats">
-            <a class="staark-hub-card staark-hub-stat-card<?php echo $counts['attention'] > 0 ? ' staark-fb-stat--hot' : ''; ?>" href="<?php echo esc_url(staark_hub_fb_url('staark-hub-inbox', ['view' => 'attention'])); ?>">
-                <span class="staark-hub-card-label"><?php esc_html_e('Needs attention', 'staark-core'); ?></span>
-                <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['attention']); ?></strong>
-                <p><?php esc_html_e('Unread messages and pending bookings', 'staark-core'); ?></p>
+        <div class="staark-hub-grid <?php echo $booking_enabled ? 'staark-hub-grid--four' : 'staark-fb-stats--messages'; ?> staark-hub-stats">
+            <a class="staark-hub-card staark-hub-stat-card<?php echo $counts['attention'] > 0 ? ' staark-fb-stat--hot' : ''; ?>" href="<?php echo esc_url(staark_hub_fb_url('staark-hub-inbox', ['view' => $booking_enabled ? 'attention' : 'all'])); ?>">
+                <span class="staark-hub-card-label"><?php echo esc_html($booking_enabled ? __('Needs attention', 'staark-core') : __('Messages', 'staark-core')); ?></span>
+                <strong class="staark-hub-metric"><?php echo esc_html((string) ($booking_enabled ? $counts['attention'] : max(0, $counts['total'] - $counts['spam']))); ?></strong>
+                <p><?php echo esc_html($booking_enabled ? __('Unread messages and pending bookings', 'staark-core') : __('Contact and quote requests', 'staark-core')); ?></p>
             </a>
-            <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(staark_hub_fb_url('staark-hub-bookings', ['view' => 'pending'])); ?>">
-                <span class="staark-hub-card-label"><?php esc_html_e('Pending bookings', 'staark-core'); ?></span>
-                <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['pending']); ?></strong>
-                <p><?php esc_html_e('Waiting for confirmation', 'staark-core'); ?></p>
-            </a>
-            <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(staark_hub_fb_url('staark-hub-bookings', ['day' => wp_date('Y-m-d')])); ?>">
-                <span class="staark-hub-card-label"><?php esc_html_e('Today', 'staark-core'); ?></span>
-                <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['today']); ?></strong>
-                <p><?php esc_html_e('Bookings for today', 'staark-core'); ?></p>
-            </a>
+            <?php if ($booking_enabled) : ?>
+                <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(staark_hub_fb_url('staark-hub-bookings', ['view' => 'pending'])); ?>">
+                    <span class="staark-hub-card-label"><?php esc_html_e('Pending bookings', 'staark-core'); ?></span>
+                    <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['pending']); ?></strong>
+                    <p><?php esc_html_e('Waiting for confirmation', 'staark-core'); ?></p>
+                </a>
+                <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(staark_hub_fb_url('staark-hub-bookings', ['day' => wp_date('Y-m-d')])); ?>">
+                    <span class="staark-hub-card-label"><?php esc_html_e('Today', 'staark-core'); ?></span>
+                    <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['today']); ?></strong>
+                    <p><?php esc_html_e('Bookings for today', 'staark-core'); ?></p>
+                </a>
+            <?php endif; ?>
             <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(staark_hub_fb_url('staark-hub-inbox', ['view' => 'attention'])); ?>">
                 <span class="staark-hub-card-label"><?php esc_html_e('Unread', 'staark-core'); ?></span>
                 <strong class="staark-hub-metric"><?php echo esc_html((string) $counts['new']); ?></strong>
@@ -746,6 +777,11 @@ function staark_hub_render_bookings(): void
 {
     if (! current_user_can(staark_hub_fb_cap())) {
         return;
+    }
+
+    if (! staark_hub_fb_booking_enabled()) {
+        wp_safe_redirect(staark_hub_fb_url('staark-hub-inbox'));
+        exit;
     }
 
     $counts = staark_hub_fb_counts();

@@ -33,6 +33,16 @@
   color: #b42318;
 }
 
+.staark-fb .staark-fb-stats--messages {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 782px) {
+  .staark-fb .staark-fb-stats--messages {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Toolbar, tabs, search                                               */
 /* ------------------------------------------------------------------ */
