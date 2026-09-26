@@ -459,7 +459,7 @@ function staark_hub_set_managed_mode(string $mode)
         }
     }
 
-    update_option(STAARK_HUB_MANAGED_MODE_OPTION, $mode, false);
+    update_option(STAARK_HUB_MANAGED_MODE_OPTION, $mode, true);
 
     // A normal WordPress activation hook cannot be run through activate_plugin()
     // while the managed runtime is already loaded. Re-establish Staark-owned

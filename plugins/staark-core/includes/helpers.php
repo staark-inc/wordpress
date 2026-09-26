@@ -43,7 +43,7 @@ function staark_hub_set_module_enabled(string $module, bool $enabled): void
 
     $modules = staark_hub_modules();
     $modules[$module] = $enabled;
-    update_option('staark_hub_modules', $modules, false);
+    update_option('staark_hub_modules', $modules, true);
 }
 
 function staark_hub_checkbox_value(string $key): bool
@@ -181,3 +181,36 @@ function staark_hub_client_ip(): string
 
     return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : 'unknown';
 }
+
+/**
+ * Small settings read on every request are autoloaded (one query for all of
+ * them instead of one each). Options saved before 0.6.8 were stored with
+ * autoload off; switch them once.
+ *
+ * @return list<string>
+ */
+function staark_hub_autoload_options(): array
+{
+    return [
+        'staark_hub_modules',
+        'staark_hub_security_settings',
+        'staark_hub_performance_settings',
+        'staark_hub_seo_settings',
+        'staark_hub_branding',
+        'staark_hub_managed_mode',
+        'staark_hub_update_state',
+    ];
+}
+
+add_action('admin_init', static function (): void {
+    if ((int) get_option('staark_hub_autoload_schema', 0) >= 1 || ! function_exists('wp_set_option_autoload_values')) {
+        return;
+    }
+
+    $values = [];
+    foreach (staark_hub_autoload_options() as $option) {
+        $values[$option] = true;
+    }
+    wp_set_option_autoload_values($values);
+    update_option('staark_hub_autoload_schema', 1, true);
+});

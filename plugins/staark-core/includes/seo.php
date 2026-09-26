@@ -109,7 +109,7 @@ function staark_hub_seo_save_settings(array $settings): void
             'twitter_handle' => ltrim(sanitize_text_field((string) ($settings['twitter_handle'] ?? '')), '@'),
             'default_social_image_id' => $social_image_id,
         ],
-        false
+        true
     );
 }
 

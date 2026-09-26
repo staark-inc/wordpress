@@ -3,10 +3,13 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.8.0
+ * Version: 0.6.8.1
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
+ * Domain Path: /languages
+ * Requires at least: 6.6
+ * Requires PHP: 8.1
  */
 
 if (! defined('ABSPATH')) {
@@ -21,10 +24,14 @@ if (defined('STAARK_HUB_RUNTIME_LOADED')) {
 }
 define('STAARK_HUB_RUNTIME_LOADED', true);
 
-const STAARK_HUB_VERSION = '0.6.8.0';
+const STAARK_HUB_VERSION = '0.6.8.1';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
+
+add_action('init', static function (): void {
+    load_plugin_textdomain('staark-core', false, dirname(plugin_basename(STAARK_HUB_PLUGIN_FILE)) . '/languages');
+}, 1);
 
 /**
  * Build an asset URL for both regular-plugin and wp-content/staark-managed
@@ -516,24 +523,26 @@ function staark_hub_connection_is_connected(): bool
  */
 function staark_hub_sync_queue(): array
 {
+    // Only unsynced tickets, filtered in SQL (was: every ticket + one meta
+    // lookup each). 200 per sync run is plenty; the rest follow next run.
     $ticket_ids = get_posts(
         [
             'post_type' => 'staark_ticket',
             'post_status' => ['private', 'publish'],
-            'posts_per_page' => -1,
+            'posts_per_page' => 200,
             'fields' => 'ids',
             'orderby' => 'date',
             'order' => 'ASC',
+            'meta_query' => [
+                'relation' => 'OR',
+                ['key' => '_staark_ticket_sync_state', 'value' => 'synced', 'compare' => '!='],
+                ['key' => '_staark_ticket_sync_state', 'compare' => 'NOT EXISTS'],
+            ],
             'suppress_filters' => true,
         ]
     );
 
-    $ticket_ids = array_values(
-        array_filter(
-            array_map('intval', $ticket_ids),
-            static fn (int $id): bool => (string) get_post_meta($id, '_staark_ticket_sync_state', true) !== 'synced'
-        )
-    );
+    $ticket_ids = array_values(array_map('intval', $ticket_ids));
 
     return [
         'tickets' => count($ticket_ids),
@@ -907,12 +916,28 @@ add_shortcode('staark_brand', 'staark_hub_frontend_brand_shortcode');
 add_shortcode('staark_brand_tagline', 'staark_hub_frontend_tagline_shortcode');
 add_shortcode('staark_brand_copyright', 'staark_hub_frontend_copyright_shortcode');
 
-add_action('wp_enqueue_scripts', static function (): void {
-    wp_add_inline_style('staark-theme', staark_hub_branding_css());
-}, 30);
+/*
+ * Branding colors as their own style handle, so they work with any theme and
+ * reach the iframed block editor (enqueue_block_assets covers both the
+ * front end and the editor canvas).
+ */
+function staark_hub_enqueue_branding_css(): void
+{
+    if (wp_style_is('staark-hub-branding', 'enqueued')) {
+        return;
+    }
 
-add_action('enqueue_block_editor_assets', static function (): void {
-    wp_add_inline_style('wp-edit-blocks', staark_hub_branding_css());
+    $deps = wp_style_is('staark-theme', 'registered') ? ['staark-theme'] : [];
+    wp_register_style('staark-hub-branding', false, $deps, STAARK_HUB_VERSION);
+    wp_enqueue_style('staark-hub-branding');
+    wp_add_inline_style('staark-hub-branding', staark_hub_branding_css());
+}
+
+add_action('wp_enqueue_scripts', 'staark_hub_enqueue_branding_css', 30);
+add_action('enqueue_block_assets', static function (): void {
+    if (is_admin()) {
+        staark_hub_enqueue_branding_css();
+    }
 });
 
 add_action('init', static function (): void {
@@ -975,7 +1000,7 @@ add_action('admin_menu', static function (): void {
     exit;
 });
 
-add_action('admin_init', static function (): void {
+add_action('admin_menu', static function (): void {
     if (staark_hub_current_page() !== 'staark-hub-leads' || ! current_user_can('manage_options')) {
         return;
     }
@@ -1571,7 +1596,7 @@ add_action('admin_post_staark_save_branding', static function (): void {
         'site_icon_id' => $site_icon_id,
     ];
 
-    update_option('staark_hub_branding', $branding, false);
+    update_option('staark_hub_branding', $branding, true);
     update_option('blogname', $brand_name);
     update_option('blogdescription', $tagline);
 

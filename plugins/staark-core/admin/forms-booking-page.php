@@ -12,7 +12,8 @@ if (! defined('ABSPATH')) {
 
 add_action('admin_menu', static function (): void {
     $cap = staark_hub_fb_cap();
-    $count = staark_hub_fb_notify_settings()['admin_badge'] ? staark_hub_fb_counts()['attention'] : 0;
+    // Only count for people who see the menu (no queries for other roles).
+    $count = current_user_can($cap) && staark_hub_fb_notify_settings()['admin_badge'] ? staark_hub_fb_counts()['attention'] : 0;
     $badge = $count > 0
         ? sprintf(' <span class="awaiting-mod count-%1$d"><span class="pending-count">%1$d</span></span>', $count)
         : '';
@@ -701,6 +702,9 @@ function staark_hub_fb_month_summary(string $month): array
         ]
     );
 
+    // Load all their meta in one query instead of several per booking.
+    update_meta_cache('post', array_map('intval', $posts));
+
     $days = [];
     foreach ($posts as $id) {
         $booking = staark_hub_fb_booking((int) $id);
@@ -874,6 +878,10 @@ function staark_hub_render_bookings(): void
                     </nav>
                     <a class="button" href="<?php echo esc_url(staark_hub_fb_url('staark-hub-inbox', ['view' => 'bookings'])); ?>"><?php esc_html_e('Show in Inbox', 'staark-core'); ?></a>
                 </div>
+
+                <?php if (count($posts) >= 200) : ?>
+                    <p class="staark-fb-muted" style="padding:12px 20px 0"><?php esc_html_e('Showing the first 200 bookings. Pick a day in the calendar to see the rest.', 'staark-core'); ?></p>
+                <?php endif; ?>
 
                 <?php if ($groups === []) : ?>
                     <div class="staark-fb-empty">

@@ -975,34 +975,6 @@ function staark_hub_forms_handle_public_submission(): void
 add_action('admin_post_nopriv_staark_submit_public_form', 'staark_hub_forms_handle_public_submission');
 add_action('admin_post_staark_submit_public_form', 'staark_hub_forms_handle_public_submission');
 
-add_action('admin_post_staark_save_forms_settings', static function (): void {
-    staark_hub_forms_admin_action_guard('staark_save_forms_settings');
-    staark_hub_forms_save_settings(is_array($_POST) ? wp_unslash($_POST) : []);
-
-    wp_safe_redirect(admin_url('admin.php?page=staark-hub-form-settings&fb_notice=saved'));
-    exit;
-});
-
-add_action('admin_post_staark_forms_test_mail', static function (): void {
-    staark_hub_forms_admin_action_guard('staark_forms_test_mail');
-
-    $recipient = sanitize_email(staark_hub_forms_post_scalar('test_email'));
-    $result = staark_hub_forms_send_test_email($recipient);
-
-    set_transient(
-        'staark_forms_mail_test_' . get_current_user_id(),
-        [
-            'sent' => $result['sent'],
-            'error' => $result['error'],
-            'recipient' => $recipient,
-        ],
-        5 * MINUTE_IN_SECONDS
-    );
-
-    wp_safe_redirect(admin_url('admin.php?page=staark-hub-form-settings&fb_notice=mail_test'));
-    exit;
-});
-
 add_action('admin_post_staark_submission_retry_mail', static function (): void {
     $submission_id = absint(staark_hub_forms_post_scalar('submission_id'));
     staark_hub_forms_admin_action_guard('staark_submission_retry_mail_' . $submission_id);
@@ -1026,28 +998,13 @@ add_action('admin_post_staark_submission_retry_mail', static function (): void {
     exit;
 });
 
-add_action('admin_post_staark_submission_status', static function (): void {
-    $submission_id = absint(staark_hub_forms_post_scalar('submission_id'));
-    staark_hub_forms_admin_action_guard('staark_submission_status_' . $submission_id);
-
-    $status = sanitize_key(staark_hub_forms_post_scalar('status'));
-    $statuses = staark_hub_form_statuses();
-
-    if ($submission_id > 0 && get_post_type($submission_id) === 'staark_submission' && isset($statuses[$status])) {
-        update_post_meta($submission_id, '_staark_submission_status', $status);
-    }
-
-    wp_safe_redirect(
-        admin_url('admin.php?page=staark-hub-inbox&submission=' . $submission_id)
-    );
-    exit;
-});
-
 /**
  * @return array{total:int,new:int,read:int,replied:int,spam:int}
  */
 function staark_hub_forms_summary(): array
 {
+    global $wpdb;
+
     $summary = [
         'total' => 0,
         'new' => 0,
@@ -1056,21 +1013,26 @@ function staark_hub_forms_summary(): array
         'spam' => 0,
     ];
 
-    $ids = get_posts(
-        [
-            'post_type' => 'staark_submission',
-            'post_status' => ['private', 'publish'],
-            'posts_per_page' => -1,
-            'fields' => 'ids',
-            'suppress_filters' => true,
-        ]
+    // One grouped query instead of one meta lookup per submission.
+    $rows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT COALESCE(pm.meta_value, '') AS status, COUNT(*) AS total
+             FROM {$wpdb->posts} p
+             LEFT JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = %s
+             WHERE p.post_type = %s AND p.post_status IN ('private', 'publish')
+             GROUP BY pm.meta_value",
+            '_staark_submission_status',
+            'staark_submission'
+        ),
+        ARRAY_A
     );
 
-    foreach ($ids as $id) {
-        ++$summary['total'];
-        $status = (string) get_post_meta((int) $id, '_staark_submission_status', true);
-        if (isset($summary[$status])) {
-            ++$summary[$status];
+    foreach ((array) $rows as $row) {
+        $count = (int) ($row['total'] ?? 0);
+        $summary['total'] += $count;
+        $status = (string) ($row['status'] ?? '');
+        if ($status !== 'total' && isset($summary[$status])) {
+            $summary[$status] += $count;
         }
     }
 

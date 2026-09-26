@@ -102,7 +102,7 @@ function staark_hub_update_state(): array
 /** @param array<string,mixed> $state */
 function staark_hub_update_save_state(array $state): void
 {
-    update_option(STAARK_HUB_UPDATE_STATE_OPTION, $state, false);
+    update_option(STAARK_HUB_UPDATE_STATE_OPTION, $state, true);
 }
 
 function staark_hub_update_manifest_request_path(): string
@@ -368,7 +368,8 @@ function staark_hub_update_fetch_manifest(bool $force = false)
     }
 
     staark_hub_update_save_state($state);
-    set_transient(STAARK_HUB_UPDATE_MANIFEST_TRANSIENT, $manifest, 6 * HOUR_IN_SECONDS);
+    // Outlives the twice-daily refresh so the cached manifest never lapses between runs.
+    set_transient(STAARK_HUB_UPDATE_MANIFEST_TRANSIENT, $manifest, 13 * HOUR_IN_SECONDS);
 
     return $manifest;
 }
