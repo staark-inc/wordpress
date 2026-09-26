@@ -636,7 +636,9 @@ function staark_hub_security_xmlrpc_methods(array $methods): array
  */
 function staark_hub_security_rest_endpoints(array $endpoints): array
 {
-    if (is_user_logged_in() && current_user_can('list_users')) {
+    // Logged-in authors and editors need /users/me and ?who=authors in the
+    // block editor; core already limits what they can see there.
+    if (is_user_logged_in() && (current_user_can('list_users') || current_user_can('edit_posts'))) {
         return $endpoints;
     }
 

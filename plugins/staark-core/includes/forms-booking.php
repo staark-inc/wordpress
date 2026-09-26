@@ -197,6 +197,17 @@ function staark_hub_fb_form(string $form_id): array
     ];
 }
 
+/**
+ * True when the form's type is decided: a known Staark form or one saved
+ * under S-Hub Inbox → Forms (forms that only appear in the inbox are not).
+ */
+function staark_hub_fb_form_is_configured(string $form_id): bool
+{
+    $saved = get_option(STAARK_HUB_FB_REGISTRY_OPTION, []);
+
+    return isset(staark_hub_fb_known_forms()[$form_id]) || (is_array($saved) && isset($saved[$form_id]));
+}
+
 function staark_hub_fb_clean_recipients(string $value): string
 {
     $emails = [];
@@ -350,8 +361,13 @@ function staark_hub_fb_booking(int $submission_id): array
  */
 add_action('staark_hub_form_stored', static function (int $submission_id, array $data): void {
     $form = staark_hub_fb_form((string) $data['form_id']);
-    $booking = staark_hub_fb_booking_request_fields();
-    $is_booking = $form['kind'] === 'booking' || $booking['date'] !== '';
+    // Registered booking forms create bookings. A registered message form
+    // never does, even if booking_* fields are posted to it. A form that is
+    // not registered yet (custom theme) becomes a booking only when it sends
+    // a valid booking date; its type can be fixed under S-Hub Inbox → Forms.
+    $is_booking = $form['kind'] === 'booking'
+        || (! staark_hub_fb_form_is_configured((string) $data['form_id']) && staark_hub_fb_valid_date(staark_hub_forms_post_scalar('booking_date')) !== '');
+    $booking = $is_booking ? staark_hub_fb_booking_request_fields() : [];
 
     update_post_meta($submission_id, '_staark_submission_kind', $is_booking ? 'booking' : 'message');
 
@@ -394,12 +410,64 @@ add_action('staark_hub_form_submitted', static function (int $submission_id, arr
     $form = staark_hub_fb_form((string) $data['form_id']);
 
     if ($settings['customer_receipt'] && $form['autoreply']) {
+        $skip = staark_hub_fb_autoreply_blocked($submission_id);
+        if ($skip !== '') {
+            staark_hub_fb_log($submission_id, 'customer_mail', sprintf(__('Auto-reply not sent: %s', 'staark-core'), $skip), false);
+            return;
+        }
+
         staark_hub_fb_send_customer_mail(
             $submission_id,
             staark_hub_fb_is_booking($submission_id) ? 'receipt_booking' : 'receipt_message'
         );
     }
 }, 20, 3);
+
+/**
+ * Guard for the automatic "we received your request" email.
+ *
+ * The public form lets anyone type any email address, so an auto-reply can
+ * be abused to send mail from the site's domain to strangers. Auto-replies
+ * never repeat the visitor's message (see staark_hub_fb_template_values()),
+ * and they are skipped when the request looks like spam or a limit is hit:
+ * - the name or message contains a link;
+ * - more than N auto-replies were sent this hour (default 30);
+ * - the same address already got 2 auto-replies in the last 24 hours.
+ *
+ * @return string Reason when blocked, '' when the auto-reply may be sent.
+ */
+function staark_hub_fb_autoreply_blocked(int $submission_id): string
+{
+    $email = strtolower((string) get_post_meta($submission_id, '_staark_submission_email', true));
+    $text = (string) get_post_meta($submission_id, '_staark_submission_name', true)
+        . ' ' . (string) get_post_meta($submission_id, '_staark_booking_item', true)
+        . ' ' . (string) get_post_field('post_content', $submission_id);
+
+    // Email addresses (anna@gmail.com) are normal in a message, not links.
+    $text = (string) preg_replace('/[^\s@<>]+@[^\s@<>]+/', ' ', $text);
+    if (preg_match('~(https?://|www\.|\b[a-z0-9-]+\.(?:com|net|org|info|io|ru|cn|xyz|top|link|click|site|online)\b)~i', $text)) {
+        return __('the request contains a link', 'staark-core');
+    }
+
+    $hourly_max = max(1, absint(apply_filters('staark_hub_autoreply_hourly_limit', 30)));
+    $hour_key = 'staark_fb_ar_h_' . gmdate('YmdH');
+    $hour_count = (int) get_transient($hour_key);
+    if ($hour_count >= $hourly_max) {
+        return __('hourly auto-reply limit reached', 'staark-core');
+    }
+
+    $per_address_max = max(1, absint(apply_filters('staark_hub_autoreply_address_limit', 2)));
+    $address_key = 'staark_fb_ar_a_' . substr(hash_hmac('sha256', $email, wp_salt('nonce')), 0, 24);
+    $address_count = (int) get_transient($address_key);
+    if ($address_count >= $per_address_max) {
+        return __('this address already received auto-replies today', 'staark-core');
+    }
+
+    set_transient($hour_key, $hour_count + 1, HOUR_IN_SECONDS + MINUTE_IN_SECONDS);
+    set_transient($address_key, $address_count + 1, DAY_IN_SECONDS);
+
+    return '';
+}
 
 /* ------------------------------------------------------------------ */
 /* Activity log                                                        */
@@ -450,7 +518,7 @@ function staark_hub_fb_default_templates(): array
             'label' => __('Message received', 'staark-core'),
             'description' => __('Sent automatically when a contact or quote request arrives.', 'staark-core'),
             'subject' => 'Tack för ditt meddelande – {site}',
-            'body' => "Hej {first_name}!\n\nTack för att du kontaktade oss. Vi har tagit emot ditt meddelande och svarar så snart vi kan.\n\nDitt meddelande:\n{message}\n\nVänliga hälsningar\n{site}\n{site_url}",
+            'body' => "Hej {first_name}!\n\nTack för att du kontaktade oss. Vi har tagit emot ditt meddelande och svarar så snart vi kan.\n\nVänliga hälsningar\n{site}\n{site_url}",
         ],
         'confirmed' => [
             'label' => __('Booking confirmed', 'staark-core'),
@@ -558,7 +626,7 @@ function staark_hub_fb_placeholders(): array
         '{guests}' => __('Number of guests', 'staark-core'),
         '{item}' => __('Room type / service', 'staark-core'),
         '{reference}' => __('Reference number', 'staark-core'),
-        '{message}' => __('Customer message', 'staark-core'),
+        '{message}' => __('Customer message (left out of automatic receipts)', 'staark-core'),
         '{note}' => __('Your note (written when confirming / replying)', 'staark-core'),
         '{site}' => __('Site name', 'staark-core'),
         '{site_url}' => __('Site address', 'staark-core'),
@@ -627,9 +695,14 @@ function staark_hub_fb_booking_lines(int $submission_id): array
 /**
  * @return array<string,string>
  */
-function staark_hub_fb_template_values(int $submission_id, string $note = ''): array
+function staark_hub_fb_template_values(int $submission_id, string $note = '', bool $automatic = false): array
 {
     $name = trim((string) get_post_meta($submission_id, '_staark_submission_name', true));
+    if ($automatic) {
+        // Automatic emails go to an address typed by an anonymous visitor:
+        // only keep a plain name (letters, spaces, - and '), never free text.
+        $name = trim(mb_substr((string) preg_replace("/[^\\p{L}\\p{M} '\\-]+/u", '', $name), 0, 40));
+    }
     $first = $name !== '' ? (string) preg_split('/\s+/', $name)[0] : '';
     $booking = staark_hub_fb_is_booking($submission_id) ? staark_hub_fb_booking($submission_id) : null;
     $details = implode("\n", array_map(static fn (array $line): string => $line[0] . ': ' . $line[1], staark_hub_fb_booking_lines($submission_id)));
@@ -646,7 +719,7 @@ function staark_hub_fb_template_values(int $submission_id, string $note = ''): a
         '{guests}' => $booking && $booking['guests'] > 0 ? (string) $booking['guests'] : '',
         '{item}' => $booking ? $booking['item'] : '',
         '{reference}' => staark_hub_form_submission_label($submission_id),
-        '{message}' => $post instanceof WP_Post ? (string) $post->post_content : '',
+        '{message}' => ! $automatic && $post instanceof WP_Post ? (string) $post->post_content : '',
         '{note}' => trim($note),
         '{site}' => trim(wp_strip_all_tags((string) get_bloginfo('name'))),
         '{site_url}' => home_url('/'),
@@ -675,7 +748,7 @@ function staark_hub_fb_send_customer_mail(int $submission_id, string $template, 
         return false;
     }
 
-    $values = staark_hub_fb_template_values($submission_id, $note);
+    $values = staark_hub_fb_template_values($submission_id, $note, str_starts_with($template, 'receipt_'));
     $subject = staark_hub_fb_render_template($subject_override !== '' ? $subject_override : $templates[$template]['subject'], $values);
     $body = staark_hub_fb_render_template($templates[$template]['body'], $values);
 

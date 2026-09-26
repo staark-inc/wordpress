@@ -6,21 +6,50 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: wordpress-release-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
+  # Same checks as pull requests and main: nothing is built or published
+  # unless they pass for the tagged commit.
+  verify:
+    uses: ./.github/workflows/wordpress-verify.yml
+
   release:
+    needs: verify
     runs-on: ubuntu-latest
+    # The signing key lives in this environment. Protect it in GitHub
+    # (Settings → Environments → release): limit it to v* tags and, if you
+    # like, require a reviewer.
+    environment: release
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout tagged source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Require the tag to be on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Tag ${GITHUB_REF_NAME} points to a commit that is not on main. Merge first, then tag main." >&2
+            exit 1
+          fi
+
+      - name: Set up PHP (sodium for release signing)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: sodium
+          tools: none
 
       - name: Read and validate versions
         id: meta
@@ -266,6 +295,26 @@ jobs:
 
           cat dist/staark-wordpress-manifest.json
 
+      - name: Sign release manifest
+        env:
+          STAARK_UPDATE_SIGNING_KEY: ${{ secrets.STAARK_UPDATE_SIGNING_KEY }}
+          ALLOW_UNSIGNED_RELEASE: ${{ vars.ALLOW_UNSIGNED_RELEASE }}
+          STAARK_UPDATE_KEY_ROTATION: ${{ vars.STAARK_UPDATE_KEY_ROTATION }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${STAARK_UPDATE_SIGNING_KEY}" ]]; then
+            if [[ "${ALLOW_UNSIGNED_RELEASE:-}" == "true" ]]; then
+              echo "::warning::Publishing an UNSIGNED release (ALLOW_UNSIGNED_RELEASE=true). Sites with a signing key will refuse it."
+              exit 0
+            fi
+            echo "STAARK_UPDATE_SIGNING_KEY is not set. Run scripts/generate-update-key.php and add the secret to the 'release' environment." >&2
+            exit 1
+          fi
+
+          php scripts/sign-release-manifest.php dist/staark-wordpress-manifest.json
+
       - name: Verify artifacts
         shell: bash
         run: |
@@ -352,13 +401,16 @@ jobs:
           set -euo pipefail
 
           EXTRA_ARGS=()
+          PUBLISH_ARGS=()
 
           if [[ "$PRERELEASE" == "true" ]]; then
             EXTRA_ARGS+=(--prerelease)
           else
-            EXTRA_ARGS+=(--latest)
+            PUBLISH_ARGS+=(--latest)
           fi
 
+          # Create as a draft, check every asset arrived, then publish, so a
+          # failed upload never leaves a half-published release.
           gh release create "$TAG" \
             dist/staark-core.zip \
             dist/staark-theme.zip \
@@ -378,4 +430,13 @@ jobs:
           S-Hub Gästfrihet ${GAST_VERSION}
 
           Built automatically from tag ${TAG}." \
+            --draft \
             "${EXTRA_ARGS[@]}"
+
+          ASSETS="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets | length')"
+          if [[ "$ASSETS" != "6" ]]; then
+            echo "Expected 6 release assets, found ${ASSETS}. The release stays a draft." >&2
+            exit 1
+          fi
+
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false "${PUBLISH_ARGS[@]}"

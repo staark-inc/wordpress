@@ -12,15 +12,24 @@ if (! defined('ABSPATH')) {
 }
 
 /**
- * Use REMOTE_ADDR by default instead of trusting spoofable forwarding headers.
- * Hosts behind a trusted proxy can provide the real address through the filter.
+ * Visitor IP (see staark_hub_client_ip() for proxy/CDN setups).
  */
 function staark_hub_security_client_ip(): string
 {
-    $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+    $ip = function_exists('staark_hub_client_ip') ? staark_hub_client_ip() : 'unknown';
     $ip = (string) apply_filters('staark_hub_security_client_ip', $ip);
 
     return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : 'unknown';
+}
+
+/**
+ * The IP bucket is a soft limit: behind a proxy many people can share one
+ * address, so it allows several times more failures than the per-account
+ * (identity) bucket before it locks.
+ */
+function staark_hub_security_login_ip_multiplier(): int
+{
+    return max(1, absint(apply_filters('staark_hub_security_login_ip_multiplier', 4)));
 }
 
 /**
@@ -109,14 +118,20 @@ function staark_hub_security_login_record_failure(string $login): void
         array_unshift($keys, staark_hub_security_login_key('ip', $ip));
     }
 
+    $ip_key = $ip !== 'unknown' ? staark_hub_security_login_key('ip', $ip) : '';
+
     foreach ($keys as $key) {
         $state = staark_hub_security_login_state($key);
         if ($state['first'] === 0 || ($now - $state['first']) > $limits['window']) {
             $state = ['count' => 0, 'first' => $now, 'locked_until' => 0];
         }
 
+        $threshold = $key === $ip_key
+            ? $limits['attempts'] * staark_hub_security_login_ip_multiplier()
+            : $limits['attempts'];
+
         ++$state['count'];
-        if ($state['count'] >= $limits['attempts']) {
+        if ($state['count'] >= $threshold) {
             $state['locked_until'] = $now + $limits['lockout'];
         }
 
@@ -125,13 +140,15 @@ function staark_hub_security_login_record_failure(string $login): void
     }
 }
 
+/**
+ * A successful login clears only that account's bucket. Clearing the shared
+ * IP bucket would let anyone with a valid low-privilege account reset the
+ * counter while guessing other accounts' passwords.
+ */
 function staark_hub_security_login_clear_success(string $login): void
 {
     $ip = staark_hub_security_client_ip();
     delete_transient(staark_hub_security_login_key('identity', $ip . '|' . $login));
-    if ($ip !== 'unknown') {
-        delete_transient(staark_hub_security_login_key('ip', $ip));
-    }
 }
 
 /**
