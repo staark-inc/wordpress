@@ -320,6 +320,50 @@ function staark_hub_performance_optimize_image_block(
         }
     }
 
+    /*
+     * Static theme images are not Media Library attachments, so WordPress
+     * cannot build srcset/sizes for them automatically. Reuse Staark's
+     * responsive WebP derivatives when they exist next to the source file.
+     */
+    $src = html_entity_decode(
+        (string) ($processor->get_attribute('src') ?? ''),
+        ENT_QUOTES
+    );
+
+    if (
+        $src !== ''
+        && ! empty($settings['generate_webp'])
+        && $processor->get_attribute('srcset') === null
+    ) {
+        $theme_file = staark_hub_performance_theme_asset_path($src);
+
+        if ($theme_file !== '') {
+            $responsive = staark_hub_performance_responsive_webp_data(
+                $theme_file,
+                $src
+            );
+
+            if ($responsive['src'] !== '') {
+                $processor->set_attribute(
+                    'src',
+                    $responsive['src']
+                );
+            }
+
+            if ($responsive['srcset'] !== '') {
+                $processor->set_attribute(
+                    'srcset',
+                    $responsive['srcset']
+                );
+
+                $processor->set_attribute(
+                    'sizes',
+                    $responsive['sizes']
+                );
+            }
+        }
+    }
+
     return $processor->get_updated_html();
 }
 
