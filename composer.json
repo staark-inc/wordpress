@@ -1,0 +1,29 @@
+{
+  "name": "staark-inc/wordpress",
+  "description": "Development tooling for the Staark WordPress stack.",
+  "type": "project",
+  "license": "GPL-2.0-or-later",
+  "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.2",
+    "php-stubs/wp-cli-stubs": "^2.12",
+    "phpstan/phpstan": "^2.2",
+    "squizlabs/php_codesniffer": "^3.13",
+    "szepeviktor/phpstan-wordpress": "^2.0",
+    "wp-coding-standards/wpcs": "^3.4"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "sort-packages": true
+  },
+  "scripts": {
+    "phpcs": "phpcs --standard=phpcs.xml.dist",
+    "phpcbf": "phpcbf --standard=phpcs.xml.dist",
+    "phpstan": "phpstan analyse -c phpstan.neon.dist --memory-limit=4G",
+    "qa": [
+      "@phpcs",
+      "@phpstan"
+    ]
+  }
+}

@@ -112,7 +112,7 @@ function staark_hub_managed_request_targets_core(): bool
             continue;
         }
 
-        $value = wp_unslash($_REQUEST[$key]);
+        $value = map_deep(wp_unslash($_REQUEST[$key]), 'sanitize_text_field');
         foreach ((array) $value as $candidate) {
             if (is_scalar($candidate)) {
                 $candidates[] = (string) $candidate;

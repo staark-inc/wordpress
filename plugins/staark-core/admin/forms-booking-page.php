@@ -793,7 +793,10 @@ function staark_hub_render_bookings(): void
     $today = wp_date('Y-m-d');
     $day = isset($_GET['day']) ? staark_hub_fb_valid_date(sanitize_text_field(wp_unslash($_GET['day']))) : '';
     $view = isset($_GET['view']) ? sanitize_key(wp_unslash($_GET['view'])) : 'upcoming';
-    $month = isset($_GET['month']) && preg_match('/^\d{4}-\d{2}$/', (string) $_GET['month']) ? sanitize_text_field(wp_unslash($_GET['month'])) : wp_date('Y-m');
+    $month_input = isset($_GET['month'])
+        ? sanitize_text_field(wp_unslash($_GET['month']))
+        : '';
+    $month = preg_match('/^\d{4}-\d{2}$/', $month_input) ? $month_input : wp_date('Y-m');
     if ($day !== '') {
         $month = substr($day, 0, 7);
     }

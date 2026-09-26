@@ -38,7 +38,11 @@ add_action('admin_post_staark_first_install_apply', static function (): void {
         wp_die(esc_html__('You are not allowed to perform this action.', 'staark-core'));
     }
 
-    if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? '')) !== 'POST') {
+    $request_method = isset($_SERVER['REQUEST_METHOD'])
+        ? strtoupper(sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'])))
+        : '';
+
+    if ($request_method !== 'POST') {
         wp_die(
             esc_html__('This action requires POST.', 'staark-core'),
             '',
@@ -49,18 +53,18 @@ add_action('admin_post_staark_first_install_apply', static function (): void {
     check_admin_referer('staark_first_install_apply');
 
     $input = [
-        'business_name' => isset($_POST['business_name']) ? wp_unslash($_POST['business_name']) : '',
-        'tagline' => isset($_POST['tagline']) ? wp_unslash($_POST['tagline']) : '',
-        'industry' => isset($_POST['industry']) ? wp_unslash($_POST['industry']) : '',
-        'phone' => isset($_POST['phone']) ? wp_unslash($_POST['phone']) : '',
-        'email' => isset($_POST['email']) ? wp_unslash($_POST['email']) : '',
-        'street_address' => isset($_POST['street_address']) ? wp_unslash($_POST['street_address']) : '',
-        'locality' => isset($_POST['locality']) ? wp_unslash($_POST['locality']) : '',
-        'region' => isset($_POST['region']) ? wp_unslash($_POST['region']) : '',
-        'postal_code' => isset($_POST['postal_code']) ? wp_unslash($_POST['postal_code']) : '',
-        'country' => isset($_POST['country']) ? wp_unslash($_POST['country']) : 'SE',
-        'locale' => isset($_POST['locale']) ? wp_unslash($_POST['locale']) : get_locale(),
-        'preset_id' => isset($_POST['preset_id']) ? wp_unslash($_POST['preset_id']) : 'scandinavian',
+        'business_name' => isset($_POST['business_name']) ? sanitize_text_field(wp_unslash($_POST['business_name'])) : '',
+        'tagline' => isset($_POST['tagline']) ? sanitize_text_field(wp_unslash($_POST['tagline'])) : '',
+        'industry' => isset($_POST['industry']) ? sanitize_text_field(wp_unslash($_POST['industry'])) : '',
+        'phone' => isset($_POST['phone']) ? sanitize_text_field(wp_unslash($_POST['phone'])) : '',
+        'email' => isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '',
+        'street_address' => isset($_POST['street_address']) ? sanitize_text_field(wp_unslash($_POST['street_address'])) : '',
+        'locality' => isset($_POST['locality']) ? sanitize_text_field(wp_unslash($_POST['locality'])) : '',
+        'region' => isset($_POST['region']) ? sanitize_text_field(wp_unslash($_POST['region'])) : '',
+        'postal_code' => isset($_POST['postal_code']) ? sanitize_text_field(wp_unslash($_POST['postal_code'])) : '',
+        'country' => isset($_POST['country']) ? sanitize_text_field(wp_unslash($_POST['country'])) : 'SE',
+        'locale' => isset($_POST['locale']) ? sanitize_text_field(wp_unslash($_POST['locale'])) : get_locale(),
+        'preset_id' => isset($_POST['preset_id']) ? sanitize_key(wp_unslash($_POST['preset_id'])) : 'scandinavian',
         'create_pages' => isset($_POST['create_pages']) ? '1' : '',
         'set_front_page' => isset($_POST['set_front_page']) ? '1' : '',
         'pretty_permalinks' => isset($_POST['pretty_permalinks']) ? '1' : '',

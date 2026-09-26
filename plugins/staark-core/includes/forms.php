@@ -180,16 +180,22 @@ function staark_hub_form_submission_label(int $submission_id): string
  */
 function staark_hub_forms_post_scalar(string $key): string
 {
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Generic input reader; nonce verification is performed by the calling action.
     if (! isset($_POST[$key]) || ! is_scalar($_POST[$key])) {
         return '';
     }
 
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Caller applies context-specific sanitization after nonce verification.
     return (string) wp_unslash($_POST[$key]);
 }
 
 function staark_hub_forms_request_method_is_post(): bool
 {
-    return strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? '')) === 'POST';
+    $request_method = isset($_SERVER['REQUEST_METHOD'])
+        ? strtoupper(sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'])))
+        : '';
+
+    return $request_method === 'POST';
 }
 
 /**
@@ -234,7 +240,7 @@ function staark_hub_forms_url_is_same_origin(string $url): bool
 function staark_hub_forms_request_is_same_origin(): bool
 {
     $origin = isset($_SERVER['HTTP_ORIGIN']) && is_scalar($_SERVER['HTTP_ORIGIN'])
-        ? trim((string) wp_unslash($_SERVER['HTTP_ORIGIN']))
+        ? sanitize_text_field(wp_unslash($_SERVER['HTTP_ORIGIN']))
         : '';
 
     if ($origin !== '') {
@@ -246,7 +252,7 @@ function staark_hub_forms_request_is_same_origin(): bool
     }
 
     $referer = isset($_SERVER['HTTP_REFERER']) && is_scalar($_SERVER['HTTP_REFERER'])
-        ? trim((string) wp_unslash($_SERVER['HTTP_REFERER']))
+        ? esc_url_raw(wp_unslash($_SERVER['HTTP_REFERER']))
         : '';
 
     if ($referer !== '') {

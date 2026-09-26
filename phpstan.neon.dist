@@ -1,0 +1,33 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+    level: 2
+
+    parallel:
+        maximumNumberOfProcesses: 1
+
+    bootstrapFiles:
+        - scripts/phpstan-bootstrap.php
+
+    scanFiles:
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-commands-stubs.php
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-i18n-stubs.php
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-tools-stubs.php
+
+    paths:
+        - plugins/staark-core
+        - themes/staark
+        - themes/staark-salong
+        - themes/staark-bygg
+        - themes/staark-gastfrihet
+
+    excludePaths:
+        analyse:
+            - vendor (?)
+            - node_modules (?)
+            - dist (?)
+
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false

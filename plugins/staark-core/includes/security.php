@@ -701,7 +701,9 @@ function staark_hub_security_schedule_scan(): void
 }
 
 add_action('init', 'staark_hub_security_schedule_scan');
-add_action(STAARK_HUB_SECURITY_SCAN_HOOK, 'staark_hub_security_store_report');
+add_action(STAARK_HUB_SECURITY_SCAN_HOOK, static function (): void {
+    staark_hub_security_store_report();
+});
 
 function staark_hub_security_deactivate(): void
 {

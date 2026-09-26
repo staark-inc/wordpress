@@ -540,6 +540,7 @@ function staark_hub_seo_render_head(): void
                 JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
             );
             if (is_string($json) && $json !== '') {
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON-LD is encoded with wp_json_encode() and JSON_HEX_* flags above.
                 echo '<script type="application/ld+json">' . $json . "</script>\n";
             }
         }
@@ -876,16 +877,16 @@ add_action('admin_post_staark_seo_save', static function (): void {
             'enable_open_graph' => staark_hub_checkbox_value('enable_open_graph'),
             'enable_schema' => staark_hub_checkbox_value('enable_schema'),
             'entity_type' => isset($_POST['entity_type']) ? sanitize_text_field(wp_unslash($_POST['entity_type'])) : 'LocalBusiness',
-            'organization_name' => isset($_POST['organization_name']) ? wp_unslash($_POST['organization_name']) : '',
-            'organization_description' => isset($_POST['organization_description']) ? wp_unslash($_POST['organization_description']) : '',
-            'phone' => isset($_POST['phone']) ? wp_unslash($_POST['phone']) : '',
-            'email' => isset($_POST['email']) ? wp_unslash($_POST['email']) : '',
-            'street_address' => isset($_POST['street_address']) ? wp_unslash($_POST['street_address']) : '',
-            'locality' => isset($_POST['locality']) ? wp_unslash($_POST['locality']) : '',
-            'region' => isset($_POST['region']) ? wp_unslash($_POST['region']) : '',
-            'postal_code' => isset($_POST['postal_code']) ? wp_unslash($_POST['postal_code']) : '',
-            'country' => isset($_POST['country']) ? wp_unslash($_POST['country']) : '',
-            'twitter_handle' => isset($_POST['twitter_handle']) ? wp_unslash($_POST['twitter_handle']) : '',
+            'organization_name' => isset($_POST['organization_name']) ? sanitize_text_field(wp_unslash($_POST['organization_name'])) : '',
+            'organization_description' => isset($_POST['organization_description']) ? sanitize_textarea_field(wp_unslash($_POST['organization_description'])) : '',
+            'phone' => isset($_POST['phone']) ? sanitize_text_field(wp_unslash($_POST['phone'])) : '',
+            'email' => isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '',
+            'street_address' => isset($_POST['street_address']) ? sanitize_text_field(wp_unslash($_POST['street_address'])) : '',
+            'locality' => isset($_POST['locality']) ? sanitize_text_field(wp_unslash($_POST['locality'])) : '',
+            'region' => isset($_POST['region']) ? sanitize_text_field(wp_unslash($_POST['region'])) : '',
+            'postal_code' => isset($_POST['postal_code']) ? sanitize_text_field(wp_unslash($_POST['postal_code'])) : '',
+            'country' => isset($_POST['country']) ? sanitize_text_field(wp_unslash($_POST['country'])) : '',
+            'twitter_handle' => isset($_POST['twitter_handle']) ? sanitize_text_field(wp_unslash($_POST['twitter_handle'])) : '',
             'default_social_image_id' => isset($_POST['default_social_image_id']) ? absint($_POST['default_social_image_id']) : 0,
         ]
     );

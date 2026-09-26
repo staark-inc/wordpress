@@ -12,6 +12,11 @@ on:
       - 'themes/staark-gastfrihet/**'
       - '.github/workflows/wordpress-verify.yml'
       - '.github/workflows/wordpress-release.yml'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpcs.xml.dist'
+      - 'phpstan.neon.dist'
+      - 'scripts/phpstan-bootstrap.php'
 
   pull_request:
     paths:
@@ -22,6 +27,11 @@ on:
       - 'themes/staark-gastfrihet/**'
       - '.github/workflows/wordpress-verify.yml'
       - '.github/workflows/wordpress-release.yml'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpcs.xml.dist'
+      - 'phpstan.neon.dist'
+      - 'scripts/phpstan-bootstrap.php'
 
   workflow_dispatch:
 
@@ -57,6 +67,41 @@ jobs:
           php -v
           git ls-files -z '*.php' | xargs -0 -n1 -P4 php -l > /dev/null
           echo "PHP ${{ matrix.php }} syntax OK"
+
+  static-analysis:
+    name: PHPCS + PHPStan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate Composer metadata
+        run: composer validate --strict
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install static-analysis dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: PHPCS
+        run: composer run phpcs
+
+      - name: PHPStan
+        run: composer run phpstan
 
   verify:
     runs-on: ubuntu-latest

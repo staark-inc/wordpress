@@ -48,7 +48,13 @@ function staark_hub_set_module_enabled(string $module, bool $enabled): void
 
 function staark_hub_checkbox_value(string $key): bool
 {
-    return isset($_POST[$key]) && (string) wp_unslash($_POST[$key]) === '1';
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Generic checkbox reader; calling actions verify their nonce.
+    if (! isset($_POST[$key]) || ! is_scalar($_POST[$key])) {
+        return false;
+    }
+
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Generic checkbox reader; calling actions verify their nonce.
+    return sanitize_text_field((string) wp_unslash($_POST[$key])) === '1';
 }
 
 /**
@@ -150,7 +156,7 @@ function staark_hub_cloudflare_ranges(): array
 function staark_hub_client_ip(): string
 {
     $remote = isset($_SERVER['REMOTE_ADDR']) && is_scalar($_SERVER['REMOTE_ADDR'])
-        ? trim((string) wp_unslash($_SERVER['REMOTE_ADDR']))
+        ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']))
         : '';
     $ip = $remote;
 
@@ -164,7 +170,8 @@ function staark_hub_client_ip(): string
         }
 
         if ($trusted !== [] && staark_hub_ip_in_ranges($remote, $trusted)) {
-            $chain = array_reverse(array_map('trim', explode(',', (string) wp_unslash($_SERVER[$header]))));
+            $forwarded = sanitize_text_field(wp_unslash($_SERVER[$header]));
+            $chain = array_reverse(array_map('trim', explode(',', $forwarded)));
             foreach ($chain as $candidate) {
                 if (! filter_var($candidate, FILTER_VALIDATE_IP)) {
                     break;

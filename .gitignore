@@ -8,3 +8,4 @@ dist/
 *.zip
 .wp-env.override.json
 plugins/staark-core/update-signing.key
+/vendor/

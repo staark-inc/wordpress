@@ -1025,7 +1025,11 @@ function staark_hub_fb_guard(string $nonce_action, string $capability = ''): voi
         wp_die(esc_html__('You are not allowed to do this.', 'staark-core'), '', ['response' => 403]);
     }
 
-    if (! isset($_SERVER['REQUEST_METHOD']) || strtoupper((string) $_SERVER['REQUEST_METHOD']) !== 'POST') {
+    $request_method = isset($_SERVER['REQUEST_METHOD'])
+        ? strtoupper(sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'])))
+        : '';
+
+    if ($request_method !== 'POST') {
         wp_die(esc_html__('Invalid request.', 'staark-core'), '', ['response' => 405]);
     }
 
@@ -1208,7 +1212,9 @@ add_action('admin_post_staark_fb_bulk', static function (): void {
 add_action('admin_post_staark_fb_save_forms', static function (): void {
     staark_hub_fb_guard('staark_fb_save_forms', 'manage_options');
 
-    $forms = isset($_POST['forms']) && is_array($_POST['forms']) ? wp_unslash($_POST['forms']) : [];
+    $forms = isset($_POST['forms']) && is_array($_POST['forms'])
+        ? map_deep(wp_unslash($_POST['forms']), 'sanitize_text_field')
+        : [];
     staark_hub_fb_save_registry($forms);
 
     wp_safe_redirect(staark_hub_fb_url('staark-hub-form-list', ['fb_notice' => 'saved']));

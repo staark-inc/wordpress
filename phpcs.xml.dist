@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<ruleset name="Staark WordPress">
+    <description>Security and correctness checks for the Staark WordPress stack.</description>
+
+    <file>plugins/staark-core</file>
+    <file>themes/staark</file>
+    <file>themes/staark-salong</file>
+    <file>themes/staark-bygg</file>
+    <file>themes/staark-gastfrihet</file>
+
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/dist/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="parallel" value="4"/>
+    <arg value="ps"/>
+
+    <!-- Actual security/correctness gates. -->
+    <rule ref="WordPress.Security.ValidatedSanitizedInput"/>
+
+    <rule ref="WordPress.Security.NonceVerification">
+        <exclude name="WordPress.Security.NonceVerification.Recommended"/>
+        <properties>
+            <property name="customNonceVerificationFunctions" type="array">
+                <element value="staark_hub_fb_guard"/>
+                <element value="staark_hub_connection_guard"/>
+                <element value="staark_hub_forms_admin_action_guard"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.Security.EscapeOutput">
+        <properties>
+            <property name="customEscapingFunctions" type="array">
+                <element value="staark_sl_section"/>
+            </property>
+        </properties>
+
+        <!-- CLI build utility: terminal output does not require HTML escaping. -->
+        <exclude-pattern>plugins/staark-core/deployment/generate-showcase-webp.php</exclude-pattern>
+    </rule>
+
+    <rule ref="WordPress.DB.PreparedSQL"/>
+
+    <rule ref="WordPress.WP.DeprecatedFunctions"/>
+</ruleset>

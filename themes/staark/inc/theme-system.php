@@ -449,7 +449,11 @@ add_action('admin_post_staark_theme_apply_preset', static function (): void {
         wp_die(esc_html__('You are not allowed to perform this action.', 'staark'));
     }
 
-    if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? '')) !== 'POST') {
+    $request_method = isset($_SERVER['REQUEST_METHOD'])
+        ? strtoupper(sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'])))
+        : '';
+
+    if ($request_method !== 'POST') {
         wp_die(esc_html__('This action requires POST.', 'staark'), '', ['response' => 405]);
     }
 

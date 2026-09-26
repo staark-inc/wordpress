@@ -717,7 +717,9 @@ function staark_hub_performance_schedule(): void
     }
 }
 add_action('init', 'staark_hub_performance_schedule', 40);
-add_action(STAARK_HUB_PERFORMANCE_AUDIT_HOOK, 'staark_hub_performance_run_audit');
+add_action(STAARK_HUB_PERFORMANCE_AUDIT_HOOK, static function (): void {
+    staark_hub_performance_run_audit();
+});
 
 function staark_hub_performance_deactivate(): void
 {
