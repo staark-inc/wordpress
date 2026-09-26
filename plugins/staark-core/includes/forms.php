@@ -776,7 +776,12 @@ function staark_hub_forms_send_notification(int $submission_id): bool
     }
 
     $settings = staark_hub_forms_settings();
-    if (! $settings['notify'] || $settings['recipient_email'] === '') {
+    $form_id_for_mail = (string) get_post_meta($submission_id, '_staark_submission_form_id', true);
+    $recipients = function_exists('staark_hub_fb_recipients')
+        ? staark_hub_fb_recipients($form_id_for_mail)
+        : ($settings['recipient_email'] !== '' ? [$settings['recipient_email']] : []);
+
+    if (! $settings['notify'] || $recipients === []) {
         update_post_meta($submission_id, '_staark_submission_mail_state', 'disabled');
         update_post_meta($submission_id, '_staark_submission_mail_error', '');
         return false;
@@ -789,21 +794,44 @@ function staark_hub_forms_send_notification(int $submission_id): bool
     $form_id = (string) get_post_meta($submission_id, '_staark_submission_form_id', true);
     $source_url = (string) get_post_meta($submission_id, '_staark_submission_source_url', true);
 
-    $subject = trim($settings['subject_prefix'] . ' ' . __('Ny kontaktförfrågan', 'staark-core'));
-    $body = implode(
-        "\n",
-        [
-            'Submission: ' . staark_hub_form_submission_label($submission_id),
-            'Name: ' . $name,
-            'Email: ' . $email,
-            'Phone: ' . $phone,
-            'Company: ' . $company,
-            'Form: ' . $form_id,
-            'Source: ' . $source_url,
-            '',
-            (string) $submission->post_content,
-        ]
-    );
+    $is_booking = function_exists('staark_hub_fb_is_booking') && staark_hub_fb_is_booking($submission_id);
+    $form_label = function_exists('staark_hub_fb_form') ? staark_hub_fb_form($form_id)['label'] : $form_id;
+    $booking_lines = $is_booking ? staark_hub_fb_booking_lines($submission_id) : [];
+
+    $subject_text = $is_booking ? __('Ny bokningsförfrågan', 'staark-core') : __('Ny kontaktförfrågan', 'staark-core');
+    if ($is_booking && $booking_lines !== []) {
+        $subject_text .= ' – ' . $name . ', ' . $booking_lines[0][1];
+    } elseif ($name !== '') {
+        $subject_text .= ' – ' . $name;
+    }
+    $subject = trim($settings['subject_prefix'] . ' ' . $subject_text);
+
+    $lines = [
+        'Submission: ' . staark_hub_form_submission_label($submission_id),
+        'Form: ' . $form_label . ($form_label !== $form_id ? ' (' . $form_id . ')' : ''),
+        'Name: ' . $name,
+        'Email: ' . $email,
+        'Phone: ' . $phone,
+    ];
+    if ($company !== '') {
+        $lines[] = 'Company: ' . $company;
+    }
+    $lines[] = 'Source: ' . $source_url;
+
+    if ($booking_lines !== []) {
+        $lines[] = '';
+        foreach ($booking_lines as $booking_line) {
+            $lines[] = $booking_line[0] . ': ' . $booking_line[1];
+        }
+    }
+
+    $lines[] = '';
+    $lines[] = (string) $submission->post_content;
+    $lines[] = '';
+    $lines[] = ($is_booking ? 'Confirm or decline: ' : 'Open in Inbox: ')
+        . admin_url('admin.php?page=staark-hub-inbox&submission=' . $submission_id);
+
+    $body = implode("\n", $lines);
 
     $headers = ['Content-Type: text/plain; charset=UTF-8'];
     if (is_email($email)) {
@@ -811,7 +839,7 @@ function staark_hub_forms_send_notification(int $submission_id): bool
     }
 
     $mail_result = staark_hub_forms_mail(
-        $settings['recipient_email'],
+        $recipients,
         $subject,
         $body,
         $headers
@@ -822,7 +850,7 @@ function staark_hub_forms_send_notification(int $submission_id): bool
     $attempts = (int) get_post_meta($submission_id, '_staark_submission_mail_attempts', true);
     update_post_meta($submission_id, '_staark_submission_mail_attempts', $attempts + 1);
     update_post_meta($submission_id, '_staark_submission_mail_last_attempt', current_time('mysql', true));
-    update_post_meta($submission_id, '_staark_submission_mail_recipient', $settings['recipient_email']);
+    update_post_meta($submission_id, '_staark_submission_mail_recipient', implode(', ', $recipients));
     update_post_meta($submission_id, '_staark_submission_mail_transport', $settings['mail_transport']);
     update_post_meta($submission_id, '_staark_submission_mail_state', $sent ? 'sent' : 'failed');
 
@@ -923,6 +951,12 @@ function staark_hub_forms_handle_public_submission(): void
     update_post_meta($submission_id, '_staark_submission_mail_state', 'not_sent');
     update_post_meta($submission_id, '_staark_submission_sync_state', 'pending');
 
+    /**
+     * Fires after a submission and its core fields are stored, before any
+     * email is sent. Forms & Booking stores the type and booking details here.
+     */
+    do_action('staark_hub_form_stored', $submission_id, $data);
+
     $mail_sent = staark_hub_forms_send_notification($submission_id);
 
     /**
@@ -942,7 +976,7 @@ add_action('admin_post_staark_save_forms_settings', static function (): void {
     staark_hub_forms_admin_action_guard('staark_save_forms_settings');
     staark_hub_forms_save_settings(is_array($_POST) ? wp_unslash($_POST) : []);
 
-    wp_safe_redirect(admin_url('admin.php?page=staark-hub-forms&staark_forms=saved'));
+    wp_safe_redirect(admin_url('admin.php?page=staark-hub-form-settings&fb_notice=saved'));
     exit;
 });
 
@@ -962,7 +996,7 @@ add_action('admin_post_staark_forms_test_mail', static function (): void {
         5 * MINUTE_IN_SECONDS
     );
 
-    wp_safe_redirect(admin_url('admin.php?page=staark-hub-forms&staark_forms=mail_test'));
+    wp_safe_redirect(admin_url('admin.php?page=staark-hub-form-settings&fb_notice=mail_test'));
     exit;
 });
 
@@ -978,9 +1012,10 @@ add_action('admin_post_staark_submission_retry_mail', static function (): void {
     wp_safe_redirect(
         add_query_arg(
             [
-                'page' => 'staark-hub-forms',
+                'page' => 'staark-hub-inbox',
                 'submission' => $submission_id,
-                'mail_retry' => $state,
+                'fb_notice' => 'mail_retry',
+                'fb_mail' => $state,
             ],
             admin_url('admin.php')
         )
@@ -1000,7 +1035,7 @@ add_action('admin_post_staark_submission_status', static function (): void {
     }
 
     wp_safe_redirect(
-        admin_url('admin.php?page=staark-hub-forms&submission=' . $submission_id)
+        admin_url('admin.php?page=staark-hub-inbox&submission=' . $submission_id)
     );
     exit;
 });

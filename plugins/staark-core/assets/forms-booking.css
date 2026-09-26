@@ -1,0 +1,997 @@
+/*
+ * Staark Hub — Forms & Booking screens (Inbox, detail, Bookings, Forms,
+ * Notifications, Settings). Built on the Hub UI 2 tokens in hub-ui.css.
+ */
+
+.staark-hub-wrap .staark-hub-nav-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #d63638;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.staark-fb .staark-fb-muted {
+  color: var(--staark-hub-muted);
+  font-size: 13px;
+}
+
+.staark-fb .staark-fb-stat--hot {
+  border-color: #f5c2c0;
+  background: linear-gradient(180deg, #fff6f5, #fff);
+}
+
+.staark-fb .staark-fb-stat--hot .staark-hub-metric {
+  color: #b42318;
+}
+
+/* ------------------------------------------------------------------ */
+/* Toolbar, tabs, search                                               */
+/* ------------------------------------------------------------------ */
+
+.staark-fb .staark-fb-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.staark-fb .staark-fb-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--staark-hub-border);
+}
+
+.staark-fb .staark-fb-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.staark-fb .staark-fb-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: var(--staark-hub-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.staark-fb .staark-fb-tabs a:hover {
+  background: var(--staark-hub-surface);
+  color: var(--staark-hub-ink);
+}
+
+.staark-fb .staark-fb-tabs a.is-active {
+  background: var(--staark-hub-ink);
+  color: #fff;
+}
+
+.staark-fb .staark-fb-tabs a span {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, .07);
+  font-size: 11px;
+  text-align: center;
+}
+
+.staark-fb .staark-fb-tabs a.is-active span {
+  background: rgba(255, 255, 255, .18);
+}
+
+.staark-fb .staark-fb-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.staark-fb .staark-fb-search input[type="search"] {
+  min-width: 240px;
+}
+
+.staark-fb .staark-fb-bulkbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--staark-hub-surface);
+  border-bottom: 1px solid var(--staark-hub-border);
+}
+
+/* ------------------------------------------------------------------ */
+/* Table                                                               */
+/* ------------------------------------------------------------------ */
+
+.staark-fb .staark-fb-table-wrap {
+  overflow-x: auto;
+}
+
+.staark-fb .staark-fb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.staark-fb .staark-fb-table th,
+.staark-fb .staark-fb-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--staark-hub-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.staark-fb .staark-fb-table th {
+  color: var(--staark-hub-muted);
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.staark-fb .staark-fb-table tbody tr:hover {
+  background: #fafbfc;
+}
+
+.staark-fb .staark-fb-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.staark-fb .staark-fb-table td.check,
+.staark-fb .staark-fb-table th.check {
+  width: 24px;
+  padding-right: 0;
+}
+
+.staark-fb .staark-fb-table .from a,
+.staark-fb .staark-fb-table .request a {
+  color: var(--staark-hub-ink);
+  text-decoration: none;
+}
+
+.staark-fb .staark-fb-table .from strong {
+  font-weight: 600;
+}
+
+.staark-fb .staark-fb-table tr.is-unread .from strong {
+  font-weight: 750;
+}
+
+.staark-fb .staark-fb-table tr.is-unread .from strong::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 7px 1px 0;
+  border-radius: 50%;
+  background: var(--staark-hub-blue);
+}
+
+.staark-fb .staark-fb-table .from span {
+  display: block;
+  color: var(--staark-hub-muted);
+  font-size: 12.5px;
+}
+
+.staark-fb .staark-fb-table .request {
+  min-width: 280px;
+}
+
+.staark-fb .staark-fb-kind {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--staark-hub-muted);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.staark-fb .staark-fb-kind--booking::before {
+  content: "\f508";
+  margin-right: 4px;
+  font-family: dashicons;
+  font-size: 13px;
+  vertical-align: -2px;
+}
+
+.staark-fb .staark-fb-brief {
+  font-weight: 600;
+}
+
+.staark-fb .staark-fb-excerpt {
+  color: var(--hub-text) !important;
+}
+
+.staark-fb .staark-fb-table .when {
+  color: var(--staark-hub-muted);
+  white-space: nowrap;
+}
+
+.staark-fb .staark-fb-table input[type="text"],
+.staark-fb .staark-fb-table select {
+  width: 100%;
+  min-width: 140px;
+}
+
+.staark-fb .staark-fb-table td.center {
+  text-align: center;
+}
+
+.staark-fb .staark-fb-code {
+  display: block;
+  margin-top: 6px;
+  color: var(--staark-hub-muted);
+  font-size: 11px;
+  background: none;
+  padding: 0;
+}
+
+.staark-fb .staark-fb-pagination {
+  padding: 14px 20px;
+  border-top: 1px solid var(--staark-hub-border);
+}
+
+.staark-fb .staark-fb-pagination .page-numbers {
+  display: inline-block;
+  min-width: 30px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.staark-fb .staark-fb-pagination .current {
+  background: var(--staark-hub-ink);
+  color: #fff;
+}
+
+.staark-fb .staark-fb-empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.staark-fb .staark-fb-empty strong {
+  display: block;
+  color: var(--staark-hub-ink);
+  font-size: 16px;
+}
+
+.staark-fb .staark-fb-empty p {
+  margin: 6px 0 0;
+  color: var(--staark-hub-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Status pills                                                        */
+/* ------------------------------------------------------------------ */
+
+.staark-fb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef0f3;
+  color: var(--staark-hub-muted);
+  font-size: 11.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.staark-fb-pill::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.staark-fb-pill--message-new {
+  background: var(--hub-accent-soft);
+  color: var(--staark-hub-blue-dark);
+}
+
+.staark-fb-pill--message-replied,
+.staark-fb-pill--booking-confirmed {
+  background: var(--hub-ok-soft);
+  color: var(--hub-ok);
+}
+
+.staark-fb-pill--booking-pending {
+  background: var(--hub-warn-soft);
+  color: var(--hub-warn);
+}
+
+.staark-fb-pill--booking-declined,
+.staark-fb-pill--booking-cancelled,
+.staark-fb-pill--message-spam {
+  background: #fdecea;
+  color: #b42318;
+}
+
+.staark-fb-pill--booking-completed {
+  background: #eef0f3;
+  color: #475467;
+}
+
+/* ------------------------------------------------------------------ */
+/* Detail                                                              */
+/* ------------------------------------------------------------------ */
+
+.staark-fb .staark-fb-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.staark-fb .staark-fb-detail-side {
+  display: grid;
+  gap: 16px;
+}
+
+.staark-fb .staark-fb-detail-side .staark-hub-card {
+  margin: 0;
+  padding: 20px;
+}
+
+.staark-fb .staark-fb-request-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.staark-fb .staark-fb-request-head h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+}
+
+.staark-fb .staark-fb-booking {
+  margin-bottom: 22px;
+  padding: 18px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: var(--hub-radius-sm);
+  background: var(--staark-hub-surface);
+}
+
+.staark-fb .staark-fb-booking-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.staark-fb .staark-fb-booking-facts div {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.staark-fb .staark-fb-booking-facts dt {
+  color: var(--staark-hub-muted);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.staark-fb .staark-fb-booking-facts dd {
+  margin: 3px 0 0;
+  color: var(--staark-hub-ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.staark-fb .staark-fb-booking-actions textarea,
+.staark-fb .staark-fb-reply textarea,
+.staark-fb .staark-fb-template textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.staark-fb .staark-fb-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0;
+  line-height: 1.45;
+}
+
+.staark-fb .staark-fb-check input {
+  margin-top: 2px;
+}
+
+.staark-fb .staark-fb-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.staark-fb .staark-fb-confirm.button-primary {
+  border-color: var(--hub-ok);
+  background: var(--hub-ok);
+}
+
+.staark-fb .staark-fb-confirm.button-primary:hover {
+  border-color: #07704c;
+  background: #07704c;
+}
+
+.staark-fb .staark-fb-decline {
+  color: #b42318 !important;
+  border-color: #f0b8b2 !important;
+}
+
+.staark-fb .staark-fb-edit {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--hub-line-strong);
+}
+
+.staark-fb .staark-fb-edit summary {
+  color: var(--staark-hub-blue);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.staark-fb .staark-fb-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.staark-fb .staark-fb-edit-grid label span {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.staark-fb .staark-fb-edit-grid input {
+  width: 100%;
+}
+
+.staark-fb .staark-fb-subhead {
+  margin: 0 0 8px;
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.staark-fb .staark-fb-message {
+  padding: 16px 18px;
+  border-left: 3px solid var(--staark-hub-border);
+  background: #fcfcfd;
+  color: var(--hub-text);
+  font-size: 14.5px;
+  line-height: 1.65;
+  white-space: normal;
+}
+
+.staark-fb .staark-fb-reply .staark-hub-field {
+  display: block;
+  margin-top: 12px;
+}
+
+.staark-fb .staark-fb-reply input[type="text"] {
+  width: 100%;
+}
+
+.staark-fb .staark-fb-dl {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 12px 0 0;
+}
+
+.staark-fb .staark-fb-dl dt {
+  color: var(--staark-hub-muted);
+  font-size: 12.5px;
+}
+
+.staark-fb .staark-fb-dl dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.staark-fb .staark-fb-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--staark-hub-border);
+}
+
+.staark-fb .staark-fb-inline select {
+  min-width: 150px;
+}
+
+.staark-fb .staark-fb-booking-row .time small {
+  display: block;
+  color: var(--staark-hub-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.staark-fb .staark-fb-inline label {
+  width: 100%;
+  font-weight: 600;
+}
+
+.staark-fb .staark-fb-log {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.staark-fb .staark-fb-log li {
+  position: relative;
+  margin: 0;
+  padding: 0 0 12px 18px;
+  border-left: 2px solid var(--staark-hub-border);
+  line-height: 1.45;
+}
+
+.staark-fb .staark-fb-log li::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hub-ok);
+}
+
+.staark-fb .staark-fb-log li.is-error::before {
+  background: #d63638;
+}
+
+.staark-fb .staark-fb-log li span {
+  display: block;
+  color: var(--staark-hub-muted);
+  font-size: 11.5px;
+}
+
+.staark-fb .staark-fb-delete {
+  padding: 0 4px;
+}
+
+.staark-fb .staark-fb-delete .button-link {
+  color: #b42318;
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ */
+/* Bookings                                                            */
+/* ------------------------------------------------------------------ */
+
+.staark-fb .staark-fb-bookings {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.staark-fb .staark-fb-bookings-side {
+  display: grid;
+  gap: 16px;
+}
+
+.staark-fb .staark-fb-bookings-side .staark-hub-card {
+  margin: 0;
+  padding: 18px;
+}
+
+.staark-fb .staark-fb-calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.staark-fb .staark-fb-calendar-head strong {
+  color: var(--staark-hub-ink);
+  font-size: 15px;
+  text-transform: capitalize;
+}
+
+.staark-fb .staark-fb-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.staark-fb .staark-fb-calendar-grid .dow {
+  padding: 4px 0;
+  color: var(--staark-hub-muted);
+  font-size: 11px;
+  font-weight: 650;
+  text-align: center;
+}
+
+.staark-fb .staark-fb-calendar-grid .day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 4px 0;
+  border-radius: 8px;
+  color: var(--staark-hub-ink);
+  text-decoration: none;
+}
+
+.staark-fb .staark-fb-calendar-grid .day:hover {
+  background: var(--staark-hub-surface);
+}
+
+.staark-fb .staark-fb-calendar-grid .day.is-past {
+  color: #98a2b3;
+}
+
+.staark-fb .staark-fb-calendar-grid .day.is-today .num {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--staark-hub-blue);
+  color: #fff;
+}
+
+.staark-fb .staark-fb-calendar-grid .day.is-selected {
+  outline: 2px solid var(--staark-hub-ink);
+}
+
+.staark-fb .staark-fb-calendar-grid .num {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.staark-fb .staark-fb-calendar-grid .dots {
+  display: flex;
+  gap: 2px;
+}
+
+.staark-fb .staark-fb-calendar-grid .dots i,
+.staark-fb .staark-fb-legend i {
+  display: inline-grid;
+  place-items: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.staark-fb i.ok {
+  background: var(--hub-ok);
+}
+
+.staark-fb i.warn {
+  background: #dc8a0e;
+}
+
+.staark-fb .staark-fb-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  color: var(--staark-hub-muted);
+  font-size: 12px;
+}
+
+.staark-fb .staark-fb-legend i {
+  min-width: 10px;
+  height: 10px;
+  margin-left: 6px;
+}
+
+.staark-fb .staark-fb-mini-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.staark-fb .staark-fb-mini-stats a {
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--staark-hub-surface);
+  color: var(--staark-hub-ink);
+  text-align: center;
+  text-decoration: none;
+}
+
+.staark-fb .staark-fb-mini-stats strong {
+  display: block;
+  font-size: 20px;
+}
+
+.staark-fb .staark-fb-mini-stats span {
+  color: var(--staark-hub-muted);
+  font-size: 11.5px;
+}
+
+.staark-fb .staark-fb-day {
+  padding: 16px 20px 6px;
+  border-bottom: 1px solid var(--staark-hub-border);
+}
+
+.staark-fb .staark-fb-day:last-child {
+  border-bottom: 0;
+}
+
+.staark-fb .staark-fb-day h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 15px;
+  text-transform: capitalize;
+}
+
+.staark-fb .staark-fb-day h3 small {
+  color: var(--staark-hub-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.staark-fb .staark-fb-today {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--staark-hub-blue);
+  color: #fff;
+  font-size: 11px;
+  text-transform: none;
+}
+
+.staark-fb .staark-fb-booking-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.staark-fb .staark-fb-booking-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--staark-hub-border);
+  border-left: 3px solid var(--hub-ok);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.staark-fb .staark-fb-booking-row--pending {
+  border-left-color: #dc8a0e;
+  background: #fffcf6;
+}
+
+.staark-fb .staark-fb-booking-row--declined,
+.staark-fb .staark-fb-booking-row--cancelled {
+  border-left-color: #d0d5dd;
+  opacity: .72;
+}
+
+.staark-fb .staark-fb-booking-row--completed {
+  border-left-color: #98a2b3;
+}
+
+.staark-fb .staark-fb-booking-row .time {
+  color: var(--staark-hub-ink);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.staark-fb .staark-fb-booking-row .who a {
+  color: var(--staark-hub-ink);
+  text-decoration: none;
+}
+
+.staark-fb .staark-fb-booking-row .who small {
+  display: block;
+  color: var(--staark-hub-muted);
+}
+
+.staark-fb .staark-fb-booking-row .actions {
+  display: flex;
+  gap: 6px;
+}
+
+.staark-fb .staark-fb-booking-row .actions form {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Notifications, settings                                             */
+/* ------------------------------------------------------------------ */
+
+.staark-fb .staark-fb-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.staark-fb .staark-fb-cards--two {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.staark-fb .staark-fb-cards--two > div {
+  display: grid;
+  gap: 16px;
+}
+
+.staark-fb .staark-fb-cards .staark-hub-card {
+  margin: 0;
+}
+
+.staark-fb .staark-fb-cards .staark-hub-field {
+  display: block;
+  margin-top: 12px;
+}
+
+.staark-fb .staark-fb-cards .staark-hub-field input,
+.staark-fb .staark-fb-cards .staark-hub-field select {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.staark-fb .staark-fb-gap {
+  margin-top: 26px !important;
+}
+
+.staark-fb .staark-fb-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+}
+
+.staark-fb .staark-fb-field-row > .staark-hub-field {
+  flex: 1 1 180px;
+}
+
+.staark-fb .staark-fb-field-row > .staark-fb-field-small {
+  flex: 0 1 120px;
+}
+
+.staark-fb .staark-fb-templates {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+
+.staark-fb .staark-fb-template {
+  margin-bottom: 10px;
+  padding: 0 16px;
+  border: 1px solid var(--staark-hub-border);
+  border-radius: var(--hub-radius-sm);
+  background: #fff;
+}
+
+.staark-fb .staark-fb-template[open] {
+  padding-bottom: 16px;
+}
+
+.staark-fb .staark-fb-template summary {
+  padding: 14px 0;
+  cursor: pointer;
+}
+
+.staark-fb .staark-fb-template summary span {
+  display: block;
+  color: var(--staark-hub-muted);
+  font-size: 12.5px;
+}
+
+.staark-fb .staark-fb-template .staark-hub-field {
+  display: block;
+  margin-top: 10px;
+}
+
+.staark-fb .staark-fb-template input[type="text"] {
+  width: 100%;
+}
+
+.staark-fb .staark-fb-template textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.staark-fb .staark-fb-placeholders {
+  position: sticky;
+  top: 48px;
+  padding: 16px;
+  border-radius: var(--hub-radius-sm);
+  background: var(--staark-hub-surface);
+}
+
+.staark-fb .staark-fb-placeholders dl {
+  display: grid;
+  gap: 2px;
+  margin: 10px 0;
+}
+
+.staark-fb .staark-fb-placeholders dt {
+  margin-top: 6px;
+}
+
+.staark-fb .staark-fb-placeholders dd {
+  margin: 0;
+  color: var(--staark-hub-muted);
+  font-size: 12.5px;
+}
+
+@media (max-width: 1200px) {
+  .staark-fb .staark-fb-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .staark-fb .staark-fb-templates {
+    grid-template-columns: 1fr;
+  }
+
+  .staark-fb .staark-fb-placeholders {
+    position: static;
+  }
+}
+
+@media (max-width: 1100px) {
+  .staark-fb .staark-fb-detail,
+  .staark-fb .staark-fb-bookings,
+  .staark-fb .staark-fb-cards--two {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 782px) {
+  .staark-fb .staark-fb-search input[type="search"] {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .staark-fb .staark-fb-booking-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .staark-fb .staark-fb-booking-row .staark-fb-pill,
+  .staark-fb .staark-fb-booking-row .actions {
+    grid-column: 2;
+  }
+
+  .staark-fb .staark-fb-table .request {
+    min-width: 200px;
+  }
+}

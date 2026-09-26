@@ -149,6 +149,17 @@
       if (!message || message.dataset.salongComposed) {
         return;
       }
+      // Structured copy for Staark Hub → Forms & Booking (ignored by older Hub versions).
+      [
+        ['booking_type', 'appointment'],
+        ['booking_date', dateInput.value],
+        ['booking_time', timeSelect.value],
+        ['booking_item', serviceSelect.value]
+      ].forEach(function (pair) {
+        var hidden = el('input', { type: 'hidden', name: pair[0] });
+        hidden.value = pair[1] || '';
+        form.appendChild(hidden);
+      });
       var lines = ['Bokningsförfrågan', 'Behandling: ' + (serviceSelect.value || '—')];
       if (dateInput.value) {
         lines.push('Önskat datum: ' + formatDate(dateInput.value));
