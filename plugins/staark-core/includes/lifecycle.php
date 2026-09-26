@@ -64,6 +64,8 @@ function staark_hub_deactivate(): void
     wp_clear_scheduled_hook('staark_hub_security_daily_scan');
     wp_clear_scheduled_hook('staark_hub_performance_daily_audit');
     wp_clear_scheduled_hook('staark_hub_update_check_twicedaily');
+    wp_clear_scheduled_hook('staark_hub_starter_reconcile');
+    wp_clear_scheduled_hook('staark_hub_support_refresh');
 }
 
 register_activation_hook(STAARK_HUB_PLUGIN_FILE, 'staark_hub_activate');

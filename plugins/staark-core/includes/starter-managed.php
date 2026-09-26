@@ -668,10 +668,78 @@ function staark_hub_starter_managed_status(): array
  * Automatic lifecycle. The context signature changes when the active theme,
  * preset, theme version or actual blueprint set changes.
  */
+const STAARK_HUB_STARTER_GATE_OPTION = 'staark_hub_starter_managed_gate';
+const STAARK_HUB_STARTER_RECONCILE_EVENT = 'staark_hub_starter_reconcile';
+
+/**
+ * Cheap fingerprint of everything that can change the starter blueprints:
+ * theme, parent, theme version, preset, front page and Staark Core version.
+ * Reading it costs one autoloaded option, no queries.
+ */
+function staark_hub_starter_managed_gate_key(): string
+{
+    $theme = wp_get_theme();
+
+    return md5(implode('|', [
+        get_stylesheet(),
+        get_template(),
+        (string) $theme->get('Version'),
+        (string) wp_get_theme(get_template())->get('Version'),
+        (string) get_theme_mod('staark_theme_preset', ''),
+        (string) get_option('page_on_front'),
+        STAARK_HUB_VERSION,
+    ]));
+}
+
+function staark_hub_starter_managed_reconcile_if_changed(): void
+{
+    $key = staark_hub_starter_managed_gate_key();
+    if (get_option(STAARK_HUB_STARTER_GATE_OPTION) === $key) {
+        return;
+    }
+
+    staark_hub_starter_managed_reconcile(false);
+    update_option(STAARK_HUB_STARTER_GATE_OPTION, $key, true);
+}
+
+/*
+ * Automatic lifecycle. The full reconcile (blueprints, page lookups, hashes)
+ * only runs when the gate key changed, and never inside a visitor's request:
+ * admin, cron and WP-CLI run it directly, front-end requests schedule it.
+ */
 add_action(
     'init',
     static function (): void {
-        staark_hub_starter_managed_reconcile(false);
+        if (get_option(STAARK_HUB_STARTER_GATE_OPTION) === staark_hub_starter_managed_gate_key()) {
+            return;
+        }
+
+        if (is_admin() || wp_doing_cron() || (defined('WP_CLI') && WP_CLI)) {
+            staark_hub_starter_managed_reconcile_if_changed();
+            return;
+        }
+
+        if (! wp_next_scheduled(STAARK_HUB_STARTER_RECONCILE_EVENT)) {
+            wp_schedule_single_event(time(), STAARK_HUB_STARTER_RECONCILE_EVENT);
+        }
     },
     100
 );
+
+add_action(STAARK_HUB_STARTER_RECONCILE_EVENT, 'staark_hub_starter_managed_reconcile_if_changed');
+
+/**
+ * Force the next request to reconcile (and adopt new starter pages), e.g.
+ * after First Install or the starter repair created pages without changing
+ * theme, preset or front page.
+ */
+function staark_hub_starter_managed_invalidate(): void
+{
+    delete_option(STAARK_HUB_STARTER_GATE_OPTION);
+}
+
+add_action('staark_hub_first_install_completed', 'staark_hub_starter_managed_invalidate');
+// Starter repair and the themes' "set up pages" actions create or rewrite
+// pages; page saves are rare, so any page save re-checks on the next request.
+// (The reconcile stores the gate after its own page saves, so it cannot loop.)
+add_action('save_post_page', 'staark_hub_starter_managed_invalidate');

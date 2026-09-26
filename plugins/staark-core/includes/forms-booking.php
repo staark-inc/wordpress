@@ -906,7 +906,8 @@ function staark_hub_fb_counts(): array
         'booking_enabled' => $booking_enabled,
     ];
 
-    set_transient(STAARK_HUB_FB_COUNTS_TRANSIENT, $counts, 5 * MINUTE_IN_SECONDS);
+    // Every write flushes this, so a long TTL only matters for the date rollover (checked above).
+    set_transient(STAARK_HUB_FB_COUNTS_TRANSIENT, $counts, HOUR_IN_SECONDS);
 
     return $counts;
 }
@@ -1370,10 +1371,13 @@ function staark_hub_fb_upgrade_submissions(): int
 }
 
 add_action('admin_init', static function (): void {
-    if ((int) get_option('staark_hub_fb_schema', 0) >= 1 || ! current_user_can(staark_hub_fb_cap())) {
+    if ((int) get_option('staark_hub_fb_schema', 0) >= 1 || ! current_user_can(staark_hub_fb_cap()) || wp_doing_ajax()) {
         return;
     }
 
-    staark_hub_fb_upgrade_submissions();
-    update_option('staark_hub_fb_schema', 1, false);
+    // Batches of 500 per admin page load; the schema flag is only set once
+    // nothing is left, so large inboxes finish over a few page loads.
+    if (staark_hub_fb_upgrade_submissions() < 500) {
+        update_option('staark_hub_fb_schema', 1, true);
+    }
 });

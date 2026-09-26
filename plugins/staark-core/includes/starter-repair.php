@@ -124,6 +124,55 @@ function staark_hub_starter_broken_pages(): array
     return $result;
 }
 
+/**
+ * Cached version of staark_hub_starter_broken_pages() for the admin notice,
+ * which shows on the dashboard, the Pages list and every Hub screen. The
+ * full scan (search + parsing up to 100 page bodies) only reruns when pages
+ * change or the theme/preset changes.
+ *
+ * @return array{fixable:array<string,WP_Post>,orphaned:array<int,WP_Post>}
+ */
+function staark_hub_starter_broken_pages_cached(): array
+{
+    $key = md5(get_stylesheet() . '|' . (string) wp_get_theme()->get('Version') . '|' . (string) get_theme_mod('staark_theme_preset', ''));
+    $cached = get_transient('staark_hub_starter_broken');
+
+    if (! is_array($cached) || ($cached['key'] ?? '') !== $key) {
+        $broken = staark_hub_starter_broken_pages();
+        $cached = [
+            'key' => $key,
+            'fixable' => array_map(static fn (WP_Post $page): int => (int) $page->ID, $broken['fixable']),
+            'orphaned' => array_map('intval', array_keys($broken['orphaned'])),
+        ];
+        set_transient('staark_hub_starter_broken', $cached, DAY_IN_SECONDS);
+    }
+
+    $result = ['fixable' => [], 'orphaned' => []];
+    foreach ((array) $cached['fixable'] as $slug => $id) {
+        $page = get_post((int) $id);
+        if ($page instanceof WP_Post) {
+            $result['fixable'][(string) $slug] = $page;
+        }
+    }
+    foreach ((array) $cached['orphaned'] as $id) {
+        $page = get_post((int) $id);
+        if ($page instanceof WP_Post) {
+            $result['orphaned'][(int) $id] = $page;
+        }
+    }
+
+    return $result;
+}
+
+function staark_hub_starter_broken_pages_flush(): void
+{
+    delete_transient('staark_hub_starter_broken');
+}
+
+add_action('save_post_page', 'staark_hub_starter_broken_pages_flush');
+add_action('deleted_post', 'staark_hub_starter_broken_pages_flush');
+add_action('switch_theme', 'staark_hub_starter_broken_pages_flush');
+
 function staark_hub_starter_notice_screen(): bool
 {
     if (! function_exists('get_current_screen')) {
@@ -164,7 +213,7 @@ add_action('admin_notices', static function (): void {
         return;
     }
 
-    $broken = staark_hub_starter_broken_pages();
+    $broken = staark_hub_starter_broken_pages_cached();
     if ($broken['fixable'] === [] && $broken['orphaned'] === []) {
         return;
     }
@@ -241,6 +290,8 @@ add_action('admin_post_staark_starter_repair', static function (): void {
             ++$updated;
         }
     }
+
+    staark_hub_starter_broken_pages_flush();
 
     $back = wp_get_referer() ?: admin_url('edit.php?post_type=page');
     wp_safe_redirect(add_query_arg(['staark_starter_repair' => 'done', 'updated' => $updated], $back));

@@ -66,7 +66,7 @@ function staark_hub_performance_save_settings(array $settings): void
             'webp_quality' => max(60, min(95, (int) ($settings['webp_quality'] ?? 82))),
             'smart_lazy_images' => ! empty($settings['smart_lazy_images']),
         ],
-        false
+        true
     );
 }
 
@@ -726,9 +726,7 @@ function staark_hub_performance_deactivate(): void
         wp_unschedule_event($timestamp, STAARK_HUB_PERFORMANCE_AUDIT_HOOK);
     }
 }
-if (defined('STAARK_HUB_PLUGIN_FILE')) {
-    register_deactivation_hook(STAARK_HUB_PLUGIN_FILE, 'staark_hub_performance_deactivate');
-}
+// Scheduled events are cleared by staark_hub_deactivate() (includes/lifecycle.php).
 
 add_action('admin_post_staark_performance_audit', static function (): void {
     if (! current_user_can('manage_options')) {

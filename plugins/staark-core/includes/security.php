@@ -50,7 +50,7 @@ function staark_hub_security_save_settings(array $settings): void
             'generic_login_errors' => ! empty($settings['generic_login_errors']),
             'login_protection' => ! empty($settings['login_protection']),
         ],
-        false
+        true
     );
 }
 
@@ -712,9 +712,7 @@ function staark_hub_security_deactivate(): void
     }
 }
 
-if (defined('STAARK_HUB_PLUGIN_FILE')) {
-    register_deactivation_hook(STAARK_HUB_PLUGIN_FILE, 'staark_hub_security_deactivate');
-}
+// Scheduled events are cleared by staark_hub_deactivate() (includes/lifecycle.php).
 
 add_action('admin_post_staark_security_scan', static function (): void {
     if (! current_user_can('manage_options')) {

@@ -162,7 +162,18 @@ function staark_hub_support_maybe_refresh(): void
 
     set_transient('staark_hub_support_refresh_lock', '1', 5 * MINUTE_IN_SECONDS);
 
+    // Sync in the background instead of blocking the Support screen on a
+    // remote request (up to 12 s). "Sync now" still syncs immediately.
+    if (! wp_next_scheduled('staark_hub_support_refresh')) {
+        wp_schedule_single_event(time(), 'staark_hub_support_refresh');
+        if (function_exists('spawn_cron')) {
+            spawn_cron();
+        }
+    }
+}
+
+add_action('staark_hub_support_refresh', static function (): void {
     if (function_exists('staark_hub_sync_pending_records')) {
         staark_hub_sync_pending_records();
     }
-}
+});

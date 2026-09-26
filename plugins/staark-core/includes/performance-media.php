@@ -750,14 +750,17 @@ function staark_hub_performance_optimize_existing_images(int $limit = 10): array
 
     require_once ABSPATH . 'wp-admin/includes/image.php';
 
+    // Skip images already handled (optimized or failed) so repeated runs
+    // work through the whole library instead of the newest 100 again.
     $ids = get_posts([
         'post_type' => 'attachment',
         'post_status' => 'inherit',
-        'post_mime_type' => 'image',
+        'post_mime_type' => ['image/jpeg', 'image/png'],
         'posts_per_page' => 100,
         'fields' => 'ids',
         'orderby' => 'date',
         'order' => 'DESC',
+        'meta_query' => [['key' => '_staark_webp_state', 'compare' => 'NOT EXISTS']],
         'suppress_filters' => true,
     ]);
 
@@ -774,6 +777,7 @@ function staark_hub_performance_optimize_existing_images(int $limit = 10): array
         }
 
         if (staark_hub_performance_attachment_has_webp($id)) {
+            update_post_meta($id, '_staark_webp_state', 'done');
             ++$result['skipped'];
             continue;
         }
@@ -781,6 +785,7 @@ function staark_hub_performance_optimize_existing_images(int $limit = 10): array
         $file = get_attached_file($id);
 
         if (! is_string($file) || $file === '' || ! is_file($file)) {
+            update_post_meta($id, '_staark_webp_state', 'failed');
             ++$result['failed'];
             continue;
         }
@@ -790,6 +795,7 @@ function staark_hub_performance_optimize_existing_images(int $limit = 10): array
         $metadata = wp_generate_attachment_metadata($id, $file);
 
         if (! is_array($metadata) || $metadata === []) {
+            update_post_meta($id, '_staark_webp_state', 'failed');
             ++$result['failed'];
             continue;
         }
@@ -797,8 +803,10 @@ function staark_hub_performance_optimize_existing_images(int $limit = 10): array
         wp_update_attachment_metadata($id, $metadata);
 
         if (staark_hub_performance_attachment_has_webp($id)) {
+            update_post_meta($id, '_staark_webp_state', 'done');
             ++$result['optimized'];
         } else {
+            update_post_meta($id, '_staark_webp_state', 'failed');
             ++$result['failed'];
         }
     }
