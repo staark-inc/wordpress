@@ -130,6 +130,52 @@ function staark_hub_update_manifest_url(): string
     return $base . staark_hub_update_manifest_request_path();
 }
 
+/**
+ * Hosts allowed to serve update packages. GitHub release assets redirect to
+ * githubusercontent.com, which download_url() follows.
+ *
+ * Extend with STAARK_HUB_UPDATE_PACKAGE_HOSTS (comma-separated) or the
+ * `staark_hub_update_package_hosts` filter, e.g. for a private mirror.
+ *
+ * @return list<string>
+ */
+function staark_hub_update_package_hosts(): array
+{
+    $hosts = ['github.com', 'staarkinc.com'];
+
+    // The Hub this site is connected to may serve or mirror packages itself.
+    if (function_exists('staark_hub_connection')) {
+        $hub_host = (string) wp_parse_url((string) staark_hub_connection()['hub_url'], PHP_URL_HOST);
+        if ($hub_host !== '') {
+            $hosts[] = $hub_host;
+        }
+    }
+    if (defined('STAARK_HUB_UPDATE_PACKAGE_HOSTS')) {
+        $hosts = array_merge($hosts, array_map('trim', explode(',', (string) STAARK_HUB_UPDATE_PACKAGE_HOSTS)));
+    }
+
+    $hosts = (array) apply_filters('staark_hub_update_package_hosts', $hosts);
+
+    return array_values(array_filter(array_map(static fn ($host): string => strtolower(trim((string) $host)), $hosts)));
+}
+
+function staark_hub_update_package_host_allowed(string $url): bool
+{
+    $host = strtolower((string) wp_parse_url($url, PHP_URL_HOST));
+    if ($host === '') {
+        return false;
+    }
+
+    foreach (staark_hub_update_package_hosts() as $allowed) {
+        if ($host === $allowed || str_ends_with($host, '.' . $allowed)) {
+            return true;
+        }
+    }
+
+    // Local/development installs may test against their own Hub.
+    return in_array(staark_hub_runtime_environment(), ['local', 'development'], true);
+}
+
 function staark_hub_update_http_url_allowed(string $url): bool
 {
     $scheme = strtolower((string) wp_parse_url($url, PHP_URL_SCHEME));
@@ -159,9 +205,10 @@ function staark_hub_update_normalize_release(array $release, string $type): arra
 
     return [
         'type' => $type,
-        'slug' => isset($release['slug'])
-            ? sanitize_key((string) $release['slug'])
-            : staark_hub_update_release_slug($type),
+        // The target folder always comes from the plugin's own registry. A
+        // manifest may repeat the slug, but it can never choose another one.
+        'slug' => staark_hub_update_release_slug($type),
+        'manifest_slug' => isset($release['slug']) ? sanitize_key((string) $release['slug']) : '',
         'version' => $version,
         'package' => $package,
         'sha256' => preg_match('/^[a-f0-9]{64}$/', $sha256) ? $sha256 : '',
@@ -214,6 +261,13 @@ function staark_hub_update_normalize_manifest(array $manifest)
         if (! staark_hub_update_http_url_allowed((string) $release['package'])) {
             return new WP_Error('staark_updates_package_url', 'Update package URLs must use HTTPS outside local/development environments.');
         }
+        if (! staark_hub_update_package_host_allowed((string) $release['package'])) {
+            return new WP_Error('staark_updates_package_host', 'Update package host is not allowed: ' . (string) wp_parse_url((string) $release['package'], PHP_URL_HOST));
+        }
+        if ($release['manifest_slug'] !== '' && $release['manifest_slug'] !== $release['slug']) {
+            return new WP_Error('staark_updates_slug', 'Update manifest slug for ' . $type . ' does not match ' . $release['slug'] . '.');
+        }
+        unset($release['manifest_slug']);
 
         $normalized['releases'][$type] = $release;
     }
@@ -367,21 +421,70 @@ function staark_hub_update_requirements_ok(array $release)
     return true;
 }
 
+/**
+ * Ed25519 public key (base64) that release signatures must match.
+ *
+ * Order: STAARK_HUB_UPDATE_PUBLIC_KEY constant, then the key shipped with the
+ * plugin in `update-signing.pub` (created by scripts/generate-update-key.php).
+ */
+function staark_hub_update_public_key(): string
+{
+    if (defined('STAARK_HUB_UPDATE_PUBLIC_KEY') && trim((string) STAARK_HUB_UPDATE_PUBLIC_KEY) !== '') {
+        return trim((string) STAARK_HUB_UPDATE_PUBLIC_KEY);
+    }
+
+    $file = STAARK_HUB_PLUGIN_DIR . 'update-signing.pub';
+    if (is_readable($file)) {
+        $key = trim((string) file_get_contents($file));
+        if ($key !== '' && ! str_starts_with($key, '#')) {
+            return $key;
+        }
+    }
+
+    return '';
+}
+
+/**
+ * Signed updates are required as soon as a public key is known. Without a
+ * key (plugin built before signing was set up) updates keep working, and the
+ * Updates screen warns about it; STAARK_HUB_REQUIRE_SIGNED_UPDATES forces
+ * signing even then.
+ */
+function staark_hub_update_signatures_required(): bool
+{
+    return staark_hub_update_public_key() !== ''
+        || (defined('STAARK_HUB_REQUIRE_SIGNED_UPDATES') && STAARK_HUB_REQUIRE_SIGNED_UPDATES === true);
+}
+
+/**
+ * Exact bytes a release signature covers. The package URL is deliberately
+ * left out so the Hub may mirror packages; the SHA256 binds the content.
+ */
+function staark_hub_update_signature_message(array $release, string $type): string
+{
+    return implode('|', [
+        'staark-release-v1',
+        $type,
+        staark_hub_update_release_slug($type),
+        (string) $release['version'],
+        strtolower((string) $release['sha256']),
+    ]);
+}
+
 /** @return true|WP_Error */
 function staark_hub_update_verify_release_signature(array $release, string $type)
 {
-    $required = defined('STAARK_HUB_REQUIRE_SIGNED_UPDATES') && STAARK_HUB_REQUIRE_SIGNED_UPDATES === true;
-    $public_key = defined('STAARK_HUB_UPDATE_PUBLIC_KEY') ? trim((string) STAARK_HUB_UPDATE_PUBLIC_KEY) : '';
+    $public_key = staark_hub_update_public_key();
     $signature = trim((string) ($release['signature'] ?? ''));
 
     if ($public_key === '') {
-        return $required
-            ? new WP_Error('staark_updates_public_key', 'Signed updates are required but STAARK_HUB_UPDATE_PUBLIC_KEY is not configured.')
+        return staark_hub_update_signatures_required()
+            ? new WP_Error('staark_updates_public_key', 'Signed updates are required but no update public key is configured.')
             : true;
     }
 
     if ($signature === '') {
-        return new WP_Error('staark_updates_signature_missing', 'The update release is missing its detached signature.');
+        return new WP_Error('staark_updates_signature_missing', 'The update release is missing its signature. It was not installed.');
     }
     if (! function_exists('sodium_crypto_sign_verify_detached')) {
         return new WP_Error('staark_updates_sodium', 'libsodium is required to verify the Staark update signature.');
@@ -393,11 +496,9 @@ function staark_hub_update_verify_release_signature(array $release, string $type
         return new WP_Error('staark_updates_signature_format', 'The configured update key or release signature is invalid.');
     }
 
-    $message = implode('|', [$type, (string) $release['version'], (string) $release['sha256'], (string) $release['package']]);
-
-    return sodium_crypto_sign_verify_detached($sig, $message, $key)
+    return sodium_crypto_sign_verify_detached($sig, staark_hub_update_signature_message($release, $type), $key)
         ? true
-        : new WP_Error('staark_updates_signature', 'Staark update signature verification failed.');
+        : new WP_Error('staark_updates_signature', 'Staark update signature verification failed. The update was not installed.');
 }
 
 /** @return true|WP_Error */
@@ -747,6 +848,18 @@ function staark_hub_update_rollback_pending_core()
     return true;
 }
 
+/**
+ * RC checks that say something about the update itself. Unrelated checks
+ * (a missing cron schedule, protection disabled by config …) must not roll
+ * a good update back.
+ *
+ * @return list<string>
+ */
+function staark_hub_update_health_check_ids(): array
+{
+    return ['version', 'php', 'files', 'modules'];
+}
+
 function staark_hub_update_finalize_pending_core(): void
 {
     $state = staark_hub_update_state();
@@ -755,16 +868,44 @@ function staark_hub_update_finalize_pending_core(): void
         return;
     }
 
+    // One request finalizes; concurrent requests skip instead of racing to
+    // restore backups. The lock expires after five minutes.
+    $lock = 'staark_hub_update_finalize_lock';
+    if (! add_option($lock, (string) time(), '', false)) {
+        $since = (int) get_option($lock, 0);
+        if ($since > time() - 5 * MINUTE_IN_SECONDS) {
+            return;
+        }
+        update_option($lock, (string) time(), false);
+    }
+
+    try {
+        staark_hub_update_finalize_pending_core_locked($state, $pending);
+    } finally {
+        delete_option($lock);
+    }
+}
+
+/**
+ * @param array<string,mixed> $state
+ * @param array<string,mixed> $pending
+ */
+function staark_hub_update_finalize_pending_core_locked(array $state, array $pending): void
+{
     $expected = isset($pending['version']) ? (string) $pending['version'] : '';
     if ($expected === '' || STAARK_HUB_VERSION !== $expected) {
         staark_hub_update_rollback_pending_core();
         return;
     }
 
-    $healthy = function_exists('staark_hub_rc_report') ? staark_hub_rc_report() : ['ok' => true];
-    if (empty($healthy['ok'])) {
-        staark_hub_update_rollback_pending_core();
-        return;
+    if (function_exists('staark_hub_rc_checks')) {
+        $relevant = staark_hub_update_health_check_ids();
+        foreach (staark_hub_rc_checks() as $check) {
+            if (in_array((string) ($check['id'] ?? ''), $relevant, true) && empty($check['ok'])) {
+                staark_hub_update_rollback_pending_core();
+                return;
+            }
+        }
     }
 
     $backup = isset($pending['backup']) ? (string) $pending['backup'] : '';
@@ -807,7 +948,8 @@ function staark_hub_update_install_theme(array $release, string $type = 'theme')
             return $valid;
         }
 
-        $slug = sanitize_key((string) ($release['slug'] ?? 'staark'));
+        // Always the registry slug for this release type, never the manifest's.
+        $slug = staark_hub_update_release_slug($type);
         $target = trailingslashit(get_theme_root()) . $slug;
         if (function_exists('staark_hub_path_is_mountpoint') && is_dir($target) && staark_hub_path_is_mountpoint($target)) {
             return new WP_Error('staark_updates_theme_mounted', 'The Staark Theme directory is externally mounted. Update the source mapping outside WordPress.');

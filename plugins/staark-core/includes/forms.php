@@ -370,9 +370,9 @@ add_action('init', static function (): void {
  */
 function staark_hub_forms_rate_key(string $form_id, string $bucket = 'cooldown'): string
 {
-    $ip = isset($_SERVER['REMOTE_ADDR']) && is_scalar($_SERVER['REMOTE_ADDR'])
-        ? sanitize_text_field((string) wp_unslash($_SERVER['REMOTE_ADDR']))
-        : 'unknown';
+    $ip = function_exists('staark_hub_client_ip')
+        ? staark_hub_client_ip()
+        : (isset($_SERVER['REMOTE_ADDR']) && is_scalar($_SERVER['REMOTE_ADDR']) ? sanitize_text_field((string) wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown');
     $form_id = sanitize_key($form_id);
     $bucket = sanitize_key($bucket);
 
@@ -835,7 +835,10 @@ function staark_hub_forms_send_notification(int $submission_id): bool
 
     $headers = ['Content-Type: text/plain; charset=UTF-8'];
     if (is_email($email)) {
-        $headers[] = 'Reply-To: ' . $name . ' <' . $email . '>';
+        // The name is visitor input: strip address separators and quotes so it
+        // cannot add extra Reply-To recipients.
+        $reply_name = trim(preg_replace('/[,;:<>"\x5c\r\n]+/', ' ', $name) ?? '');
+        $headers[] = 'Reply-To: ' . ($reply_name !== '' ? $reply_name . ' ' : '') . '<' . $email . '>';
     }
 
     $mail_result = staark_hub_forms_mail(

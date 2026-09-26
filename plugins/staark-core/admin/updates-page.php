@@ -29,6 +29,15 @@ function staark_hub_render_updates(): void
     <div class="wrap staark-hub-wrap">
         <?php staark_hub_header('Updates'); ?>
 
+        <?php if (! staark_hub_update_signatures_required()) : ?>
+            <div class="notice notice-warning">
+                <p>
+                    <strong><?php esc_html_e('Update signatures are not verified.', 'staark-core'); ?></strong>
+                    <?php esc_html_e('This Staark Core build has no update signing key, so updates are trusted on HTTPS and SHA256 alone. Releases built with a signing key (update-signing.pub) verify every package before it is installed.', 'staark-core'); ?>
+                </p>
+            </div>
+        <?php endif; ?>
+
         <?php if ($status === 'checked') : ?>
             <div class="notice notice-success is-dismissible">
                 <p>Staark update channel checked successfully.</p>

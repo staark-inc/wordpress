@@ -186,14 +186,21 @@ add_filter('plugin_action_links_' . plugin_basename(STAARK_HUB_PLUGIN_FILE), sta
  * @return string[]
  */
 add_filter('map_meta_cap', static function (array $caps, string $cap, int $user_id, array $args): array {
-    unset($args);
-
     if (! staark_hub_managed_client_restrictions_apply($user_id)) {
         return $caps;
     }
 
     if (in_array($cap, ['edit_plugins', 'edit_themes'], true)) {
         return ['do_not_allow'];
+    }
+
+    // Client administrators cannot delete, remove, demote or edit a Staark
+    // operator account; otherwise they could take over operator authority.
+    if (in_array($cap, ['delete_user', 'remove_user', 'promote_user', 'edit_user'], true)) {
+        $target = isset($args[0]) ? (int) $args[0] : 0;
+        if ($target > 0 && $target !== $user_id && (string) get_user_meta($target, STAARK_HUB_OPERATOR_META, true) === '1') {
+            return ['do_not_allow'];
+        }
     }
 
     return $caps;

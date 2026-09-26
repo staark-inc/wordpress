@@ -348,9 +348,14 @@ function staark_hub_operator_ids(): array
     return array_values(array_unique(array_map('intval', is_array($ids) ? $ids : [])));
 }
 
+/**
+ * Operators that can still act: flagged users who remain administrators.
+ * A demoted operator (e.g. changed to Editor) no longer counts, so the site
+ * is never left in Managed mode with a phantom operator.
+ */
 function staark_hub_operator_count(): int
 {
-    return count(staark_hub_operator_ids());
+    return count(array_filter(staark_hub_operator_ids(), 'staark_hub_user_has_manage_options'));
 }
 
 /**
@@ -494,6 +499,14 @@ add_action('admin_post_staark_managed_bootstrap_operator', static function (): v
     }
 
     check_admin_referer('staark_managed_bootstrap_operator');
+
+    // Self-service bootstrap is only for sites in Normal mode. A managed site
+    // without a usable operator is recovered by Staark over WP-CLI
+    // (`wp staark managed grant <user>`), not by whoever clicks first.
+    if (staark_hub_managed_mode() !== 'normal' && ! staark_hub_current_user_is_operator()) {
+        wp_safe_redirect(admin_url('admin.php?page=staark-hub-managed&staark_managed=operator_exists'));
+        exit;
+    }
 
     if (staark_hub_operator_count() > 0 && ! staark_hub_current_user_is_operator()) {
         wp_safe_redirect(admin_url('admin.php?page=staark-hub-managed&staark_managed=operator_exists'));

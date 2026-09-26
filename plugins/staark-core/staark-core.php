@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.7.2
+ * Version: 0.6.8.0
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -21,7 +21,7 @@ if (defined('STAARK_HUB_RUNTIME_LOADED')) {
 }
 define('STAARK_HUB_RUNTIME_LOADED', true);
 
-const STAARK_HUB_VERSION = '0.6.7.2';
+const STAARK_HUB_VERSION = '0.6.8.0';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
@@ -470,6 +470,16 @@ function staark_hub_connection_ensure_identity(): array
         } catch (Throwable $error) {
             $connection['site_secret'] = wp_generate_password(64, false, false);
         }
+        $changed = true;
+    }
+
+    // A development Hub URL saved earlier (or written directly to the option)
+    // is ignored on production sites.
+    if ($connection['environment'] === 'development' && ! staark_hub_connection_custom_hub_allowed()) {
+        $connection['environment'] = 'production';
+        $connection['site_secret'] = staark_hub_connection_new_secret();
+        $connection['status'] = 'disconnected';
+        $connection['remote_site_id'] = '';
         $changed = true;
     }
 
@@ -1269,12 +1279,48 @@ add_action('admin_post_staark_submit_support_ticket', static function (): void {
 });
 
 
-add_action('admin_post_staark_save_connection_settings', static function (): void {
+/**
+ * Guard for actions that change where this site connects to (Hub URL,
+ * pairing, identity). On a managed site only a Staark operator may do this:
+ * pointing the connector elsewhere would also redirect the update source.
+ */
+function staark_hub_connection_guard(string $nonce_action): void
+{
     if (! current_user_can('manage_options')) {
         wp_die(esc_html__('You are not allowed to perform this action.', 'staark-core'));
     }
 
-    check_admin_referer('staark_save_connection_settings');
+    if (function_exists('staark_hub_is_managed') && staark_hub_is_managed()
+        && function_exists('staark_hub_current_user_is_operator') && ! staark_hub_current_user_is_operator()) {
+        wp_die(
+            esc_html__('This site is managed by Staark. Only a Staark operator can change the connection.', 'staark-core'),
+            esc_html__('Managed site', 'staark-core'),
+            ['response' => 403]
+        );
+    }
+
+    check_admin_referer($nonce_action);
+}
+
+/**
+ * A custom (development) Hub URL is only allowed on non-production sites.
+ */
+function staark_hub_connection_custom_hub_allowed(): bool
+{
+    return in_array(staark_hub_runtime_environment(), ['local', 'development', 'staging'], true);
+}
+
+function staark_hub_connection_new_secret(): string
+{
+    try {
+        return bin2hex(random_bytes(32));
+    } catch (Throwable $error) {
+        return wp_generate_password(64, false, false);
+    }
+}
+
+add_action('admin_post_staark_save_connection_settings', static function (): void {
+    staark_hub_connection_guard('staark_save_connection_settings');
 
     $connection = staark_hub_connection_ensure_identity();
     if (staark_hub_connection_is_connected()) {
@@ -1286,6 +1332,11 @@ add_action('admin_post_staark_save_connection_settings', static function (): voi
         ? sanitize_key(wp_unslash($_POST['connector_environment']))
         : 'production';
     $environment = $environment === 'development' ? 'development' : 'production';
+
+    if ($environment === 'development' && ! staark_hub_connection_custom_hub_allowed()) {
+        wp_safe_redirect(admin_url('admin.php?page=staark-hub-connect&staark_connect=insecure_url'));
+        exit;
+    }
 
     if ($environment === 'production') {
         $hub_url = 'https://staarkinc.com';
@@ -1307,6 +1358,12 @@ add_action('admin_post_staark_save_connection_settings', static function (): voi
         }
     }
 
+    // A new Hub gets a new secret: the old one must never be sent to a
+    // different server, where it could be used to impersonate this site.
+    if ($hub_url !== $connection['hub_url']) {
+        $connection['site_secret'] = staark_hub_connection_new_secret();
+    }
+
     $connection['environment'] = $environment;
     $connection['hub_url'] = $hub_url;
     $connection['status'] = 'disconnected';
@@ -1320,11 +1377,7 @@ add_action('admin_post_staark_save_connection_settings', static function (): voi
 });
 
 add_action('admin_post_staark_connect_site', static function (): void {
-    if (! current_user_can('manage_options')) {
-        wp_die(esc_html__('You are not allowed to perform this action.', 'staark-core'));
-    }
-
-    check_admin_referer('staark_connect_site');
+    staark_hub_connection_guard('staark_connect_site');
     $pairing_code = isset($_POST['pairing_code']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['pairing_code']))) : '';
     $pairing_code = preg_replace('/[^A-Z0-9-]/', '', $pairing_code) ?: '';
 
@@ -1433,11 +1486,7 @@ add_action('admin_post_staark_sync_now', static function (): void {
 });
 
 add_action('admin_post_staark_disconnect_site', static function (): void {
-    if (! current_user_can('manage_options')) {
-        wp_die(esc_html__('You are not allowed to perform this action.', 'staark-core'));
-    }
-
-    check_admin_referer('staark_disconnect_site');
+    staark_hub_connection_guard('staark_disconnect_site');
     $connection = staark_hub_connection_ensure_identity();
     $connection['status'] = 'disconnected';
     $connection['remote_site_id'] = '';
@@ -1450,11 +1499,7 @@ add_action('admin_post_staark_disconnect_site', static function (): void {
 });
 
 add_action('admin_post_staark_regenerate_site_identity', static function (): void {
-    if (! current_user_can('manage_options')) {
-        wp_die(esc_html__('You are not allowed to perform this action.', 'staark-core'));
-    }
-
-    check_admin_referer('staark_regenerate_site_identity');
+    staark_hub_connection_guard('staark_regenerate_site_identity');
     $connection = staark_hub_connection_ensure_identity();
 
     if ($connection['status'] === 'connected') {
@@ -2484,14 +2529,14 @@ function staark_hub_render_connect(): void
                         <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="staark-hub-connect-environment">
                             <input type="hidden" name="action" value="staark_save_connection_settings">
                             <?php wp_nonce_field('staark_save_connection_settings'); ?>
-                            <p><?php echo esc_html__('Production is locked to staarkinc.com. Development can point to a separate HTTPS endpoint or, on local/development WordPress installs only, a plain HTTP URL.', 'staark-core'); ?> <span class="staark-hub-pill">WP: <?php echo esc_html($runtime_environment); ?></span></p>
+                            <p><?php echo esc_html__('Production is locked to staarkinc.com. Development can point to a separate Hub, but only on local, development or staging WordPress installs (WP_ENVIRONMENT_TYPE). Plain HTTP is allowed on local/development only. Changing the Hub URL gives this site a new secret.', 'staark-core'); ?> <span class="staark-hub-pill">WP: <?php echo esc_html($runtime_environment); ?></span></p>
                             <div class="staark-hub-connect-environment-options">
                                 <label>
                                     <input type="radio" name="connector_environment" value="production" <?php checked($connection['environment'], 'production'); ?>>
                                     <span><strong>Production</strong><small>https://staarkinc.com</small></span>
                                 </label>
                                 <label>
-                                    <input type="radio" name="connector_environment" value="development" <?php checked($connection['environment'], 'development'); ?>>
+                                    <input type="radio" name="connector_environment" value="development" <?php checked($connection['environment'], 'development'); ?> <?php disabled(! staark_hub_connection_custom_hub_allowed()); ?>>
                                     <span><strong>Development</strong><small><?php echo esc_html__('Separate Hub / local testing', 'staark-core'); ?></small></span>
                                 </label>
                             </div>
