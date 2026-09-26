@@ -20,6 +20,11 @@ if (! defined('ABSPATH')) {
 
 const STAARK_GAST_PATTERN_PREFIX = 'staark/gast-';
 
+/*
+ * Restaurang and Hotell both provide booking requests.
+ */
+add_filter('staark_hub_booking_enabled', '__return_true');
+
 function staark_gast_version(): string
 {
     $version = wp_get_theme(get_stylesheet())->get('Version');

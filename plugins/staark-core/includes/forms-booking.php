@@ -31,19 +31,36 @@ function staark_hub_fb_label(): string
 }
 
 /**
+ * Whether the active theme exposes the Booking module in S-Hub Inbox.
+ *
+ * Core defaults to message-only. Themes that provide booking flows opt in
+ * through `staark_hub_booking_enabled`.
+ */
+function staark_hub_fb_booking_enabled(): bool
+{
+    return (bool) apply_filters('staark_hub_booking_enabled', false);
+}
+
+/**
  * Admin screens of the Forms & Booking section.
  *
  * @return array<string,string> slug => label
  */
 function staark_hub_fb_pages(): array
 {
-    return [
+    $pages = [
         'staark-hub-inbox' => __('Inbox', 'staark-core'),
-        'staark-hub-bookings' => __('Bookings', 'staark-core'),
-        'staark-hub-form-list' => __('Forms', 'staark-core'),
-        'staark-hub-notifications' => __('Notifications', 'staark-core'),
-        'staark-hub-form-settings' => __('Settings', 'staark-core'),
     ];
+
+    if (staark_hub_fb_booking_enabled()) {
+        $pages['staark-hub-bookings'] = __('Bookings', 'staark-core');
+    }
+
+    $pages['staark-hub-form-list'] = __('Forms', 'staark-core');
+    $pages['staark-hub-notifications'] = __('Notifications', 'staark-core');
+    $pages['staark-hub-form-settings'] = __('Settings', 'staark-core');
+
+    return $pages;
 }
 
 /**
@@ -694,6 +711,23 @@ function staark_hub_fb_flush_counts(): void
 }
 
 /**
+ * Meta query matching regular messages while excluding booking submissions.
+ *
+ * Older submissions may not have `_staark_submission_kind`, so missing kind is
+ * treated as a regular message for backwards compatibility.
+ *
+ * @return array<string|int,mixed>
+ */
+function staark_hub_fb_message_meta_query(): array
+{
+    return [
+        'relation' => 'OR',
+        ['key' => '_staark_submission_kind', 'value' => 'message'],
+        ['key' => '_staark_submission_kind', 'compare' => 'NOT EXISTS'],
+    ];
+}
+
+/**
  * Meta query for items that need attention: unread messages and pending
  * bookings (spam excluded).
  *
@@ -701,6 +735,14 @@ function staark_hub_fb_flush_counts(): void
  */
 function staark_hub_fb_attention_meta_query(): array
 {
+    if (! staark_hub_fb_booking_enabled()) {
+        return [
+            'relation' => 'AND',
+            staark_hub_fb_message_meta_query(),
+            ['key' => '_staark_submission_status', 'value' => 'new'],
+        ];
+    }
+
     return [
         'relation' => 'OR',
         [
@@ -739,31 +781,56 @@ function staark_hub_fb_count(array $meta_query): int
 }
 
 /**
- * @return array{attention:int,new:int,pending:int,today:int,upcoming:int,total:int,bookings:int,spam:int}
+ * @return array{attention:int,new:int,pending:int,today:int,upcoming:int,total:int,bookings:int,spam:int,today_date:string,booking_enabled:bool}
  */
 function staark_hub_fb_counts(): array
 {
+    $booking_enabled = staark_hub_fb_booking_enabled();
     $cached = get_transient(STAARK_HUB_FB_COUNTS_TRANSIENT);
-    if (is_array($cached) && isset($cached['attention'], $cached['today_date']) && $cached['today_date'] === wp_date('Y-m-d')) {
+    if (
+        is_array($cached)
+        && isset($cached['attention'], $cached['today_date'], $cached['booking_enabled'])
+        && $cached['today_date'] === wp_date('Y-m-d')
+        && (bool) $cached['booking_enabled'] === $booking_enabled
+    ) {
         return $cached;
     }
 
     $today = wp_date('Y-m-d');
     $active = ['key' => '_staark_booking_status', 'value' => ['pending', 'confirmed'], 'compare' => 'IN'];
+    $new_query = [['key' => '_staark_submission_status', 'value' => 'new']];
+    $total_query = [];
+    $spam_query = [['key' => '_staark_submission_status', 'value' => 'spam']];
+
+    if (! $booking_enabled) {
+        $message_scope = staark_hub_fb_message_meta_query();
+        $new_query[] = $message_scope;
+        $total_query[] = $message_scope;
+        $spam_query[] = $message_scope;
+    }
 
     $counts = [
         'attention' => staark_hub_fb_count(staark_hub_fb_attention_meta_query()),
-        'new' => staark_hub_fb_count([['key' => '_staark_submission_status', 'value' => 'new']]),
-        'pending' => staark_hub_fb_count([
-            ['key' => '_staark_booking_status', 'value' => 'pending'],
-            ['key' => '_staark_submission_status', 'value' => 'spam', 'compare' => '!='],
-        ]),
-        'today' => staark_hub_fb_count([$active, ['key' => '_staark_booking_date', 'value' => $today]]),
-        'upcoming' => staark_hub_fb_count([$active, ['key' => '_staark_booking_date', 'value' => $today, 'compare' => '>=']]),
-        'total' => staark_hub_fb_count([]),
-        'bookings' => staark_hub_fb_count([['key' => '_staark_submission_kind', 'value' => 'booking']]),
-        'spam' => staark_hub_fb_count([['key' => '_staark_submission_status', 'value' => 'spam']]),
+        'new' => staark_hub_fb_count($new_query),
+        'pending' => $booking_enabled
+            ? staark_hub_fb_count([
+                ['key' => '_staark_booking_status', 'value' => 'pending'],
+                ['key' => '_staark_submission_status', 'value' => 'spam', 'compare' => '!='],
+            ])
+            : 0,
+        'today' => $booking_enabled
+            ? staark_hub_fb_count([$active, ['key' => '_staark_booking_date', 'value' => $today]])
+            : 0,
+        'upcoming' => $booking_enabled
+            ? staark_hub_fb_count([$active, ['key' => '_staark_booking_date', 'value' => $today, 'compare' => '>=']])
+            : 0,
+        'total' => staark_hub_fb_count($total_query),
+        'bookings' => $booking_enabled
+            ? staark_hub_fb_count([['key' => '_staark_submission_kind', 'value' => 'booking']])
+            : 0,
+        'spam' => staark_hub_fb_count($spam_query),
         'today_date' => $today,
+        'booking_enabled' => $booking_enabled,
     ];
 
     set_transient(STAARK_HUB_FB_COUNTS_TRANSIENT, $counts, 5 * MINUTE_IN_SECONDS);
