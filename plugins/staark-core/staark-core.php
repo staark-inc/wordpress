@@ -3,7 +3,7 @@
  * Plugin Name: Staark Hub
  * Plugin URI: https://staarkinc.com
  * Description: Website management layer for sites built and maintained by Staark Inc.
- * Version: 0.6.6.0
+ * Version: 0.6.7.0
  * Author: Staark Inc.
  * Author URI: https://staarkinc.com
  * Text Domain: staark-core
@@ -21,7 +21,7 @@ if (defined('STAARK_HUB_RUNTIME_LOADED')) {
 }
 define('STAARK_HUB_RUNTIME_LOADED', true);
 
-const STAARK_HUB_VERSION = '0.6.6.0';
+const STAARK_HUB_VERSION = '0.6.7.0';
 const STAARK_HUB_SLUG = 'staark-hub';
 define('STAARK_HUB_PLUGIN_FILE', __FILE__);
 define('STAARK_HUB_PLUGIN_DIR', __DIR__ . '/');
@@ -58,6 +58,7 @@ require_once STAARK_HUB_PLUGIN_DIR . 'includes/seo.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/performance-media.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/forms.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'includes/forms-booking.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/first-install.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/starter-repair.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'includes/lifecycle.php';
@@ -68,7 +69,7 @@ require_once STAARK_HUB_PLUGIN_DIR . 'includes/rc.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/security-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/seo-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/performance-page.php';
-require_once STAARK_HUB_PLUGIN_DIR . 'admin/forms-page.php';
+require_once STAARK_HUB_PLUGIN_DIR . 'admin/forms-booking-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/first-install-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/managed-page.php';
 require_once STAARK_HUB_PLUGIN_DIR . 'admin/updates-page.php';
@@ -937,12 +938,30 @@ add_action('admin_menu', static function (): void {
     add_submenu_page(STAARK_HUB_SLUG, __('Security', 'staark-core'), __('Security', 'staark-core'), 'manage_options', 'staark-hub-security', 'staark_hub_render_security');
     add_submenu_page(STAARK_HUB_SLUG, __('SEO', 'staark-core'), __('SEO', 'staark-core'), 'manage_options', 'staark-hub-seo', 'staark_hub_render_seo');
     add_submenu_page(STAARK_HUB_SLUG, __('Performance', 'staark-core'), __('Performance', 'staark-core'), 'manage_options', 'staark-hub-performance', 'staark_hub_render_performance');
-    add_submenu_page(STAARK_HUB_SLUG, __('Forms & Submissions', 'staark-core'), __('Forms', 'staark-core'), 'manage_options', 'staark-hub-forms', 'staark_hub_render_forms');
     add_submenu_page(STAARK_HUB_SLUG, __('Support', 'staark-core'), __('Support', 'staark-core'), 'manage_options', 'staark-hub-support', 'staark_hub_render_support');
     add_submenu_page(STAARK_HUB_SLUG, __('Branding', 'staark-core'), __('Branding', 'staark-core'), 'manage_options', 'staark-hub-branding', 'staark_hub_render_branding');
     add_submenu_page(STAARK_HUB_SLUG, __('Updates', 'staark-core'), __('Updates', 'staark-core'), 'manage_options', 'staark-hub-updates', 'staark_hub_render_updates');
     add_submenu_page(STAARK_HUB_SLUG, __('Managed Mode', 'staark-core'), __('Managed', 'staark-core'), 'manage_options', 'staark-hub-managed', 'staark_hub_render_managed');
     add_submenu_page(STAARK_HUB_SLUG, __('Connect', 'staark-core'), __('Connect to Staark', 'staark-core'), 'manage_options', 'staark-hub-connect', 'staark_hub_render_connect');
+});
+
+/*
+ * The Forms screen moved to its own "Forms & Booking" menu. Keep old links
+ * (bookmarks, notification emails) working. This runs on admin_menu because
+ * WordPress rejects unknown admin pages before admin_init fires.
+ */
+add_action('admin_menu', static function (): void {
+    if (staark_hub_current_page() !== 'staark-hub-forms') {
+        return;
+    }
+
+    $args = ['page' => 'staark-hub-inbox'];
+    if (isset($_GET['submission'])) {
+        $args['submission'] = absint($_GET['submission']);
+    }
+
+    wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
+    exit;
 });
 
 add_action('admin_init', static function (): void {
@@ -991,17 +1010,17 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
         true
     );
 
-    // The Forms screen styles live in forms.css, which was only loaded on the frontend.
-    if (staark_hub_current_page() === 'staark-hub-forms') {
+    if (function_exists('staark_hub_fb_pages') && isset(staark_hub_fb_pages()[staark_hub_current_page()])) {
         wp_enqueue_style(
-            'staark-hub-forms-admin',
-            staark_hub_runtime_url('assets/forms.css'),
-            ['staark-hub-admin'],
-            is_file(STAARK_HUB_PLUGIN_DIR . 'assets/forms.css')
-                ? (string) filemtime(STAARK_HUB_PLUGIN_DIR . 'assets/forms.css')
+            'staark-hub-forms-booking',
+            staark_hub_runtime_url('assets/forms-booking.css'),
+            ['staark-hub-ui'],
+            is_file(STAARK_HUB_PLUGIN_DIR . 'assets/forms-booking.css')
+                ? (string) filemtime(STAARK_HUB_PLUGIN_DIR . 'assets/forms-booking.css')
                 : STAARK_HUB_VERSION
         );
     }
+
 
     if (staark_hub_current_page() === 'staark-hub-security') {
         wp_enqueue_style(
@@ -1031,16 +1050,6 @@ add_action('admin_enqueue_scripts', static function (string $hook_suffix): void 
     }
 
 
-    if (staark_hub_current_page() === 'staark-hub-forms') {
-        wp_enqueue_style(
-            'staark-hub-forms',
-            staark_hub_runtime_url('assets/forms.css'),
-            ['staark-hub-admin'],
-            is_file(STAARK_HUB_PLUGIN_DIR . 'assets/forms.css')
-                ? (string) filemtime(STAARK_HUB_PLUGIN_DIR . 'assets/forms.css')
-                : STAARK_HUB_VERSION
-        );
-    }
 
     if (staark_hub_current_page() === 'staark-hub-managed') {
         wp_enqueue_style(
@@ -1562,7 +1571,7 @@ function staark_hub_nav_items(): array
     $items = [
         STAARK_HUB_SLUG => __('Overview', 'staark-core'),
         'staark-hub-website' => __('Website', 'staark-core'),
-        'staark-hub-forms' => __('Forms', 'staark-core'),
+        'staark-hub-inbox' => __('Forms & Booking', 'staark-core'),
         'staark-hub-security' => __('Security', 'staark-core'),
         'staark-hub-seo' => __('SEO', 'staark-core'),
         'staark-hub-performance' => __('Performance', 'staark-core'),
@@ -1574,8 +1583,8 @@ function staark_hub_nav_items(): array
         'staark-hub-connect' => __('Connect', 'staark-core'),
     ];
 
-    if (! function_exists('staark_hub_render_forms')) {
-        unset($items['staark-hub-forms']);
+    if (! function_exists('staark_hub_render_inbox')) {
+        unset($items['staark-hub-inbox']);
     }
 
     if (! function_exists('staark_hub_render_first_install')) {
@@ -1598,6 +1607,7 @@ function staark_hub_section_intro(string $section): string
         'Overview' => __('Setup status, shortcuts and everything Staark manages for this website.', 'staark-core'),
         'Website' => __('Starter pages, homepage and the building blocks of the site.', 'staark-core'),
         'Forms' => __('Contact and booking requests stored safely in WordPress.', 'staark-core'),
+        'Forms & Booking' => __('Requests, bookings and notifications from every form on the website.', 'staark-core'),
         'Security' => __('Health checks and reversible hardening for this installation.', 'staark-core'),
         'SEO' => __('Metadata, schema, sitemap and local business details.', 'staark-core'),
         'Performance' => __('Cache, assets, images and Core Web Vitals readiness.', 'staark-core'),
@@ -1612,22 +1622,33 @@ function staark_hub_section_intro(string $section): string
     return $intros[$section] ?? __('Managed by Staark Inc.', 'staark-core');
 }
 
-function staark_hub_nav(): void
+/**
+ * @param array<string,string>|null $items  slug => label; defaults to the Hub sections.
+ * @param array<string,int>         $badges slug => count shown next to the label.
+ */
+function staark_hub_nav(?array $items = null, array $badges = []): void
 {
     $current = staark_hub_current_page();
-    $items = staark_hub_nav_items();
+    $items = $items ?? staark_hub_nav_items();
     ?>
     <nav class="staark-hub-nav" aria-label="<?php echo esc_attr__('Staark Hub sections', 'staark-core'); ?>">
         <?php foreach ($items as $slug => $label) : ?>
             <a class="staark-hub-nav-link<?php echo $current === $slug ? ' is-active' : ''; ?>" href="<?php echo esc_url(admin_url('admin.php?page=' . $slug)); ?>"<?php echo $current === $slug ? ' aria-current="page"' : ''; ?>>
                 <?php echo esc_html($label); ?>
+                <?php if (! empty($badges[$slug])) : ?>
+                    <span class="staark-hub-nav-badge"><?php echo esc_html((string) $badges[$slug]); ?></span>
+                <?php endif; ?>
             </a>
         <?php endforeach; ?>
     </nav>
     <?php
 }
 
-function staark_hub_header(string $section, string $title = ''): void
+/**
+ * @param array<string,string>|null $nav    Section navigation (defaults to the Hub sections).
+ * @param array<string,int>         $badges Counts next to navigation items.
+ */
+function staark_hub_header(string $section, string $title = '', ?array $nav = null, array $badges = []): void
 {
     $host = (string) (wp_parse_url(home_url('/'), PHP_URL_HOST) ?: home_url('/'));
     $site_name = trim(wp_strip_all_tags((string) get_bloginfo('name')));
@@ -1659,7 +1680,7 @@ function staark_hub_header(string $section, string $title = ''): void
                 <p class="staark-hub-subtitle"><?php echo esc_html(staark_hub_section_intro($section)); ?></p>
             </div>
         </div>
-        <?php staark_hub_nav(); ?>
+        <?php staark_hub_nav($nav, $badges); ?>
     </header>
     <?php
 }
@@ -1711,7 +1732,7 @@ function staark_hub_overview_checklist(): array
             'label' => __('Form notifications', 'staark-core'),
             'ok' => is_email($forms_email) !== false,
             'detail' => $forms_email !== '' ? $forms_email : __('No recipient set', 'staark-core'),
-            'url' => admin_url('admin.php?page=staark-hub-forms'),
+            'url' => admin_url('admin.php?page=staark-hub-notifications'),
             'action' => __('Set up', 'staark-core'),
         ],
         [
@@ -1740,7 +1761,7 @@ function staark_hub_module_descriptions(): array
 {
     return [
         'staark-hub-website' => __('Starter pages and homepage', 'staark-core'),
-        'staark-hub-forms' => __('Contact and booking requests', 'staark-core'),
+        'staark-hub-inbox' => __('Requests, bookings and notifications', 'staark-core'),
         'staark-hub-security' => __('Scanner and safe hardening', 'staark-core'),
         'staark-hub-seo' => __('Metadata, schema and sitemap', 'staark-core'),
         'staark-hub-performance' => __('Cache, images and fonts', 'staark-core'),
@@ -1849,10 +1870,19 @@ function staark_hub_render_overview(): void
                 <p><?php echo esc_html__('Published pages', 'staark-core'); ?></p>
             </a>
             <?php if (is_array($forms)) : ?>
-                <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-forms')); ?>">
-                    <span class="staark-hub-card-label"><?php echo esc_html__('Form requests', 'staark-core'); ?></span>
-                    <strong class="staark-hub-metric"><?php echo esc_html((string) $forms['new']); ?> <small><?php echo esc_html__('new', 'staark-core'); ?></small></strong>
-                    <p><?php echo esc_html(sprintf(_n('%d request in total', '%d requests in total', $forms['total'], 'staark-core'), $forms['total'])); ?></p>
+                <?php $fb_counts = function_exists('staark_hub_fb_counts') ? staark_hub_fb_counts() : null; ?>
+                <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-inbox')); ?>">
+                    <span class="staark-hub-card-label"><?php echo esc_html__('Forms & Booking', 'staark-core'); ?></span>
+                    <strong class="staark-hub-metric"><?php echo esc_html((string) ($fb_counts ? $fb_counts['attention'] : $forms['new'])); ?> <small><?php echo esc_html__('need attention', 'staark-core'); ?></small></strong>
+                    <p>
+                        <?php
+                        echo esc_html(
+                            $fb_counts
+                                ? sprintf(__('%1$d pending bookings · %2$d requests in total', 'staark-core'), $fb_counts['pending'], $fb_counts['total'])
+                                : sprintf(_n('%d request in total', '%d requests in total', $forms['total'], 'staark-core'), $forms['total'])
+                        );
+                        ?>
+                    </p>
                 </a>
             <?php endif; ?>
             <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(admin_url('update-core.php')); ?>">

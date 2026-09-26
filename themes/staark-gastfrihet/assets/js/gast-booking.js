@@ -101,6 +101,19 @@
     return list;
   }
 
+  /**
+   * Structured copy of the booking for Staark Hub → Forms & Booking
+   * (booking_* fields; older Hub versions ignore them).
+   */
+  function setHidden(form, name, value) {
+    var input = form.querySelector('input[type="hidden"][name="' + name + '"]');
+    if (!input) {
+      input = el('input', { type: 'hidden', name: name });
+      form.appendChild(input);
+    }
+    input.value = value == null ? '' : String(value);
+  }
+
   function insertFields(form, fields) {
     var grid = form.querySelector('.staark-form-grid');
     if (grid && grid.parentNode) {
@@ -150,6 +163,11 @@
     ]));
 
     return function () {
+      setHidden(form, 'booking_type', 'table');
+      setHidden(form, 'booking_date', date.value);
+      setHidden(form, 'booking_time', time.value);
+      setHidden(form, 'booking_guests', guests.value === 'Fler än 10' ? 11 : guests.value);
+      setHidden(form, 'booking_item', occasion.value);
       var lines = [
         'Bordsbokning (förfrågan)',
         'Datum: ' + nice(date.value),
@@ -207,6 +225,11 @@
     ]));
 
     return function () {
+      setHidden(form, 'booking_type', 'room');
+      setHidden(form, 'booking_date', checkin.value);
+      setHidden(form, 'booking_end_date', checkout.value);
+      setHidden(form, 'booking_guests', (+adults.value || 0) + (+children.value || 0));
+      setHidden(form, 'booking_item', room.value + (count.value !== '1' ? ' × ' + count.value : ''));
       var lines = [
         'Rumsbokning (förfrågan)',
         'Incheckning: ' + nice(checkin.value),
