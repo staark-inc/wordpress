@@ -191,7 +191,7 @@ the client-facing smoke matrix passes, and only intentional files are staged.
 ## 13. WP-6.1 Update Channel gate
 
 Configure a development manifest endpoint or deploy the production endpoint described in
-`WP-6.1-UPDATE-CHANNEL.md`.
+`docs/WP-6.1-UPDATE-CHANNEL.md`.
 
 Check discovery:
 

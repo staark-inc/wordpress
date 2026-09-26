@@ -58,7 +58,7 @@ If no link is set, editors see a hint where the button would be; visitors do not
 - Restaurang: date, time, number of guests and occasion. Times come from the hidden list in the section, and **Fler än 10** shows a note about larger groups.
 - Hotell: check-in and check-out (check-out is always at least one day later, and the form shows the number of nights), adults, children, room type and number of rooms. Room types come from the hidden list in the section.
 
-Requests arrive in **Staark Hub → Forms**:
+Requests arrive in **S-Hub Inbox**:
 
 ```
 Bordsbokning (förfrågan)

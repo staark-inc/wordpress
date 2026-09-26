@@ -144,11 +144,11 @@ jobs:
           (
             cd dist/package
 
-            zip -qr9 ../staark-core.zip staark-core
-            zip -qr9 ../staark-theme.zip staark
-            zip -qr9 ../staark-salong-theme.zip staark-salong
-            zip -qr9 ../staark-bygg-theme.zip staark-bygg
-            zip -qr9 ../staark-gastfrihet-theme.zip staark-gastfrihet
+            zip -qr9X ../staark-core.zip staark-core -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
+            zip -qr9X ../staark-theme.zip staark -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
+            zip -qr9X ../staark-salong-theme.zip staark-salong -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
+            zip -qr9X ../staark-bygg-theme.zip staark-bygg -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
+            zip -qr9X ../staark-gastfrihet-theme.zip staark-gastfrihet -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
           )
 
           test -s dist/staark-core.zip

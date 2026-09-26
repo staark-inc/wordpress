@@ -47,7 +47,7 @@ They are listed in the inserter under **Staark — Salong**.
 - preferred date and time of day
 - "new customer"
 
-On submit, the fields are added to the start of the message, so the request arrives in **Staark Hub → Forms** like this:
+On submit, the fields are added to the start of the message, so the request arrives in **S-Hub Inbox** like this:
 
 ```
 Bokningsförfrågan

@@ -64,8 +64,13 @@ body {
 }
 
 :where(a, button, input, textarea, select, summary, .wp-element-button):focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--salong-accent) 45%, transparent);
+  outline: 2px solid var(--salong-accent-dark);
   outline-offset: 3px;
+}
+
+/* Focus ring on dark sections: light instead of the dark accent. */
+:where(.salong-topbar, .salong-footer) :focus-visible {
+  outline-color: #fff;
 }
 
 :where(h1, h2, h3, h4, .wp-block-heading) {
@@ -1054,7 +1059,8 @@ a.salong-contact:hover {
   border-color: var(--salong-accent);
   background: #fff;
   box-shadow: 0 0 0 4px var(--salong-accent-soft);
-  outline: none;
+  outline: 2px solid var(--salong-accent-dark);
+  outline-offset: 1px;
 }
 
 .salong-booking .staark-form-field.salong-check label {

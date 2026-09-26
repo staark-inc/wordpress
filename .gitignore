@@ -1,6 +1,10 @@
-.wp-env.json
 node_modules
 .idea
 .vscode
 .DS_Store
 AGENTS.md
+.staark-backups/
+dist/
+*.zip
+.wp-env.override.json
+plugins/staark-core/update-signing.key
