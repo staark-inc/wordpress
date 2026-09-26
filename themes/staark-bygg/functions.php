@@ -15,6 +15,15 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+/*
+ * Use the small parent base.css instead of the legacy parent theme.css.
+ * Declared before the parent's after_setup_theme callback (priority 10),
+ * which picks the editor stylesheet from it.
+ */
+add_action('after_setup_theme', static function (): void {
+    add_theme_support('staark-lean-parent');
+}, 5);
+
 const STAARK_BYGG_PATTERN_PREFIX = 'staark/bygg-';
 
 function staark_bygg_version(): string
@@ -97,7 +106,7 @@ function staark_bygg_accent_css(): string
     }
 
     $preset = staark_theme_system_active_preset();
-    $accent = staark_theme_system_color($preset, 'primary', '#c64e2c');
+    $accent = staark_theme_system_color($preset, 'primary', '#b64728');
     $accent_dark = staark_theme_system_color($preset, 'primaryDark', '#92361f');
 
     if (function_exists('staark_hub_branding') && function_exists('staark_hub_branding_defaults')) {
@@ -146,6 +155,13 @@ add_filter('render_block_core/group', static function (string $content, array $b
     $class = isset($block['attrs']['className']) ? (string) $block['attrs']['className'] : '';
 
     if (! preg_match('/(^|\s)bygg-(section|hero)(\s|$)/', $class) || ! str_contains($content, '[')) {
+        return $content;
+    }
+
+    // Inside the_content, WordPress runs do_shortcode() itself after the
+    // blocks (priority 11); running it here too would execute shortcodes twice
+    // and turn escaped [[shortcode]] into a live one.
+    if (doing_filter('the_content')) {
         return $content;
     }
 

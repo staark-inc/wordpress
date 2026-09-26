@@ -84,6 +84,13 @@ add_filter('render_block_core/group', static function (string $content, array $b
     }
 
     // Block templates run do_shortcode() before patterns are expanded.
+    // Inside the_content, WordPress runs do_shortcode() itself after the
+    // blocks (priority 11); running it here too would execute shortcodes twice
+    // and turn escaped [[shortcode]] into a live one.
+    if (doing_filter('the_content')) {
+        return $content;
+    }
+
     return str_contains($content, '[') ? do_shortcode($content) : $content;
 }, 10, 2);
 

@@ -473,8 +473,10 @@ function staark_hub_performance_responsive_webp_data(
             continue;
         }
 
+        // Also for .webp sources (S-Hub Light patterns reference WebP files
+        // directly): cta.webp -> cta-480.webp.
         $variant_url = preg_replace(
-            '/\.(?:jpe?g|png)(?=([?#]|$))/i',
+            '/\.(?:jpe?g|png|webp)(?=([?#]|$))/i',
             '-'
                 . $width
                 . '.webp',

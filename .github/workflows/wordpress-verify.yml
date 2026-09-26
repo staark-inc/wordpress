@@ -32,6 +32,32 @@ permissions:
   contents: read
 
 jobs:
+  php-lint:
+    name: PHP ${{ matrix.php }} lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: none
+
+      - name: Lint every PHP file
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -v
+          git ls-files -z '*.php' | xargs -0 -n1 -P4 php -l > /dev/null
+          echo "PHP ${{ matrix.php }} syntax OK"
+
   verify:
     runs-on: ubuntu-latest
 
@@ -75,6 +101,13 @@ jobs:
           )
 
           echo "PHP syntax OK"
+
+      - name: JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-files -z '*.js' ':!:**/node_modules/**' | xargs -0 -n1 node --check
+          echo "JavaScript syntax OK"
 
       - name: Validate JSON and package metadata
         shell: bash
@@ -197,11 +230,11 @@ jobs:
           (
             cd dist/package
 
-            zip -qr9 ../staark-core.zip staark-core
-            zip -qr9 ../staark-theme.zip staark
-            zip -qr9 ../staark-salong-theme.zip staark-salong
-            zip -qr9 ../staark-bygg-theme.zip staark-bygg
-            zip -qr9 ../staark-gastfrihet-theme.zip staark-gastfrihet
+            zip -qr9X ../staark-core.zip staark-core -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
+            zip -qr9X ../staark-theme.zip staark -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
+            zip -qr9X ../staark-salong-theme.zip staark-salong -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
+            zip -qr9X ../staark-bygg-theme.zip staark-bygg -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
+            zip -qr9X ../staark-gastfrihet-theme.zip staark-gastfrihet -x '*/.DS_Store' '*/README.md' '*/.git*' '*/node_modules/*' '*.map'
           )
 
           unzip -tq dist/staark-core.zip

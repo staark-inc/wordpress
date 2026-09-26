@@ -21,7 +21,7 @@
   --bygg-paper: var(--wp--preset--color--paper, #f8f7f2);
   --bygg-surface: var(--wp--preset--color--surface, #eaefe9);
   --bygg-white: var(--wp--preset--color--white, #fff);
-  --bygg-accent: var(--wp--preset--color--primary, #c64e2c);
+  --bygg-accent: var(--wp--preset--color--primary, #b64728);
   --bygg-accent-dark: var(--wp--preset--color--primary-dark, #92361f);
   --bygg-accent-soft: var(--wp--preset--color--primary-soft, #fff0ea);
   --bygg-ok: var(--wp--preset--color--success, #187a58);
@@ -50,8 +50,13 @@ body {
 }
 
 :where(a, button, input, textarea, select, summary, .wp-element-button):focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--bygg-accent) 45%, transparent);
+  outline: 2px solid var(--bygg-accent-dark);
   outline-offset: 3px;
+}
+
+/* Focus ring on dark sections: light instead of the dark accent. */
+:where(.bygg-topbar, .bygg-footer, .bygg-process, .bygg-reviews) :focus-visible {
+  outline-color: #fff;
 }
 
 :where(h1, h2, h3, h4, .wp-block-heading) {
@@ -1219,7 +1224,8 @@ a.bygg-contact:hover {
   border-color: var(--bygg-accent);
   background: #fff;
   box-shadow: 0 0 0 4px var(--bygg-accent-soft);
-  outline: none;
+  outline: 2px solid var(--bygg-accent-dark);
+  outline-offset: 1px;
 }
 
 .bygg-quote .staark-form-field.bygg-check label {

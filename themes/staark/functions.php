@@ -19,19 +19,33 @@ add_action('after_setup_theme', static function (): void {
         'flex-width' => true,
     ]);
     if (get_stylesheet() !== get_template()) {
-        // Child themes keep the legacy stylesheet they were built on.
-        add_editor_style('assets/css/theme.css');
+        // Child themes keep the legacy stylesheet they were built on, or the
+        // lean base when they declare staark-lean-parent.
+        add_editor_style(current_theme_supports('staark-lean-parent') ? 'assets/css/base.css' : 'assets/css/theme.css');
     }
 });
 
+/**
+ * Child themes that ship their own full design declare
+ * add_theme_support('staark-lean-parent'). They then get the small shared
+ * base (element defaults, buttons, .staark-section, Hub brand) instead of the
+ * legacy theme.css + inlined critical.css they never use (~37 KB per page).
+ */
+function staark_theme_lean_parent(): bool
+{
+    return get_stylesheet() !== get_template() && current_theme_supports('staark-lean-parent');
+}
+
 add_action('wp_enqueue_scripts', static function (): void {
-    $theme = wp_get_theme();
+    $theme = wp_get_theme(get_template());
+    $file = staark_theme_lean_parent() ? 'assets/css/base.css' : 'assets/css/theme.css';
+    $path = get_template_directory() . '/' . $file;
 
     wp_enqueue_style(
         'staark-theme',
-        get_theme_file_uri('assets/css/theme.css'),
+        get_template_directory_uri() . '/' . $file,
         [],
-        $theme->get('Version') ?: '0.1.0'
+        ($theme->get('Version') ?: '0.1.0') . (is_file($path) ? '.' . filemtime($path) : '')
     );
 });
 
@@ -176,7 +190,7 @@ add_action('init', static function (): void {
  * S-Hub Light design system: pattern kit + Light 2 layer.
  * Loaded from the parent directory so child themes can render these patterns.
  */
-foreach (['inc/pattern-kit.php', 'inc/light.php'] as $staark_light_file) {
+foreach (['inc/pattern-kit.php', 'inc/light.php', 'inc/headings.php', 'inc/media.php', 'inc/links.php'] as $staark_light_file) {
     if (is_file(get_template_directory() . '/' . $staark_light_file)) {
         require_once get_template_directory() . '/' . $staark_light_file;
     }

@@ -89,8 +89,14 @@ body.staark-light {
 }
 
 .staark-light :where(a, button, input, select, textarea, summary, .wp-element-button):focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--sl-accent) 40%, transparent);
+  outline: 2px solid var(--sl-accent-dark);
   outline-offset: 3px;
+}
+
+/* Focus ring on dark sections: light instead of the dark accent. */
+.sl-tone-dark :focus-visible,
+.sl-footer :focus-visible {
+  outline-color: #fff;
 }
 
 .sl-main {
@@ -1092,7 +1098,8 @@ a.sl-contact:hover {
   border-color: var(--sl-accent);
   background: #fff;
   box-shadow: 0 0 0 4px var(--sl-accent-soft);
-  outline: none;
+  outline: 2px solid var(--sl-accent-dark);
+  outline-offset: 1px;
 }
 
 .sl-form-card .staark-form-consent label {

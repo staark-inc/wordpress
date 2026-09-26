@@ -68,8 +68,13 @@ body {
 }
 
 :where(a, button, input, textarea, select, summary, .wp-element-button):focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--gast-accent) 45%, transparent);
+  outline: 2px solid var(--gast-accent-dark);
   outline-offset: 3px;
+}
+
+/* Focus ring on dark sections: light instead of the dark accent. */
+:where(.gast-topbar, .gast-footer, .gast-lunch, .gast-reviews, .gast-contact-cta) :focus-visible {
+  outline-color: #fff;
 }
 
 :where(h1, h2, h3, h4, .wp-block-heading) {
@@ -1548,7 +1553,8 @@ a.gast-contact:hover {
   border-color: var(--gast-accent);
   background: #fff;
   box-shadow: 0 0 0 4px var(--gast-accent-soft);
-  outline: none;
+  outline: 2px solid var(--gast-accent-dark);
+  outline-offset: 1px;
 }
 
 .gast-booking .gast-field-hint {

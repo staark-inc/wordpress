@@ -53,7 +53,7 @@ They are listed in the inserter under **Staark — Bygg**.
 - budget
 - ROT
 
-The request arrives in **Staark Hub → Forms** like this:
+The request arrives in **S-Hub Inbox** like this:
 
 ```
 Offertförfrågan

@@ -1,0 +1,136 @@
+/*
+ * S-Hub Light base — the part of theme.css that child themes use:
+ * element defaults, buttons, .staark-section and the Hub brand markup.
+ * Child themes that declare add_theme_support('staark-lean-parent') load this
+ * (about 3 KB) instead of theme.css + critical.css (about 37 KB).
+ * Generated from theme.css; keep in sync when those rules change.
+ */
+
+:root {
+  --staark-radius-sm: 12px;
+  --staark-radius-md: 18px;
+  --staark-radius-lg: 28px;
+  --staark-shadow-soft: 0 18px 50px rgba(16, 24, 40, 0.07);
+  --staark-shadow-deep: 0 30px 90px rgba(16, 24, 40, 0.14);
+  --staark-ease: cubic-bezier(.2,.8,.2,1);
+}
+
+* { box-sizing: border-box;
+}
+
+html { scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wp-site-blocks > * {
+  margin-block-start: 0;
+}
+
+a {
+  text-underline-offset: .18em;
+  text-decoration-thickness: .08em;
+}
+
+::selection {
+  background: var(--wp--preset--color--primary);
+  color: #fff;
+}
+
+:where(a,
+button,
+input,
+textarea,
+select,
+.wp-element-button):focus-visible {
+  outline: 3px solid rgba(36, 87, 245, .32);
+  outline-offset: 3px;
+}
+
+.staark-section {
+  padding-top: clamp(88px, 11vw, 154px);
+  padding-bottom: clamp(88px, 11vw, 154px);
+}
+
+.staark-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: inherit;
+  font-size: 20px;
+  font-weight: 850;
+  letter-spacing: -.045em;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.wp-block-button__link {
+  transition: transform 160ms var(--staark-ease), box-shadow 160ms var(--staark-ease), background 160ms var(--staark-ease);
+}
+
+.wp-block-button__link:hover {
+  transform: translateY(-1px);
+}
+
+.wp-block-button:not(.is-style-outline) .wp-block-button__link {
+  box-shadow: 0 10px 24px rgba(36, 87, 245, .18);
+}
+
+.wp-block-button.is-style-outline .wp-block-button__link {
+  border-color: var(--wp--preset--color--line);
+  background: transparent;
+}
+
+.staark-page-lead { max-width: 760px; }
+
+.staark-section-intro {
+  gap: clamp(36px, 8vw, 120px);
+  margin-bottom: 52px;
+}
+
+@media (max-width: 781px) {
+  .staark-section {
+    padding-top: 80px;
+    padding-bottom: 80px;
+  }
+
+  .staark-section-intro {
+    gap: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+:root {
+  --showcase-ink: #101619;
+  --showcase-forest: #142720;
+  --showcase-forest-deep: #0d1916;
+  --showcase-paper: #fbfaf7;
+  --showcase-cream: #f2eee7;
+  --showcase-sand: #e9dfd0;
+  --showcase-muted: #65706b;
+  --showcase-line: rgba(16, 22, 25, .12);
+  --showcase-white: #fff;
+  --showcase-gold: #d59531;
+  --showcase-radius: 16px;
+  --showcase-radius-lg: 26px;
+  --showcase-shadow: 0 24px 70px rgba(13, 25, 22, .12);
+  --showcase-ease: cubic-bezier(.2,.8,.2,1);
+}

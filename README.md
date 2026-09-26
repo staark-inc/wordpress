@@ -2,15 +2,20 @@
 
 Staark WordPress is the maintained WordPress stack used for websites built and supported by **Staark Inc.**
 
-It is intentionally small: one first-party block theme plus one first-party management plugin, backed by the main Staark Hub.
+It is intentionally small: one first-party management plugin and one block theme family (S-Hub Light plus industry child themes), backed by the main Staark Hub.
 
 ## Current release line
 
-| Component | Version |
-| --- | --- |
-| Staark Hub / Core | `0.6.1.1` |
-| Staark Theme | `0.6.0` |
-| Update manifest schema | `1` |
+The version of each package is the header of its main file; this table is a snapshot.
+
+| Component | Folder | Version |
+| --- | --- | --- |
+| Staark Hub / Core | `plugins/staark-core` | `0.6.8.1` |
+| S-Hub Light (parent theme) | `themes/staark` | `0.8.1` |
+| S-Hub Salong | `themes/staark-salong` | `0.2.4` |
+| S-Hub Bygg | `themes/staark-bygg` | `0.2.2` |
+| S-Hub Gästfrihet | `themes/staark-gastfrihet` | `0.1.4` |
+| Update manifest schema | | `1` (signed releases: `staark-release-v1`) |
 
 ## Components
 
@@ -26,29 +31,35 @@ It is intentionally small: one first-party block theme plus one first-party mana
 
 ```text
 .
-├── .github/workflows/wordpress-release.yml
+├── .github/workflows/
+│   ├── wordpress-verify.yml     # lint + package checks on PRs, main and releases
+│   └── wordpress-release.yml    # v* tags: verify → build → sign → publish
 ├── .wp-env.json
-├── RC-CHECKLIST.md
-├── WP-6.1-UPDATE-CHANNEL.md
+├── docs/                        # RC checklist, update channel, signing, managed mode, audits
 ├── plugins/
 │   └── staark-core/
 │       ├── admin/
 │       ├── assets/
 │       ├── deployment/
 │       ├── includes/
-│       └── staark-core.php
+│       ├── staark-core.php
+│       └── update-signing.pub   # release public key (see docs/update-signing.md)
 ├── scripts/
+│   ├── generate-update-key.php
+│   ├── sign-release-manifest.php
 │   ├── managed-recover.sh
 │   └── rc-smoke.sh
 └── themes/
-    └── staark/
+    ├── staark/                  # S-Hub Light (parent)
+    ├── staark-salong/
+    ├── staark-bygg/
+    └── staark-gastfrihet/
 ```
 
 ## Requirements
 
 - WordPress `6.6+`
-- PHP `8.0+` for Staark Hub
-- PHP `8.1+` for Staark Theme
+- PHP `8.1+`
 - Node.js + npm for local tooling
 - Docker for `@wordpress/env`
 
@@ -67,7 +78,7 @@ npx wp-env run cli wp theme list
 npx wp-env run cli wp staark rc-check
 ```
 
-The shared development environment uses port `8888` and `https://wp.staarkinc.com`.
+The shared development environment uses port `8888` and `https://wp.staarkinc.com`. It runs as `WP_ENVIRONMENT_TYPE=staging` with `WP_DEBUG_DISPLAY=false`, so PHP notices are never shown to visitors of that public domain.
 
 ## Staark Hub product areas
 
@@ -83,6 +94,13 @@ Staark Hub
 ├── Updates
 ├── Managed
 └── Connect
+
+S-Hub Inbox (own menu)
+├── Inbox
+├── Bookings        (themes with booking forms)
+├── Forms
+├── Notifications
+└── Settings
 ```
 
 Security, SEO and Performance are first-party modules so a managed client site does not need a pile of overlapping utility plugins for the normal Staark workflow.
@@ -109,7 +127,9 @@ npx wp-env run cli wp staark managed mode normal
 npx wp-env run cli wp staark managed loader status
 ```
 
-Emergency/recovery constants are documented in `MANAGED-MODE.md`.
+Emergency/recovery constants are documented in `docs/MANAGED-MODE.md`.
+
+On a managed site only a Staark Operator can change the Hub connection (URL, pairing, identity), and client administrators cannot delete, demote or edit operator accounts.
 
 ## Managed releases and rollback
 
@@ -200,9 +220,10 @@ Git tag
    ▼
 GitHub Actions
    │
+   ├── verify (lint, JSON, package smoke test)
    ├── staark-core.zip
-   ├── staark-theme.zip
-   └── staark-wordpress-manifest.json
+   ├── staark-theme.zip + 3 child theme zips
+   └── staark-wordpress-manifest.json  (Ed25519-signed)
               │
               ▼
 Staark Hub release endpoint
@@ -218,7 +239,7 @@ The Hub endpoint is:
 /api/hub/wordpress/releases
 ```
 
-The manifest contains Core/Theme versions, HTTPS package URLs, SHA256 hashes and compatibility requirements.
+The manifest contains Core/Theme versions, HTTPS package URLs, SHA256 hashes, compatibility requirements and an Ed25519 signature per release. Sites whose Staark Core ships `update-signing.pub` refuse unsigned or altered releases. See `docs/update-signing.md`.
 
 ### Channels
 
@@ -253,21 +274,21 @@ Core packages are downloaded into staging, verified, switched atomically, deploy
 
 Theme packages are staged and verified independently and are restored immediately if post-install verification fails.
 
-Package checks include HTTPS policy, SHA256, structure/version validation, PHP lint and optional Ed25519 signatures. See `WP-6.1-UPDATE-CHANNEL.md`.
+Package checks include HTTPS policy, allowed package hosts, fixed target folders, SHA256, Ed25519 signatures, structure/version validation and PHP lint. See `docs/WP-6.1-UPDATE-CHANNEL.md` and `docs/update-signing.md`.
 
 ## Publishing a stable release
 
-1. Update the Core version header and `STAARK_HUB_VERSION`.
-2. Complete `RC-CHECKLIST.md`.
+1. Update the Core version header and `STAARK_HUB_VERSION` (and the `Version` of every theme you changed).
+2. Complete `docs/RC-CHECKLIST.md`.
 3. Commit and push `main`.
-4. Create/push the matching tag:
+4. Create/push the matching tag **on main**:
 
 ```bash
-git tag -a v0.6.1.1 -m "WP-6.1.1 final polish"
-git push origin v0.6.1.1
+git tag -a v0.6.8.1 -m "Staark WordPress 0.6.8.1"
+git push origin v0.6.8.1
 ```
 
-The release workflow builds the Core ZIP, Theme ZIP and manifest and publishes them as GitHub Release assets.
+The release workflow runs the verify checks, refuses tags that are not on `main`, builds the Core and theme ZIPs, signs the manifest with `STAARK_UPDATE_SIGNING_KEY` (GitHub environment `release`) and publishes them as GitHub Release assets (draft first, public once all assets are uploaded).
 
 After publication:
 
@@ -284,12 +305,12 @@ npx wp-env run cli wp staark rc-check
 npx wp-env run cli wp staark rc-check --format=json
 ```
 
-Also complete `RC-CHECKLIST.md`, including Managed/Locked runtime, support round-trip and production-style update install/rollback gates.
+Also complete `docs/RC-CHECKLIST.md`, including Managed/Locked runtime, support round-trip and production-style update install/rollback gates.
 
 ## Theme workflow
 
-1. Put global colors, typography, layout and spacing in `themes/staark/theme.json`.
-2. Put reusable visual behavior in `themes/staark/assets/css/theme.css`.
+1. Put global colors, typography, layout and spacing in `themes/staark/theme.json` and the presets in `presets/*.json`.
+2. S-Hub Light's own design lives in `themes/staark/assets/css/light.css`; child themes ship their own stylesheet and declare `add_theme_support('staark-lean-parent')` so they only load the small parent `base.css`.
 3. Keep homepage sections as registered patterns under `themes/staark/patterns/`.
 4. Keep templates compositional and small.
 5. Avoid frontend dependencies unless WordPress core and CSS cannot deliver the interaction cleanly.
@@ -310,11 +331,7 @@ Also complete `RC-CHECKLIST.md`, including Managed/Locked runtime, support round
 
 Staark Hub and Staark Theme are versioned independently.
 
-For the theme, update:
-
-```text
-themes/staark/style.css
-```
+For a theme, update the `Version` in its `style.css` (for example `themes/staark/style.css`).
 
 For Staark Hub, keep the plugin header and `STAARK_HUB_VERSION` synchronized.
 

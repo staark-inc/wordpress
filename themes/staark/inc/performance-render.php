@@ -66,6 +66,11 @@ add_action(
             $critical_file = '';
         }
 
+        // Lean child themes style their own first viewport.
+        if (function_exists('staark_theme_lean_parent') && staark_theme_lean_parent()) {
+            $critical_file = '';
+        }
+
         if (
             $critical_file !== ''
             && is_file($critical_file)
@@ -144,6 +149,11 @@ add_filter(
         }
 
         if ($handle !== 'staark-theme') {
+            return $html;
+        }
+
+        // The lean base is ~3 KB: load it normally, no preload swap.
+        if (function_exists('staark_theme_lean_parent') && staark_theme_lean_parent()) {
             return $html;
         }
 

@@ -6,7 +6,7 @@
   "tokens": {
     "colors": {
       "ink": "#101619",
-      "muted": "#65706B",
+      "muted": "#626D68",
       "line": "#E1DDD5",
       "paper": "#FBFAF7",
       "surface": "#F2EEE7",
@@ -14,7 +14,7 @@
       "primary": "#2457F5",
       "primaryDark": "#173BB7",
       "primarySoft": "#EEF3FF",
-      "success": "#0F9F6E",
+      "success": "#0B7853",
       "forest": "#142720",
       "forestDeep": "#0D1916",
       "gold": "#D59531"
