@@ -259,6 +259,17 @@ function staark_hub_first_install_ensure_page(string $slug, string $title, strin
         ];
     }
 
+    if (function_exists('staark_hub_starter_managed_mark_page')) {
+        staark_hub_starter_managed_mark_page(
+            (int) $result,
+            $slug,
+            [
+                'title' => $title,
+                'content' => $content,
+            ]
+        );
+    }
+
     return [
         'id' => (int) $result,
         'created' => true,
