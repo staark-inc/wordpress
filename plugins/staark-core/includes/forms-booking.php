@@ -22,6 +22,15 @@ const STAARK_HUB_FB_NOTIFY_OPTION = 'staark_hub_forms_notifications';
 const STAARK_HUB_FB_COUNTS_TRANSIENT = 'staark_hub_fb_counts';
 
 /**
+ * Name of the section in the admin menu, header and admin bar.
+ * Filter `staark_hub_inbox_label` to rename it.
+ */
+function staark_hub_fb_label(): string
+{
+    return (string) apply_filters('staark_hub_inbox_label', 'S-Hub Inbox');
+}
+
+/**
  * Admin screens of the Forms & Booking section.
  *
  * @return array<string,string> slug => label
@@ -817,7 +826,7 @@ add_action('admin_bar_menu', static function (WP_Admin_Bar $bar): void {
                 . ($count > 0 ? '<span class="staark-fb-count">' . esc_html((string) $count) . '</span>' : '')
                 . '<span class="screen-reader-text">' . esc_html(sprintf(_n('%d request needs attention', '%d requests need attention', $count, 'staark-core'), $count)) . '</span>',
             'href' => staark_hub_fb_url(),
-            'meta' => ['class' => $count > 0 ? 'staark-fb-has-items' : 'staark-fb-empty', 'title' => __('Forms & Booking', 'staark-core')],
+            'meta' => ['class' => $count > 0 ? 'staark-fb-has-items' : 'staark-fb-empty', 'title' => staark_hub_fb_label()],
         ]
     );
 

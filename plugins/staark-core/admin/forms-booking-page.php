@@ -18,8 +18,8 @@ add_action('admin_menu', static function (): void {
         : '';
 
     add_menu_page(
-        __('Forms & Booking', 'staark-core'),
-        __('Forms & Booking', 'staark-core') . $badge,
+        staark_hub_fb_label(),
+        staark_hub_fb_label() . $badge,
         $cap,
         'staark-hub-inbox',
         'staark_hub_render_inbox',
@@ -47,7 +47,7 @@ function staark_hub_fb_header(string $title): void
 
     $counts = staark_hub_fb_counts();
     staark_hub_header(
-        'Forms & Booking',
+        staark_hub_fb_label(),
         $title,
         $pages,
         [
@@ -1053,7 +1053,7 @@ function staark_hub_render_notifications(): void
                 <section class="staark-hub-card">
                     <span class="staark-hub-card-label"><?php esc_html_e('In WordPress', 'staark-core'); ?></span>
                     <h2><?php esc_html_e('Dashboard alerts', 'staark-core'); ?></h2>
-                    <label class="staark-fb-check"><input type="checkbox" name="admin_badge" value="1" <?php checked($notify['admin_badge']); ?>> <?php esc_html_e('Count badge on the Forms & Booking menu', 'staark-core'); ?></label>
+                    <label class="staark-fb-check"><input type="checkbox" name="admin_badge" value="1" <?php checked($notify['admin_badge']); ?>> <?php echo esc_html(sprintf(__('Count badge on the %s menu', 'staark-core'), staark_hub_fb_label())); ?></label>
                     <label class="staark-fb-check"><input type="checkbox" name="admin_bar" value="1" <?php checked($notify['admin_bar']); ?>> <?php esc_html_e('Bell with the latest requests in the admin bar (also on the website when logged in)', 'staark-core'); ?></label>
                     <p class="staark-fb-muted"><?php esc_html_e('Counts unread messages and bookings waiting for confirmation.', 'staark-core'); ?></p>
                 </section>
