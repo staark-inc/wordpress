@@ -1572,7 +1572,7 @@ function staark_hub_nav_items(): array
     $items = [
         STAARK_HUB_SLUG => __('Overview', 'staark-core'),
         'staark-hub-website' => __('Website', 'staark-core'),
-        'staark-hub-inbox' => __('Forms & Booking', 'staark-core'),
+        'staark-hub-inbox' => function_exists('staark_hub_fb_label') ? staark_hub_fb_label() : __('Inbox', 'staark-core'),
         'staark-hub-security' => __('Security', 'staark-core'),
         'staark-hub-seo' => __('SEO', 'staark-core'),
         'staark-hub-performance' => __('Performance', 'staark-core'),
@@ -1619,6 +1619,10 @@ function staark_hub_section_intro(string $section): string
         'First Install' => __('Turn a fresh WordPress install into a ready starter site.', 'staark-core'),
         'Connect' => __('Link this website to Staark Hub with a one-time pairing code.', 'staark-core'),
     ];
+
+    if (function_exists('staark_hub_fb_label') && $section === staark_hub_fb_label()) {
+        $section = 'Forms & Booking';
+    }
 
     return $intros[$section] ?? __('Managed by Staark Inc.', 'staark-core');
 }
@@ -1873,7 +1877,7 @@ function staark_hub_render_overview(): void
             <?php if (is_array($forms)) : ?>
                 <?php $fb_counts = function_exists('staark_hub_fb_counts') ? staark_hub_fb_counts() : null; ?>
                 <a class="staark-hub-card staark-hub-stat-card" href="<?php echo esc_url(admin_url('admin.php?page=staark-hub-inbox')); ?>">
-                    <span class="staark-hub-card-label"><?php echo esc_html__('Forms & Booking', 'staark-core'); ?></span>
+                    <span class="staark-hub-card-label"><?php echo esc_html(function_exists('staark_hub_fb_label') ? staark_hub_fb_label() : __('Inbox', 'staark-core')); ?></span>
                     <strong class="staark-hub-metric"><?php echo esc_html((string) ($fb_counts ? $fb_counts['attention'] : $forms['new'])); ?> <small><?php echo esc_html__('need attention', 'staark-core'); ?></small></strong>
                     <p>
                         <?php
